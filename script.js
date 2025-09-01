@@ -271,6 +271,21 @@ function initializeEventListeners() {
         if (modalForm) {
             modalForm.addEventListener('submit', (e) => {
                 e.preventDefault();
+                console.log('Form submit event triggered');
+                handleModalSubmit();
+            });
+        }
+        
+        // Also add click listener to the modal save button as backup
+        const modalSaveBtn = document.querySelector('.modal-actions .btn-primary');
+        if (modalSaveBtn) {
+            modalSaveBtn.addEventListener('click', (e) => {
+                if (e.target.type === 'submit') {
+                    // Let the form submit handler take care of it
+                    return;
+                }
+                e.preventDefault();
+                console.log('Modal save button clicked');
                 handleModalSubmit();
             });
         }
