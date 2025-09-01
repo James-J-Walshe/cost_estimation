@@ -310,19 +310,19 @@ function getModalFields(type) {
                 </select>
             </div>
             <div class="form-group">
-                <label>${months[0]} Days:</label>
+                <label>${months[0] || 'Month 1'} Days:</label>
                 <input type="number" name="month1Days" class="form-control" min="0" step="0.5" value="0">
             </div>
             <div class="form-group">
-                <label>${months[1]} Days:</label>
+                <label>${months[1] || 'Month 2'} Days:</label>
                 <input type="number" name="month2Days" class="form-control" min="0" step="0.5" value="0">
             </div>
             <div class="form-group">
-                <label>${months[2]} Days:</label>
+                <label>${months[2] || 'Month 3'} Days:</label>
                 <input type="number" name="month3Days" class="form-control" min="0" step="0.5" value="0">
             </div>
             <div class="form-group">
-                <label>${months[3]} Days:</label>
+                <label>${months[3] || 'Month 4'} Days:</label>
                 <input type="number" name="month4Days" class="form-control" min="0" step="0.5" value="0">
             </div>
         `,
@@ -346,19 +346,19 @@ function getModalFields(type) {
                 </select>
             </div>
             <div class="form-group">
-                <label>${months[0]} Cost:</label>
+                <label>${months[0] || 'Month 1'} Cost:</label>
                 <input type="number" name="month1Cost" class="form-control" min="0" step="0.01" value="0">
             </div>
             <div class="form-group">
-                <label>${months[1]} Cost:</label>
+                <label>${months[1] || 'Month 2'} Cost:</label>
                 <input type="number" name="month2Cost" class="form-control" min="0" step="0.01" value="0">
             </div>
             <div class="form-group">
-                <label>${months[2]} Cost:</label>
+                <label>${months[2] || 'Month 3'} Cost:</label>
                 <input type="number" name="month3Cost" class="form-control" min="0" step="0.01" value="0">
             </div>
             <div class="form-group">
-                <label>${months[3]} Cost:</label>
+                <label>${months[3] || 'Month 4'} Cost:</label>
                 <input type="number" name="month4Cost" class="form-control" min="0" step="0.01" value="0">
             </div>
         `,
