@@ -523,3 +523,22 @@ small {
     color: #1e40af;
     border: 1px solid #93c5fd;
 }
+
+/* Category badges */
+.category-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.category-internal {
+    background-color: #dcfce7;
+    color: #166534;
+}
+
+.category-external {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
