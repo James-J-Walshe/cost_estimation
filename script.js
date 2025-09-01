@@ -1017,3 +1017,54 @@ function showAlert(message, type) {
 
 // Global function for delete buttons
 window.deleteItem = deleteItem;
+
+// Calculate months based on start and end date
+function calculateProjectMonths() {
+    const startDate = new Date(projectData.projectInfo.startDate);
+    const endDate = new Date(projectData.projectInfo.endDate);
+    
+    if (!startDate || !endDate || startDate >= endDate) {
+        return ['Month 1', 'Month 2', 'Month 3', 'Month 4', 'Month 5', 'Month 6'];
+    }
+    
+    const months = [];
+    const current = new Date(startDate);
+    
+    while (current <= endDate && months.length < 12) {
+        months.push(current.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'short' 
+        }));
+        current.setMonth(current.getMonth() + 1);
+    }
+    
+    return months.length > 0 ? months : ['Month 1', 'Month 2', 'Month 3', 'Month 4'];
+}
+
+function updateMonthHeaders() {
+    const months = calculateProjectMonths();
+    
+    // Update forecast table headers
+    for (let i = 1; i <= 6; i++) {
+        const header = document.getElementById(`month${i}Header`);
+        if (header) {
+            header.textContent = months[i-1] || `Month ${i}`;
+        }
+    }
+    
+    // Update internal resources headers
+    for (let i = 1; i <= 4; i++) {
+        const header = document.getElementById(`month${i}DaysHeader`);
+        if (header) {
+            header.textContent = `${months[i-1] || `Month ${i}`} Days`;
+        }
+    }
+    
+    // Update vendor costs headers
+    for (let i = 1; i <= 4; i++) {
+        const header = document.getElementById(`month${i}CostHeader`);
+        if (header) {
+            header.textContent = `${months[i-1] || `Month ${i}`} Cost`;
+        }
+    }
+}
