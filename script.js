@@ -463,6 +463,9 @@ function handleModalSubmit() {
             data[key] = value;
         }
         
+        console.log('Modal submit - Type:', type);
+        console.log('Modal submit - Data:', data);
+        
         // Add item to appropriate array
         switch(type) {
             case 'internalResource':
@@ -525,12 +528,15 @@ function handleModalSubmit() {
                 renderRisksTable();
                 break;
             case 'rateCard':
-                projectData.rateCards.push({
+                console.log('Adding rate card:', data);
+                const newRateCard = {
                     id: Date.now(),
                     role: data.role,
                     rate: parseFloat(data.rate),
                     category: data.category
-                });
+                };
+                projectData.rateCards.push(newRateCard);
+                
                 // Update both old arrays for backward compatibility
                 if (data.category === 'Internal') {
                     projectData.internalRates.push({
@@ -545,6 +551,11 @@ function handleModalSubmit() {
                         rate: parseFloat(data.rate)
                     });
                 }
+                
+                console.log('Updated rateCards array:', projectData.rateCards);
+                console.log('Updated internalRates array:', projectData.internalRates);
+                console.log('Updated externalRates array:', projectData.externalRates);
+                
                 // Render the appropriate tables
                 renderInternalRatesTable();
                 renderExternalRatesTable();
@@ -553,6 +564,7 @@ function handleModalSubmit() {
         
         updateSummary();
         modal.style.display = 'none';
+        console.log('Modal submit completed successfully');
     } catch (error) {
         console.error('Error handling modal submit:', error);
     }
