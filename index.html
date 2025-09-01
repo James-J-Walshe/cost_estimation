@@ -1,0 +1,1501 @@
+    <script>
+// Application State
+let projectData = {
+    projectInfo: {
+        projectName: '',
+        startDate: '',
+        endDate: '',
+        projectManager: '',
+        projectDescription: ''
+    },
+    internalResources: [],
+    vendorCosts: [],
+    toolCosts: [],
+    miscCosts: [],
+    risks: [],
+    internalRates: [
+        { role: 'Project Manager', rate: 800 },
+        { role: 'Business Analyst', rate: 650 },
+        { role: 'Technical Lead', rate: 750 },
+        { role: 'Developer', rate: 600 },
+        { role: 'Tester', rate: 550 }
+    ],
+    externalRates: [
+        { role: 'Senior Consultant', rate: 1200 },
+        { role: 'Technical Architect', rate: 1500 },
+        { role: 'Implementation Specialist', rate: 900 },
+        { role: 'Support Specialist', rate: 700 }
+    ],
+    contingencyPercentage: 10
+};
+
+// DOM Elements
+const tabButtons = document.querySelectorAll('.tab-btn');
+const tabContents = document.querySelectorAll('.tab-content');
+const modal = document.getElementById('modal');
+const modalContent = document.querySelector('.modal-content');
+const modalTitle = document.getElementById('modalTitle');
+const modalForm = document.getElementById('modalForm');
+const modalFields = document.getElementById('modalFields');
+const closeModal = document.querySelector('.close');
+const cancelModal = document.getElementById('cancelModal');
+
+// Initialize Application
+document.addEventListener('DOMContentLoaded', function() {
+    initializeTabs();
+    initializeEventListeners();
+    loadDefaultData();
+    renderAllTables();
+    updateSummary();
+});
+
+// Tab Navigation
+function initializeTabs() {
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetTab = button.getAttribute('data-tab');
+            switchTab(targetTab);
+        });
+    });
+}
+
+function switchTab(targetTab) {
+    // Update active tab button
+    tabButtons.forEach(btn => btn.classList.remove('active'));
+    document.querySelector(`[data-tab="${targetTab}"]`).classList.add('active');
+    
+    // Update active tab content
+    tabContents.forEach(content => content.classList.remove('active'));
+    document.getElementById(targetTab).classList.add('active');
+    
+    // Refresh data for specific tabs
+    if (targetTab === 'summary') {
+        updateSummary();
+    }
+}
+
+// Event Listeners
+function initializeEventListeners() {
+    // Project Info Form
+    document.getElementById('projectName').addEventListener('input', (e) => {
+        projectData.projectInfo.projectName = e.target.value;
+    });
+    document.getElementById('startDate').addEventListener('input', (e) => {
+        projectData.projectInfo.startDate = e.target.value;
+    });
+    document.getElementById('endDate').addEventListener('input', (e) => {
+        projectData.projectInfo.endDate = e.target.value;
+    });
+    document.getElementById('projectManager').addEventListener('input', (e) => {
+        projectData.projectInfo.projectManager = e.target.value;
+    });
+    document.getElementById('projectDescription').addEventListener('input', (e) => {
+        projectData.projectInfo.projectDescription = e.target.value;
+    });
+
+    // Contingency percentage
+    document.getElementById('contingencyPercentage').addEventListener('input', (e) => {
+        projectData.contingencyPercentage = parseFloat(e.target.value) || 0;
+        updateSummary();
+    });
+
+    // Add buttons
+    document.getElementById('addInternalResource').addEventListener('click', () => {
+        openModal('Add Internal Resource', 'internalResource');
+    });
+    document.getElementById('addVendorCost').addEventListener('click', () => {
+        openModal('Add Vendor Cost', 'vendorCost');
+    });
+    document.getElementById('addToolCost').addEventListener('click', () => {
+        openModal('Add Tool Cost', 'toolCost');
+    });
+    document.getElementById('addMiscCost').addEventListener('click', () => {
+        openModal('Add Miscellaneous Cost', 'miscCost');
+    });
+    document.getElementById('addRisk').addEventListener('click', () => {
+        openModal('Add Risk', 'risk');
+    });
+    document.getElementById('addInternalRate').addEventListener('click', () => {
+        openModal('Add Internal Rate', 'internalRate');
+    });
+    document.getElementById('addExternalRate').addEventListener('click', () => {
+        openModal('Add External Rate', 'externalRate');
+    });
+
+    // Modal events
+    closeModal.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+    cancelModal.addEventListener('click', () => {
+        modal.style.display = 'none';
+    });
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+
+    // Save/Load buttons
+    document.getElementById('saveBtn').addEventListener('click', saveProject);
+    document.getElementById('loadBtn').addEventListener('click', loadProject);
+    document.getElementById('exportBtn').addEventListener('click', exportToExcel);
+
+    // Modal form submission
+    modalForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        handleModalSubmit();
+    });
+}
+
+// Modal Management
+function openModal(title, type) {
+    modalTitle.textContent = title;
+    modalFields.innerHTML = getModalFields(type);
+    modal.style.display = 'block';
+    modalForm.setAttribute('data-type', type);
+}
+
+function getModalFields(type) {
+    const fields = {
+        internalResource: `
+            <div class="form-group">
+                <label>Role:</label>
+                <select name="role" class="form-control" required>
+                    ${projectData.internalRates.map(rate => `<option value="${rate.role}">${rate.role}</option>`).join('')}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Q1 Days:</label>
+                <input type="number" name="q1Days" class="form-control" min="0" step="0.5" value="0">
+            </div>
+            <div class="form-group">
+                <label>Q2 Days:</label>
+                <input type="number" name="q2Days" class="form-control" min="0" step="0.5" value="0">
+            </div>
+            <div class="form-group">
+                <label>Q3 Days:</label>
+                <input type="number" name="q3Days" class="form-control" min="0" step="0.5" value="0">
+            </div>
+            <div class="form-group">
+                <label>Q4 Days:</label>
+                <input type="number" name="q4Days" class="form-control" min="0" step="0.5" value="0">
+            </div>
+        `,
+        vendorCost: `
+            <div class="form-group">
+                <label>Vendor:</label>
+                <input type="text" name="vendor" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Description:</label>
+                <input type="text" name="description" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Category:</label>
+                <select name="category" class="form-control" required>
+                    <option value="Implementation">Implementation</option>
+                    <option value="Consulting">Consulting</option>
+                    <option value="Training">Training</option>
+                    <option value="Support">Support</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Q1 Cost:</label>
+                <input type="number" name="q1Cost" class="form-control" min="0" step="0.01" value="0">
+            </div>
+            <div class="form-group">
+                <label>Q2 Cost:</label>
+                <input type="number" name="q2Cost" class="form-control" min="0" step="0.01" value="0">
+            </div>
+            <div class="form-group">
+                <label>Q3 Cost:</label>
+                <input type="number" name="q3Cost" class="form-control" min="0" step="0.01" value="0">
+            </div>
+            <div class="form-group">
+                <label>Q4 Cost:</label>
+                <input type="number" name="q4Cost" class="form-control" min="0" step="0.01" value="0">
+            </div>
+        `,
+        toolCost: `
+            <div class="form-group">
+                <label>Tool/Software:</label>
+                <input type="text" name="tool" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>License Type:</label>
+                <select name="licenseType" class="form-control" required>
+                    <option value="Per User">Per User</option>
+                    <option value="Per Device">Per Device</option>
+                    <option value="Enterprise">Enterprise</option>
+                    <option value="One-time">One-time</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Users/Licenses:</label>
+                <input type="number" name="users" class="form-control" min="1" required>
+            </div>
+            <div class="form-group">
+                <label>Monthly Cost:</label>
+                <input type="number" name="monthlyCost" class="form-control" min="0" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label>Duration (Months):</label>
+                <input type="number" name="duration" class="form-control" min="1" required>
+            </div>
+        `,
+        miscCost: `
+            <div class="form-group">
+                <label>Item:</label>
+                <input type="text" name="item" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Description:</label>
+                <input type="text" name="description" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Category:</label>
+                <select name="category" class="form-control" required>
+                    <option value="Travel">Travel</option>
+                    <option value="Equipment">Equipment</option>
+                    <option value="Training">Training</option>
+                    <option value="Documentation">Documentation</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Cost:</label>
+                <input type="number" name="cost" class="form-control" min="0" step="0.01" required>
+            </div>
+        `,
+        risk: `
+            <div class="form-group">
+                <label>Risk Description:</label>
+                <textarea name="description" class="form-control" required></textarea>
+            </div>
+            <div class="form-group">
+                <label>Probability (1-5):</label>
+                <input type="number" name="probability" class="form-control" min="1" max="5" required>
+            </div>
+            <div class="form-group">
+                <label>Impact (1-5):</label>
+                <input type="number" name="impact" class="form-control" min="1" max="5" required>
+            </div>
+            <div class="form-group">
+                <label>Mitigation Cost:</label>
+                <input type="number" name="mitigationCost" class="form-control" min="0" step="0.01" value="0">
+            </div>
+        `,
+        internalRate: `
+            <div class="form-group">
+                <label>Role:</label>
+                <input type="text" name="role" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Daily Rate:</label>
+                <input type="number" name="rate" class="form-control" min="0" step="0.01" required>
+            </div>
+        `,
+        externalRate: `
+            <div class="form-group">
+                <label>Role:</label>
+                <input type="text" name="role" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Daily Rate:</label>
+                <input type="number" name="rate" class="form-control" min="0" step="0.01" required>
+            </div>
+        `
+    };
+    
+    return fields[type] || '';
+}
+
+function handleModalSubmit() {
+    const formData = new FormData(modalForm);
+    const type = modalForm.getAttribute('data-type');
+    const data = {};
+    
+    for (let [key, value] of formData.entries()) {
+        data[key] = value;
+    }
+    
+    // Add item to appropriate array
+    switch(type) {
+        case 'internalResource':
+            const rate = projectData.internalRates.find(r => r.role === data.role);
+            projectData.internalResources.push({
+                id: Date.now(),
+                role: data.role,
+                rateCard: 'Internal',
+                dailyRate: rate ? rate.rate : 0,
+                q1Days: parseFloat(data.q1Days) || 0,
+                q2Days: parseFloat(data.q2Days) || 0,
+                q3Days: parseFloat(data.q3Days) || 0,
+                q4Days: parseFloat(data.q4Days) || 0
+            });
+            renderInternalResourcesTable();
+            break;
+        case 'vendorCost':
+            projectData.vendorCosts.push({
+                id: Date.now(),
+                vendor: data.vendor,
+                description: data.description,
+                category: data.category,
+                q1Cost: parseFloat(data.q1Cost) || 0,
+                q2Cost: parseFloat(data.q2Cost) || 0,
+                q3Cost: parseFloat(data.q3Cost) || 0,
+                q4Cost: parseFloat(data.q4Cost) || 0
+            });
+            renderVendorCostsTable();
+            break;
+        case 'toolCost':
+            projectData.toolCosts.push({
+                id: Date.now(),
+                tool: data.tool,
+                licenseType: data.licenseType,
+                users: parseInt(data.users),
+                monthlyCost: parseFloat(data.monthlyCost),
+                duration: parseInt(data.duration)
+            });
+            renderToolCostsTable();
+            break;
+        case 'miscCost':
+            projectData.miscCosts.push({
+                id: Date.now(),
+                item: data.item,
+                description: data.description,
+                category: data.category,
+                cost: parseFloat(data.cost)
+            });
+            renderMiscCostsTable();
+            break;
+        case 'risk':
+            projectData.risks.push({
+                id: Date.now(),
+                description: data.description,
+                probability: parseInt(data.probability),
+                impact: parseInt(data.impact),
+                mitigationCost: parseFloat(data.mitigationCost) || 0
+            });
+            renderRisksTable();
+            break;
+        case 'internalRate':
+            projectData.internalRates.push({
+                id: Date.now(),
+                role: data.role,
+                rate: parseFloat(data.rate)
+            });
+            renderInternalRatesTable();
+            break;
+        case 'externalRate':
+            projectData.externalRates.push({
+                id: Date.now(),
+                role: data.role,
+                rate: parseFloat(data.rate)
+            });
+            renderExternalRatesTable();
+            break;
+    }
+    
+    updateSummary();
+    modal.style.display = 'none';
+}
+
+// Table Rendering Functions
+function renderAllTables() {
+    renderInternalResourcesTable();
+    renderVendorCostsTable();
+    renderToolCostsTable();
+    renderMiscCostsTable();
+    renderRisksTable();
+    renderInternalRatesTable();
+    renderExternalRatesTable();
+    renderForecastTable();
+}
+
+function renderInternalResourcesTable() {
+    const tbody = document.getElementById('internalResourcesTable');
+    tbody.innerHTML = '';
+    
+    if (projectData.internalResources.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No internal resources added yet</td></tr>';
+        return;
+    }
+    
+    projectData.internalResources.forEach(resource => {
+        const totalCost = (resource.q1Days + resource.q2Days + resource.q3Days + resource.q4Days) * resource.dailyRate;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${resource.role}</td>
+            <td>${resource.rateCard}</td>
+            <td>${resource.dailyRate.toLocaleString()}</td>
+            <td>${resource.q1Days}</td>
+            <td>${resource.q2Days}</td>
+            <td>${resource.q3Days}</td>
+            <td>${resource.q4Days}</td>
+            <td>${totalCost.toLocaleString()}</td>
+            <td>
+                <button class="btn btn-danger btn-small" onclick="deleteItem('internalResources', ${resource.id})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function renderVendorCostsTable() {
+    const tbody = document.getElementById('vendorCostsTable');
+    tbody.innerHTML = '';
+    
+    if (projectData.vendorCosts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No vendor costs added yet</td></tr>';
+        return;
+    }
+    
+    projectData.vendorCosts.forEach(vendor => {
+        const totalCost = vendor.q1Cost + vendor.q2Cost + vendor.q3Cost + vendor.q4Cost;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${vendor.vendor}</td>
+            <td>${vendor.description}</td>
+            <td>${vendor.category}</td>
+            <td>${vendor.q1Cost.toLocaleString()}</td>
+            <td>${vendor.q2Cost.toLocaleString()}</td>
+            <td>${vendor.q3Cost.toLocaleString()}</td>
+            <td>${vendor.q4Cost.toLocaleString()}</td>
+            <td>${totalCost.toLocaleString()}</td>
+            <td>
+                <button class="btn btn-danger btn-small" onclick="deleteItem('vendorCosts', ${vendor.id})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function renderToolCostsTable() {
+    const tbody = document.getElementById('toolCostsTable');
+    tbody.innerHTML = '';
+    
+    if (projectData.toolCosts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No tool costs added yet</td></tr>';
+        return;
+    }
+    
+    projectData.toolCosts.forEach(tool => {
+        const totalCost = tool.users * tool.monthlyCost * tool.duration;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${tool.tool}</td>
+            <td>${tool.licenseType}</td>
+            <td>${tool.users}</td>
+            <td>${tool.monthlyCost.toLocaleString()}</td>
+            <td>${tool.duration}</td>
+            <td>${totalCost.toLocaleString()}</td>
+            <td>
+                <button class="btn btn-danger btn-small" onclick="deleteItem('toolCosts', ${tool.id})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function renderMiscCostsTable() {
+    const tbody = document.getElementById('miscCostsTable');
+    tbody.innerHTML = '';
+    
+    if (projectData.miscCosts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No miscellaneous costs added yet</td></tr>';
+        return;
+    }
+    
+    projectData.miscCosts.forEach(misc => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${misc.item}</td>
+            <td>${misc.description}</td>
+            <td>${misc.category}</td>
+            <td>${misc.cost.toLocaleString()}</td>
+            <td>
+                <button class="btn btn-danger btn-small" onclick="deleteItem('miscCosts', ${misc.id})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function renderRisksTable() {
+    const tbody = document.getElementById('risksTable');
+    tbody.innerHTML = '';
+    
+    if (projectData.risks.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No risks added yet</td></tr>';
+        return;
+    }
+    
+    projectData.risks.forEach(risk => {
+        const riskScore = risk.probability * risk.impact;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${risk.description}</td>
+            <td>${risk.probability}</td>
+            <td>${risk.impact}</td>
+            <td>${riskScore}</td>
+            <td>${risk.mitigationCost.toLocaleString()}</td>
+            <td>
+                <button class="btn btn-danger btn-small" onclick="deleteItem('risks', ${risk.id})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function renderInternalRatesTable() {
+    const tbody = document.getElementById('internalRatesTable');
+    tbody.innerHTML = '';
+    
+    projectData.internalRates.forEach(rate => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${rate.role}</td>
+            <td>${rate.rate.toLocaleString()}</td>
+            <td>
+                <button class="btn btn-danger btn-small" onclick="deleteItem('internalRates', ${rate.id || rate.role})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function renderExternalRatesTable() {
+    const tbody = document.getElementById('externalRatesTable');
+    tbody.innerHTML = '';
+    
+    projectData.externalRates.forEach(rate => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${rate.role}</td>
+            <td>${rate.rate.toLocaleString()}</td>
+            <td>
+                <button class="btn btn-danger btn-small" onclick="deleteItem('externalRates', ${rate.id || rate.role})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function renderForecastTable() {
+    const tbody = document.getElementById('forecastTable');
+    tbody.innerHTML = '';
+    
+    // Calculate quarterly totals
+    const quarters = ['Q1 FY24', 'Q2 FY24', 'Q3 FY24', 'Q4 FY24', 'Q1 FY25', 'Q2 FY25'];
+    
+    // Internal Resources
+    const internalQuarterly = [0, 0, 0, 0, 0, 0];
+    projectData.internalResources.forEach(resource => {
+        internalQuarterly[0] += resource.q1Days * resource.dailyRate;
+        internalQuarterly[1] += resource.q2Days * resource.dailyRate;
+        internalQuarterly[2] += resource.q3Days * resource.dailyRate;
+        internalQuarterly[3] += resource.q4Days * resource.dailyRate;
+    });
+    
+    // Vendor Costs
+    const vendorQuarterly = [0, 0, 0, 0, 0, 0];
+    projectData.vendorCosts.forEach(vendor => {
+        vendorQuarterly[0] += vendor.q1Cost;
+        vendorQuarterly[1] += vendor.q2Cost;
+        vendorQuarterly[2] += vendor.q3Cost;
+        vendorQuarterly[3] += vendor.q4Cost;
+    });
+    
+    // Add rows
+    const internalTotal = internalQuarterly.reduce((sum, val) => sum + val, 0);
+    const vendorTotal = vendorQuarterly.reduce((sum, val) => sum + val, 0);
+    
+    tbody.innerHTML = `
+        <tr>
+            <td><strong>Internal Resources</strong></td>
+            <td>${internalQuarterly[0].toLocaleString()}</td>
+            <td>${internalQuarterly[1].toLocaleString()}</td>
+            <td>${internalQuarterly[2].toLocaleString()}</td>
+            <td>${internalQuarterly[3].toLocaleString()}</td>
+            <td>${internalQuarterly[4].toLocaleString()}</td>
+            <td>${internalQuarterly[5].toLocaleString()}</td>
+            <td><strong>${internalTotal.toLocaleString()}</strong></td><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICT Project Cost Estimation Tool</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>ICT Project Cost Estimation Tool</h1>
+            <div class="header-actions">
+                <button id="saveBtn" class="btn btn-primary">Save Project</button>
+                <button id="loadBtn" class="btn btn-secondary">Load Project</button>
+                <button id="exportBtn" class="btn btn-secondary">Export to Excel</button>
+            </div>
+        </header>
+
+        <nav class="tab-navigation">
+            <button class="tab-btn active" data-tab="project-info">Project Info</button>
+            <button class="tab-btn" data-tab="resource-plan">Resource Plan</button>
+            <button class="tab-btn" data-tab="internal-resources">Internal Resources</button>
+            <button class="tab-btn" data-tab="vendor-costs">Vendor Costs</button>
+            <button class="tab-btn" data-tab="tool-costs">Tool Costs</button>
+            <button class="tab-btn" data-tab="miscellaneous">Miscellaneous</button>
+            <button class="tab-btn" data-tab="risks">Risks & Contingency</button>
+            <button class="tab-btn" data-tab="rate-cards">Rate Cards</button>
+            <button class="tab-btn" data-tab="summary">Summary</button>
+        </nav>
+
+        <main class="content">
+            <!-- Project Info Tab -->
+            <div id="project-info" class="tab-content active">
+                <h2>Project Information</h2>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="projectName">Project Name:</label>
+                        <input type="text" id="projectName" class="form-control" placeholder="Enter project name">
+                    </div>
+                    <div class="form-group">
+                        <label for="startDate">Start Date:</label>
+                        <input type="date" id="startDate" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="projectManager">Project Manager:</label>
+                        <input type="text" id="projectManager" class="form-control" placeholder="Enter project manager name">
+                    </div>
+                    <div class="form-group">
+                        <label for="endDate">End Date:</label>
+                        <input type="date" id="endDate" class="form-control">
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="projectDescription">Project Description:</label>
+                        <textarea id="projectDescription" class="form-control" rows="4" placeholder="Enter project description"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resource Plan Tab -->
+            <div id="resource-plan" class="tab-content">
+                <h2>Resource Plan Overview</h2>
+                <div class="cost-summary">
+                    <div class="summary-card">
+                        <h3>Total Project Cost</h3>
+                        <div class="cost-amount" id="totalProjectCost">$0</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>Internal Resources</h3>
+                        <div class="cost-amount" id="totalInternalCost">$0</div>
+                    </div>
+                    <div class="summary-card">
+                        <h3>External Resources</h3>
+                        <div class="cost-amount" id="totalExternalCost">$0</div>
+                    </div>
+                </div>
+                
+                <div class="forecast-section">
+                    <h3>Cost Forecast by Quarter</h3>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Q1 FY24</th>
+                                    <th>Q2 FY24</th>
+                                    <th>Q3 FY24</th>
+                                    <th>Q4 FY24</th>
+                                    <th>Q1 FY25</th>
+                                    <th>Q2 FY25</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="forecastTable">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Internal Resources Tab -->
+            <div id="internal-resources" class="tab-content">
+                <h2>Internal Resources</h2>
+                <div class="section-actions">
+                    <button id="addInternalResource" class="btn btn-primary">Add Resource</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Role</th>
+                                <th>Rate Card</th>
+                                <th>Daily Rate</th>
+                                <th>Q1 Days</th>
+                                <th>Q2 Days</th>
+                                <th>Q3 Days</th>
+                                <th>Q4 Days</th>
+                                <th>Total Cost</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="internalResourcesTable">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Vendor Costs Tab -->
+            <div id="vendor-costs" class="tab-content">
+                <h2>Vendor Costs</h2>
+                <div class="section-actions">
+                    <button id="addVendorCost" class="btn btn-primary">Add Vendor Cost</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Vendor</th>
+                                <th>Description</th>
+                                <th>Category</th>
+                                <th>Q1 Cost</th>
+                                <th>Q2 Cost</th>
+                                <th>Q3 Cost</th>
+                                <th>Q4 Cost</th>
+                                <th>Total Cost</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vendorCostsTable">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tool Costs Tab -->
+            <div id="tool-costs" class="tab-content">
+                <h2>Project Tool Costs</h2>
+                <div class="section-actions">
+                    <button id="addToolCost" class="btn btn-primary">Add Tool Cost</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Tool/Software</th>
+                                <th>License Type</th>
+                                <th>Users/Licenses</th>
+                                <th>Monthly Cost</th>
+                                <th>Duration (Months)</th>
+                                <th>Total Cost</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="toolCostsTable">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Miscellaneous Tab -->
+            <div id="miscellaneous" class="tab-content">
+                <h2>Miscellaneous Costs</h2>
+                <div class="section-actions">
+                    <button id="addMiscCost" class="btn btn-primary">Add Miscellaneous Cost</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Description</th>
+                                <th>Category</th>
+                                <th>Cost</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="miscCostsTable">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Risks & Contingency Tab -->
+            <div id="risks" class="tab-content">
+                <h2>Risks & Contingency</h2>
+                <div class="risk-summary">
+                    <div class="form-group">
+                        <label for="contingencyPercentage">Contingency Percentage:</label>
+                        <input type="number" id="contingencyPercentage" class="form-control" value="10" min="0" max="100">
+                        <small>Percentage of total project cost</small>
+                    </div>
+                    <div class="cost-display">
+                        <strong>Contingency Amount: $<span id="contingencyAmount">0</span></strong>
+                    </div>
+                </div>
+                <div class="section-actions">
+                    <button id="addRisk" class="btn btn-primary">Add Risk</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Risk Description</th>
+                                <th>Probability</th>
+                                <th>Impact</th>
+                                <th>Risk Score</th>
+                                <th>Mitigation Cost</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="risksTable">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Rate Cards Tab -->
+            <div id="rate-cards" class="tab-content">
+                <h2>Rate Cards</h2>
+                <div class="rate-cards-container">
+                    <div class="rate-card-section">
+                        <h3>Internal Rate Card</h3>
+                        <div class="section-actions">
+                            <button id="addInternalRate" class="btn btn-primary">Add Role</button>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Role</th>
+                                        <th>Daily Rate</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="internalRatesTable">
+                                    <!-- Populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="rate-card-section">
+                        <h3>External Rate Card</h3>
+                        <div class="section-actions">
+                            <button id="addExternalRate" class="btn btn-primary">Add Role</button>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Role</th>
+                                        <th>Daily Rate</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="externalRatesTable">
+                                    <!-- Populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Tab -->
+            <div id="summary" class="tab-content">
+                <h2>Project Cost Summary</h2>
+                <div class="summary-overview">
+                    <div class="summary-section">
+                        <h3>Cost Breakdown</h3>
+                        <div class="cost-breakdown">
+                            <div class="breakdown-item">
+                                <span>Internal Resources:</span>
+                                <span class="cost" id="summaryInternalCost">$0</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span>Vendor Costs:</span>
+                                <span class="cost" id="summaryVendorCost">$0</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span>Tool Costs:</span>
+                                <span class="cost" id="summaryToolCost">$0</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span>Miscellaneous:</span>
+                                <span class="cost" id="summaryMiscCost">$0</span>
+                            </div>
+                            <div class="breakdown-item subtotal">
+                                <span>Subtotal:</span>
+                                <span class="cost" id="summarySubtotal">$0</span>
+                            </div>
+                            <div class="breakdown-item">
+                                <span>Contingency:</span>
+                                <span class="cost" id="summaryContingency">$0</span>
+                            </div>
+                            <div class="breakdown-item total">
+                                <span>Total Project Cost:</span>
+                                <span class="cost" id="summaryTotal">$0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal for adding items -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3 id="modalTitle">Add Item</h3>
+            <form id="modalForm">
+                <div id="modalFields">
+                    <!-- Dynamic form fields -->
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary" id="cancelModal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <style>
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #f5f7fa;
+    color: #2d3748;
+    line-height: 1.6;
+}
+
+.app-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background-color: white;
+    min-height: 100vh;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+/* Header */
+header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+header h1 {
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* Buttons */
+.btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 0.875rem;
+}
+
+.btn-primary {
+    background-color: #4f46e5;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #4338ca;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background-color: rgba(255,255,255,0.2);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.btn-secondary:hover {
+    background-color: rgba(255,255,255,0.3);
+}
+
+.btn-danger {
+    background-color: #dc2626;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #b91c1c;
+}
+
+.btn-small {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+/* Navigation */
+.tab-navigation {
+    background-color: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 0 2rem;
+    display: flex;
+    overflow-x: auto;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 1rem 1.5rem;
+    cursor: pointer;
+    font-weight: 500;
+    color: #64748b;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.tab-btn:hover {
+    color: #4f46e5;
+    background-color: #f1f5f9;
+}
+
+.tab-btn.active {
+    color: #4f46e5;
+    border-bottom-color: #4f46e5;
+    background-color: white;
+}
+
+/* Content */
+.content {
+    padding: 2rem;
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Forms */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-control {
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+label {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #374151;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+}
+
+small {
+    margin-top: 0.25rem;
+    color: #6b7280;
+    font-size: 0.75rem;
+}
+
+/* Cost Summary Cards */
+.cost-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.summary-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.summary-card h3 {
+    font-size: 0.875rem;
+    font-weight: 500;
+    opacity: 0.9;
+    margin-bottom: 0.5rem;
+}
+
+.cost-amount {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+/* Tables */
+.table-container {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    background-color: #f8fafc;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+    white-space: nowrap;
+}
+
+.data-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.data-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+.data-table input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.data-table select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    background-color: white;
+}
+
+/* Section Actions */
+.section-actions {
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Forecast Section */
+.forecast-section {
+    margin-top: 2rem;
+}
+
+.forecast-section h3 {
+    margin-bottom: 1rem;
+    color: #374151;
+}
+
+/* Risk Summary */
+.risk-summary {
+    background-color: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.cost-display {
+    font-size: 1.1rem;
+    color: #059669;
+}
+
+/* Rate Cards */
+.rate-cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 2rem;
+}
+
+.rate-card-section {
+    background-color: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 8px;
+}
+
+.rate-card-section h3 {
+    margin-bottom: 1rem;
+    color: #374151;
+}
+
+/* Summary */
+.summary-overview {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.summary-section {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+}
+
+.cost-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.breakdown-item:last-child {
+    border-bottom: none;
+}
+
+.breakdown-item.subtotal {
+    font-weight: 600;
+    border-top: 2px solid #e5e7eb;
+    margin-top: 1rem;
+    padding-top: 1rem;
+}
+
+.breakdown-item.total {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #059669;
+    border-top: 2px solid #059669;
+    margin-top: 1rem;
+    padding-top: 1rem;
+}
+
+.cost {
+    font-weight: 600;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 2rem;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.close {
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    font-size: 2rem;
+    font-weight: bold;
+    cursor: pointer;
+    color: #6b7280;
+}
+
+.close:hover {
+    color: #374151;
+}
+
+#modalTitle {
+    margin-bottom: 1.5rem;
+    color: #374151;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .app-container {
+        margin: 0;
+        box-shadow: none;
+    }
+    
+    header {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .content {
+        padding: 1rem;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .cost-summary {
+        grid-template-columns: 1fr;
+    }
+    
+    .rate-cards-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .tab-navigation {
+        padding: 0 1rem;
+    }
+    
+    .tab-btn {
+        padding: 0.75rem 1rem;
+    }
+    
+    .section-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+}
+
+/* Utility Classes */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.mb-1 { margin-bottom: 0.25rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 1rem; }
+.mt-1 { margin-top: 0.25rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-3 { margin-top: 1rem; }
+.p-1 { padding: 0.25rem; }
+.p-2 { padding: 0.5rem; }
+.p-3 { padding: 1rem; }
+
+/* Loading and Empty States */
+.loading {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #6b7280;
+}
+
+.empty-state h3 {
+    margin-bottom: 0.5rem;
+    color: #374151;
+}
+
+/* Success/Error Messages */
+.alert {
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.alert-success {
+    background-color: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.alert-error {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+
+.alert-info {
+    background-color: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #93c5fd;
+}
+    </style>
+    <link rel="stylesheet" href="style.css">
+    
