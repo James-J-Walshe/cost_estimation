@@ -531,7 +531,23 @@ function handleModalSubmit() {
                     rate: parseFloat(data.rate),
                     category: data.category
                 });
-                renderAllTables();
+                // Update both old arrays for backward compatibility
+                if (data.category === 'Internal') {
+                    projectData.internalRates.push({
+                        id: Date.now(),
+                        role: data.role,
+                        rate: parseFloat(data.rate)
+                    });
+                } else if (data.category === 'External') {
+                    projectData.externalRates.push({
+                        id: Date.now(),
+                        role: data.role,
+                        rate: parseFloat(data.rate)
+                    });
+                }
+                // Render the appropriate tables
+                renderInternalRatesTable();
+                renderExternalRatesTable();
                 break;
         }
         
