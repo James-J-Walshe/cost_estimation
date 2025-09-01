@@ -52,6 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
         loadDefaultData();
         renderAllTables();
         updateSummary();
+        updateMonthHeaders(); // Add this line
         
         console.log('Application initialized successfully');
     } catch (error) {
@@ -59,6 +60,59 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('Error initializing application. Please check the console for details.');
     }
 });
+
+// Calculate months based on start date
+function calculateProjectMonths() {
+    const startDate = projectData.projectInfo.startDate;
+    
+    if (!startDate) {
+        return ['Month 1', 'Month 2', 'Month 3', 'Month 4', 'Month 5', 'Month 6'];
+    }
+    
+    const start = new Date(startDate);
+    const months = [];
+    const current = new Date(start);
+    
+    // Generate up to 12 months from start date
+    for (let i = 0; i < 12; i++) {
+        months.push(current.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'short' 
+        }));
+        current.setMonth(current.getMonth() + 1);
+    }
+    
+    return months;
+}
+
+// Update all month headers
+function updateMonthHeaders() {
+    const months = calculateProjectMonths();
+    
+    // Update forecast table headers (6 months shown)
+    for (let i = 1; i <= 6; i++) {
+        const header = document.getElementById(`month${i}Header`);
+        if (header && months[i-1]) {
+            header.textContent = months[i-1];
+        }
+    }
+    
+    // Update internal resources headers (4 months shown)
+    for (let i = 1; i <= 4; i++) {
+        const header = document.getElementById(`month${i}DaysHeader`);
+        if (header && months[i-1]) {
+            header.textContent = `${months[i-1]} Days`;
+        }
+    }
+    
+    // Update vendor costs headers (4 months shown)
+    for (let i = 1; i <= 4; i++) {
+        const header = document.getElementById(`month${i}CostHeader`);
+        if (header && months[i-1]) {
+            header.textContent = `${months[i-1]} Cost`;
+        }
+    }
+}
 
 // Tab Navigation
 function initializeTabs() {
@@ -120,12 +174,14 @@ function initializeEventListeners() {
         if (startDateEl) {
             startDateEl.addEventListener('input', (e) => {
                 projectData.projectInfo.startDate = e.target.value;
+                updateMonthHeaders(); // Add this line
             });
         }
         
         if (endDateEl) {
             endDateEl.addEventListener('input', (e) => {
                 projectData.projectInfo.endDate = e.target.value;
+                updateMonthHeaders(); // Add this line
             });
         }
         
@@ -229,6 +285,8 @@ function openModal(title, type) {
 }
 
 function getModalFields(type) {
+    const months = calculateProjectMonths();
+    
     const fields = {
         internalResource: `
             <div class="form-group">
@@ -238,20 +296,20 @@ function getModalFields(type) {
                 </select>
             </div>
             <div class="form-group">
-                <label>Q1 Days:</label>
-                <input type="number" name="q1Days" class="form-control" min="0" step="0.5" value="0">
+                <label>${months[0]} Days:</label>
+                <input type="number" name="month1Days" class="form-control" min="0" step="0.5" value="0">
             </div>
             <div class="form-group">
-                <label>Q2 Days:</label>
-                <input type="number" name="q2Days" class="form-control" min="0" step="0.5" value="0">
+                <label>${months[1]} Days:</label>
+                <input type="number" name="month2Days" class="form-control" min="0" step="0.5" value="0">
             </div>
             <div class="form-group">
-                <label>Q3 Days:</label>
-                <input type="number" name="q3Days" class="form-control" min="0" step="0.5" value="0">
+                <label>${months[2]} Days:</label>
+                <input type="number" name="month3Days" class="form-control" min="0" step="0.5" value="0">
             </div>
             <div class="form-group">
-                <label>Q4 Days:</label>
-                <input type="number" name="q4Days" class="form-control" min="0" step="0.5" value="0">
+                <label>${months[3]} Days:</label>
+                <input type="number" name="month4Days" class="form-control" min="0" step="0.5" value="0">
             </div>
         `,
         vendorCost: `
@@ -274,20 +332,20 @@ function getModalFields(type) {
                 </select>
             </div>
             <div class="form-group">
-                <label>Q1 Cost:</label>
-                <input type="number" name="q1Cost" class="form-control" min="0" step="0.01" value="0">
+                <label>${months[0]} Cost:</label>
+                <input type="number" name="month1Cost" class="form-control" min="0" step="0.01" value="0">
             </div>
             <div class="form-group">
-                <label>Q2 Cost:</label>
-                <input type="number" name="q2Cost" class="form-control" min="0" step="0.01" value="0">
+                <label>${months[1]} Cost:</label>
+                <input type="number" name="month2Cost" class="form-control" min="0" step="0.01" value="0">
             </div>
             <div class="form-group">
-                <label>Q3 Cost:</label>
-                <input type="number" name="q3Cost" class="form-control" min="0" step="0.01" value="0">
+                <label>${months[2]} Cost:</label>
+                <input type="number" name="month3Cost" class="form-control" min="0" step="0.01" value="0">
             </div>
             <div class="form-group">
-                <label>Q4 Cost:</label>
-                <input type="number" name="q4Cost" class="form-control" min="0" step="0.01" value="0">
+                <label>${months[3]} Cost:</label>
+                <input type="number" name="month4Cost" class="form-control" min="0" step="0.01" value="0">
             </div>
         `,
         toolCost: `
@@ -403,10 +461,10 @@ function handleModalSubmit() {
                     role: data.role,
                     rateCard: 'Internal',
                     dailyRate: rate ? rate.rate : 0,
-                    q1Days: parseFloat(data.q1Days) || 0,
-                    q2Days: parseFloat(data.q2Days) || 0,
-                    q3Days: parseFloat(data.q3Days) || 0,
-                    q4Days: parseFloat(data.q4Days) || 0
+                    month1Days: parseFloat(data.month1Days) || 0,
+                    month2Days: parseFloat(data.month2Days) || 0,
+                    month3Days: parseFloat(data.month3Days) || 0,
+                    month4Days: parseFloat(data.month4Days) || 0
                 });
                 renderInternalResourcesTable();
                 break;
@@ -416,10 +474,10 @@ function handleModalSubmit() {
                     vendor: data.vendor,
                     description: data.description,
                     category: data.category,
-                    q1Cost: parseFloat(data.q1Cost) || 0,
-                    q2Cost: parseFloat(data.q2Cost) || 0,
-                    q3Cost: parseFloat(data.q3Cost) || 0,
-                    q4Cost: parseFloat(data.q4Cost) || 0
+                    month1Cost: parseFloat(data.month1Cost) || 0,
+                    month2Cost: parseFloat(data.month2Cost) || 0,
+                    month3Cost: parseFloat(data.month3Cost) || 0,
+                    month4Cost: parseFloat(data.month4Cost) || 0
                 });
                 renderVendorCostsTable();
                 break;
@@ -507,16 +565,22 @@ function renderInternalResourcesTable() {
     }
     
     projectData.internalResources.forEach(resource => {
-        const totalCost = (resource.q1Days + resource.q2Days + resource.q3Days + resource.q4Days) * resource.dailyRate;
+        // Handle both old format (q1Days) and new format (month1Days)
+        const month1Days = resource.month1Days || resource.q1Days || 0;
+        const month2Days = resource.month2Days || resource.q2Days || 0;
+        const month3Days = resource.month3Days || resource.q3Days || 0;
+        const month4Days = resource.month4Days || resource.q4Days || 0;
+        
+        const totalCost = (month1Days + month2Days + month3Days + month4Days) * resource.dailyRate;
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${resource.role}</td>
             <td>${resource.rateCard}</td>
             <td>$${resource.dailyRate.toLocaleString()}</td>
-            <td>${resource.q1Days}</td>
-            <td>${resource.q2Days}</td>
-            <td>${resource.q3Days}</td>
-            <td>${resource.q4Days}</td>
+            <td>${month1Days}</td>
+            <td>${month2Days}</td>
+            <td>${month3Days}</td>
+            <td>${month4Days}</td>
             <td>$${totalCost.toLocaleString()}</td>
             <td>
                 <button class="btn btn-danger btn-small" onclick="deleteItem('internalResources', ${resource.id})">Delete</button>
@@ -538,16 +602,22 @@ function renderVendorCostsTable() {
     }
     
     projectData.vendorCosts.forEach(vendor => {
-        const totalCost = vendor.q1Cost + vendor.q2Cost + vendor.q3Cost + vendor.q4Cost;
+        // Handle both old format (q1Cost) and new format (month1Cost)
+        const month1Cost = vendor.month1Cost || vendor.q1Cost || 0;
+        const month2Cost = vendor.month2Cost || vendor.q2Cost || 0;
+        const month3Cost = vendor.month3Cost || vendor.q3Cost || 0;
+        const month4Cost = vendor.month4Cost || vendor.q4Cost || 0;
+        
+        const totalCost = month1Cost + month2Cost + month3Cost + month4Cost;
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${vendor.vendor}</td>
             <td>${vendor.description}</td>
             <td>${vendor.category}</td>
-            <td>$${vendor.q1Cost.toLocaleString()}</td>
-            <td>$${vendor.q2Cost.toLocaleString()}</td>
-            <td>$${vendor.q3Cost.toLocaleString()}</td>
-            <td>$${vendor.q4Cost.toLocaleString()}</td>
+            <td>$${month1Cost.toLocaleString()}</td>
+            <td>$${month2Cost.toLocaleString()}</td>
+            <td>$${month3Cost.toLocaleString()}</td>
+            <td>$${month4Cost.toLocaleString()}</td>
             <td>$${totalCost.toLocaleString()}</td>
             <td>
                 <button class="btn btn-danger btn-small" onclick="deleteItem('vendorCosts', ${vendor.id})">Delete</button>
@@ -684,51 +754,53 @@ function renderForecastTable() {
     
     tbody.innerHTML = '';
     
-    // Calculate quarterly totals
-    const quarters = ['Q1 FY24', 'Q2 FY24', 'Q3 FY24', 'Q4 FY24', 'Q1 FY25', 'Q2 FY25'];
+    // Calculate monthly totals
+    const months = calculateProjectMonths();
     
     // Internal Resources
-    const internalQuarterly = [0, 0, 0, 0, 0, 0];
+    const internalMonthly = [0, 0, 0, 0, 0, 0];
     projectData.internalResources.forEach(resource => {
-        internalQuarterly[0] += resource.q1Days * resource.dailyRate;
-        internalQuarterly[1] += resource.q2Days * resource.dailyRate;
-        internalQuarterly[2] += resource.q3Days * resource.dailyRate;
-        internalQuarterly[3] += resource.q4Days * resource.dailyRate;
+        // Handle both old and new format
+        internalMonthly[0] += (resource.month1Days || resource.q1Days || 0) * resource.dailyRate;
+        internalMonthly[1] += (resource.month2Days || resource.q2Days || 0) * resource.dailyRate;
+        internalMonthly[2] += (resource.month3Days || resource.q3Days || 0) * resource.dailyRate;
+        internalMonthly[3] += (resource.month4Days || resource.q4Days || 0) * resource.dailyRate;
     });
     
     // Vendor Costs
-    const vendorQuarterly = [0, 0, 0, 0, 0, 0];
+    const vendorMonthly = [0, 0, 0, 0, 0, 0];
     projectData.vendorCosts.forEach(vendor => {
-        vendorQuarterly[0] += vendor.q1Cost;
-        vendorQuarterly[1] += vendor.q2Cost;
-        vendorQuarterly[2] += vendor.q3Cost;
-        vendorQuarterly[3] += vendor.q4Cost;
+        // Handle both old and new format
+        vendorMonthly[0] += vendor.month1Cost || vendor.q1Cost || 0;
+        vendorMonthly[1] += vendor.month2Cost || vendor.q2Cost || 0;
+        vendorMonthly[2] += vendor.month3Cost || vendor.q3Cost || 0;
+        vendorMonthly[3] += vendor.month4Cost || vendor.q4Cost || 0;
     });
     
     // Add rows
-    const internalTotal = internalQuarterly.reduce((sum, val) => sum + val, 0);
-    const vendorTotal = vendorQuarterly.reduce((sum, val) => sum + val, 0);
+    const internalTotal = internalMonthly.reduce((sum, val) => sum + val, 0);
+    const vendorTotal = vendorMonthly.reduce((sum, val) => sum + val, 0);
     
     tbody.innerHTML = `
         <tr>
             <td><strong>Internal Resources</strong></td>
-            <td>$${internalQuarterly[0].toLocaleString()}</td>
-            <td>$${internalQuarterly[1].toLocaleString()}</td>
-            <td>$${internalQuarterly[2].toLocaleString()}</td>
-            <td>$${internalQuarterly[3].toLocaleString()}</td>
-            <td>$${internalQuarterly[4].toLocaleString()}</td>
-            <td>$${internalQuarterly[5].toLocaleString()}</td>
-            <td><strong>$${internalTotal.toLocaleString()}</strong></td>
+            <td>${internalMonthly[0].toLocaleString()}</td>
+            <td>${internalMonthly[1].toLocaleString()}</td>
+            <td>${internalMonthly[2].toLocaleString()}</td>
+            <td>${internalMonthly[3].toLocaleString()}</td>
+            <td>${internalMonthly[4].toLocaleString()}</td>
+            <td>${internalMonthly[5].toLocaleString()}</td>
+            <td><strong>${internalTotal.toLocaleString()}</strong></td>
         </tr>
         <tr>
             <td><strong>Vendor Costs</strong></td>
-            <td>$${vendorQuarterly[0].toLocaleString()}</td>
-            <td>$${vendorQuarterly[1].toLocaleString()}</td>
-            <td>$${vendorQuarterly[2].toLocaleString()}</td>
-            <td>$${vendorQuarterly[3].toLocaleString()}</td>
-            <td>$${vendorQuarterly[4].toLocaleString()}</td>
-            <td>$${vendorQuarterly[5].toLocaleString()}</td>
-            <td><strong>$${vendorTotal.toLocaleString()}</strong></td>
+            <td>${vendorMonthly[0].toLocaleString()}</td>
+            <td>${vendorMonthly[1].toLocaleString()}</td>
+            <td>${vendorMonthly[2].toLocaleString()}</td>
+            <td>${vendorMonthly[3].toLocaleString()}</td>
+            <td>${vendorMonthly[4].toLocaleString()}</td>
+            <td>${vendorMonthly[5].toLocaleString()}</td>
+            <td><strong>${vendorTotal.toLocaleString()}</strong></td>
         </tr>
     `;
 }
@@ -799,13 +871,25 @@ function updateSummary() {
 
 function calculateInternalResourcesTotal() {
     return projectData.internalResources.reduce((total, resource) => {
-        return total + ((resource.q1Days + resource.q2Days + resource.q3Days + resource.q4Days) * resource.dailyRate);
+        // Handle both old format (q1Days) and new format (month1Days)
+        const month1Days = resource.month1Days || resource.q1Days || 0;
+        const month2Days = resource.month2Days || resource.q2Days || 0;
+        const month3Days = resource.month3Days || resource.q3Days || 0;
+        const month4Days = resource.month4Days || resource.q4Days || 0;
+        
+        return total + ((month1Days + month2Days + month3Days + month4Days) * resource.dailyRate);
     }, 0);
 }
 
 function calculateVendorCostsTotal() {
     return projectData.vendorCosts.reduce((total, vendor) => {
-        return total + (vendor.q1Cost + vendor.q2Cost + vendor.q3Cost + vendor.q4Cost);
+        // Handle both old format (q1Cost) and new format (month1Cost)
+        const month1Cost = vendor.month1Cost || vendor.q1Cost || 0;
+        const month2Cost = vendor.month2Cost || vendor.q2Cost || 0;
+        const month3Cost = vendor.month3Cost || vendor.q3Cost || 0;
+        const month4Cost = vendor.month4Cost || vendor.q4Cost || 0;
+        
+        return total + (month1Cost + month2Cost + month3Cost + month4Cost);
     }, 0);
 }
 
@@ -883,6 +967,7 @@ function loadProject() {
                     loadDefaultData();
                     renderAllTables();
                     updateSummary();
+                    updateMonthHeaders();
                     showAlert('Project loaded successfully!', 'success');
                 } catch (err) {
                     console.error('Error loading project:', err);
@@ -917,6 +1002,7 @@ function exportToExcel() {
 }
 
 function generateCSVExport() {
+    const months = calculateProjectMonths();
     let csv = 'ICT Project Cost Estimate Export\n\n';
     
     // Project Info
@@ -929,18 +1015,26 @@ function generateCSVExport() {
     
     // Internal Resources
     csv += 'INTERNAL RESOURCES\n';
-    csv += 'Role,Rate Card,Daily Rate,Q1 Days,Q2 Days,Q3 Days,Q4 Days,Total Cost\n';
+    csv += `Role,Rate Card,Daily Rate,${months[0]} Days,${months[1]} Days,${months[2]} Days,${months[3]} Days,Total Cost\n`;
     projectData.internalResources.forEach(resource => {
-        const totalCost = (resource.q1Days + resource.q2Days + resource.q3Days + resource.q4Days) * resource.dailyRate;
-        csv += `"${resource.role}","${resource.rateCard}",${resource.dailyRate},${resource.q1Days},${resource.q2Days},${resource.q3Days},${resource.q4Days},${totalCost}\n`;
+        const month1Days = resource.month1Days || resource.q1Days || 0;
+        const month2Days = resource.month2Days || resource.q2Days || 0;
+        const month3Days = resource.month3Days || resource.q3Days || 0;
+        const month4Days = resource.month4Days || resource.q4Days || 0;
+        const totalCost = (month1Days + month2Days + month3Days + month4Days) * resource.dailyRate;
+        csv += `"${resource.role}","${resource.rateCard}",${resource.dailyRate},${month1Days},${month2Days},${month3Days},${month4Days},${totalCost}\n`;
     });
     
     // Vendor Costs
     csv += '\nVENDOR COSTS\n';
-    csv += 'Vendor,Description,Category,Q1 Cost,Q2 Cost,Q3 Cost,Q4 Cost,Total Cost\n';
+    csv += `Vendor,Description,Category,${months[0]} Cost,${months[1]} Cost,${months[2]} Cost,${months[3]} Cost,Total Cost\n`;
     projectData.vendorCosts.forEach(vendor => {
-        const totalCost = vendor.q1Cost + vendor.q2Cost + vendor.q3Cost + vendor.q4Cost;
-        csv += `"${vendor.vendor}","${vendor.description}","${vendor.category}",${vendor.q1Cost},${vendor.q2Cost},${vendor.q3Cost},${vendor.q4Cost},${totalCost}\n`;
+        const month1Cost = vendor.month1Cost || vendor.q1Cost || 0;
+        const month2Cost = vendor.month2Cost || vendor.q2Cost || 0;
+        const month3Cost = vendor.month3Cost || vendor.q3Cost || 0;
+        const month4Cost = vendor.month4Cost || vendor.q4Cost || 0;
+        const totalCost = month1Cost + month2Cost + month3Cost + month4Cost;
+        csv += `"${vendor.vendor}","${vendor.description}","${vendor.category}",${month1Cost},${month2Cost},${month3Cost},${month4Cost},${totalCost}\n`;
     });
     
     // Tool Costs
@@ -1017,54 +1111,3 @@ function showAlert(message, type) {
 
 // Global function for delete buttons
 window.deleteItem = deleteItem;
-
-// Calculate months based on start and end date
-function calculateProjectMonths() {
-    const startDate = new Date(projectData.projectInfo.startDate);
-    const endDate = new Date(projectData.projectInfo.endDate);
-    
-    if (!startDate || !endDate || startDate >= endDate) {
-        return ['Month 1', 'Month 2', 'Month 3', 'Month 4', 'Month 5', 'Month 6'];
-    }
-    
-    const months = [];
-    const current = new Date(startDate);
-    
-    while (current <= endDate && months.length < 12) {
-        months.push(current.toLocaleDateString('en-US', { 
-            year: 'numeric', 
-            month: 'short' 
-        }));
-        current.setMonth(current.getMonth() + 1);
-    }
-    
-    return months.length > 0 ? months : ['Month 1', 'Month 2', 'Month 3', 'Month 4'];
-}
-
-function updateMonthHeaders() {
-    const months = calculateProjectMonths();
-    
-    // Update forecast table headers
-    for (let i = 1; i <= 6; i++) {
-        const header = document.getElementById(`month${i}Header`);
-        if (header) {
-            header.textContent = months[i-1] || `Month ${i}`;
-        }
-    }
-    
-    // Update internal resources headers
-    for (let i = 1; i <= 4; i++) {
-        const header = document.getElementById(`month${i}DaysHeader`);
-        if (header) {
-            header.textContent = `${months[i-1] || `Month ${i}`} Days`;
-        }
-    }
-    
-    // Update vendor costs headers
-    for (let i = 1; i <= 4; i++) {
-        const header = document.getElementById(`month${i}CostHeader`);
-        if (header) {
-            header.textContent = `${months[i-1] || `Month ${i}`} Cost`;
-        }
-    }
-}
