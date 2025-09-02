@@ -65,6 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
         loadDefaultData();
         renderAllTables();
         updateSummary();
+        updateSummaryProjectInfo(); // STEP 3: Added call here
         updateMonthHeaders();
         
         console.log('Application initialized successfully');
@@ -161,6 +162,7 @@ function switchTab(targetTab) {
         // Refresh data for specific tabs
         if (targetTab === 'summary') {
             updateSummary();
+            updateSummaryProjectInfo(); // STEP 3: Added call here
         }
     } catch (error) {
         console.error('Error switching tabs:', error);
@@ -181,7 +183,8 @@ function initializeEventListeners() {
         if (projectNameEl) {
             projectNameEl.addEventListener('input', (e) => {
                 projectData.projectInfo.projectName = e.target.value;
-                updateSummary(); // Trigger summary update
+                updateSummary(); 
+                updateSummaryProjectInfo(); // STEP 3: Added call here
             });
         }
         
@@ -189,7 +192,8 @@ function initializeEventListeners() {
             startDateEl.addEventListener('input', (e) => {
                 projectData.projectInfo.startDate = e.target.value;
                 updateMonthHeaders();
-                updateSummary(); // Trigger summary update
+                updateSummary(); 
+                updateSummaryProjectInfo(); // STEP 3: Added call here
             });
         }
         
@@ -197,21 +201,24 @@ function initializeEventListeners() {
             endDateEl.addEventListener('input', (e) => {
                 projectData.projectInfo.endDate = e.target.value;
                 updateMonthHeaders();
-                updateSummary(); // Trigger summary update
+                updateSummary(); 
+                updateSummaryProjectInfo(); // STEP 3: Added call here
             });
         }
         
         if (projectManagerEl) {
             projectManagerEl.addEventListener('input', (e) => {
                 projectData.projectInfo.projectManager = e.target.value;
-                updateSummary(); // Trigger summary update
+                updateSummary(); 
+                updateSummaryProjectInfo(); // STEP 3: Added call here
             });
         }
         
         if (projectDescriptionEl) {
             projectDescriptionEl.addEventListener('input', (e) => {
                 projectData.projectInfo.projectDescription = e.target.value;
-                updateSummary(); // Trigger summary update
+                updateSummary(); 
+                updateSummaryProjectInfo(); // STEP 3: Added call here
             });
         }
 
@@ -220,6 +227,7 @@ function initializeEventListeners() {
             contingencyPercentageEl.addEventListener('input', (e) => {
                 projectData.contingencyPercentage = parseFloat(e.target.value) || 0;
                 updateSummary();
+                updateSummaryProjectInfo(); // STEP 3: Added call here
             });
         }
 
@@ -594,6 +602,7 @@ function handleModalSubmit() {
         }
         
         updateSummary();
+        updateSummaryProjectInfo(); // STEP 3: Added call here
         modal.style.display = 'none';
         console.log('Modal submit completed successfully');
     } catch (error) {
@@ -753,9 +762,9 @@ function renderToolCostsTable() {
             <td>${tool.tool}</td>
             <td>${tool.licenseType}</td>
             <td>${tool.users}</td>
-            <td>$${tool.monthlyCost.toLocaleString()}</td>
+            <td>${tool.monthlyCost.toLocaleString()}</td>
             <td>${tool.duration}</td>
-            <td>$${totalCost.toLocaleString()}</td>
+            <td>${totalCost.toLocaleString()}</td>
             <td>
                 <button class="btn btn-danger btn-small" onclick="deleteItem('toolCosts', ${tool.id})">Delete</button>
             </td>
@@ -781,7 +790,7 @@ function renderMiscCostsTable() {
             <td>${misc.item}</td>
             <td>${misc.description}</td>
             <td>${misc.category}</td>
-            <td>$${misc.cost.toLocaleString()}</td>
+            <td>${misc.cost.toLocaleString()}</td>
             <td>
                 <button class="btn btn-danger btn-small" onclick="deleteItem('miscCosts', ${misc.id})">Delete</button>
             </td>
@@ -809,7 +818,7 @@ function renderRisksTable() {
             <td>${risk.probability}</td>
             <td>${risk.impact}</td>
             <td>${riskScore}</td>
-            <td>$${risk.mitigationCost.toLocaleString()}</td>
+            <td>${risk.mitigationCost.toLocaleString()}</td>
             <td>
                 <button class="btn btn-danger btn-small" onclick="deleteItem('risks', ${risk.id})">Delete</button>
             </td>
@@ -973,6 +982,7 @@ function deleteItem(arrayName, id) {
         }
         renderAllTables();
         updateSummary();
+        updateSummaryProjectInfo(); // STEP 3: Added call here
     }
 }
 
@@ -1225,6 +1235,7 @@ function newProject() {
             // Re-render all tables and summaries
             renderAllTables();
             updateSummary();
+            updateSummaryProjectInfo(); // STEP 3: Added call here
             updateMonthHeaders();
             
             // Switch to project info tab
@@ -1255,6 +1266,7 @@ function loadProject() {
                     loadDefaultData();
                     renderAllTables();
                     updateSummary();
+                    updateSummaryProjectInfo(); // STEP 3: Added call here
                     updateMonthHeaders();
                     showAlert('Project loaded successfully!', 'success');
                 } catch (err) {
