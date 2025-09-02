@@ -181,7 +181,7 @@ function initializeEventListeners() {
         if (projectNameEl) {
             projectNameEl.addEventListener('input', (e) => {
                 projectData.projectInfo.projectName = e.target.value;
-                updateSummary();
+                updateSummary(); // Trigger summary update
             });
         }
         
@@ -189,7 +189,7 @@ function initializeEventListeners() {
             startDateEl.addEventListener('input', (e) => {
                 projectData.projectInfo.startDate = e.target.value;
                 updateMonthHeaders();
-                updateSummary();
+                updateSummary(); // Trigger summary update
             });
         }
         
@@ -197,21 +197,21 @@ function initializeEventListeners() {
             endDateEl.addEventListener('input', (e) => {
                 projectData.projectInfo.endDate = e.target.value;
                 updateMonthHeaders();
-                updateSummary();
+                updateSummary(); // Trigger summary update
             });
         }
         
         if (projectManagerEl) {
             projectManagerEl.addEventListener('input', (e) => {
                 projectData.projectInfo.projectManager = e.target.value;
-                updateSummary();
+                updateSummary(); // Trigger summary update
             });
         }
         
         if (projectDescriptionEl) {
             projectDescriptionEl.addEventListener('input', (e) => {
                 projectData.projectInfo.projectDescription = e.target.value;
-                updateSummary();
+                updateSummary(); // Trigger summary update
             });
         }
 
@@ -278,6 +278,9 @@ function initializeEventListeners() {
         const downloadBtn = document.getElementById('downloadBtn');
         if (downloadBtn) {
             downloadBtn.addEventListener('click', downloadProject);
+        } else {
+            // If no download button exists, modify the save button to also download
+            console.log('No download button found, save button will also download file');
         }
 
         // Modal form submission
@@ -285,6 +288,20 @@ function initializeEventListeners() {
             modalForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 console.log('Form submit event triggered');
+                handleModalSubmit();
+            });
+        }
+        
+        // Also add click listener to the modal save button as backup
+        const modalSaveBtn = document.querySelector('.modal-actions .btn-primary');
+        if (modalSaveBtn) {
+            modalSaveBtn.addEventListener('click', (e) => {
+                if (e.target.type === 'submit') {
+                    // Let the form submit handler take care of it
+                    return;
+                }
+                e.preventDefault();
+                console.log('Modal save button clicked');
                 handleModalSubmit();
             });
         }
@@ -566,6 +583,12 @@ function handleModalSubmit() {
                     });
                 }
                 
+                console.log('Updated rateCards array:', projectData.rateCards);
+                console.log('Updated internalRates array:', projectData.internalRates);
+                console.log('Updated externalRates array:', projectData.externalRates);
+                
+                // Render the unified rate cards table
+                console.log('About to render unified rate cards table...');
                 renderUnifiedRateCardsTable();
                 break;
         }
@@ -586,9 +609,9 @@ function renderAllTables() {
         renderToolCostsTable();
         renderMiscCostsTable();
         renderRisksTable();
-        renderInternalRatesTable();
-        renderExternalRatesTable();
-        renderUnifiedRateCardsTable();
+        renderInternalRatesTable(); // Keep for backward compatibility
+        renderExternalRatesTable(); // Keep for backward compatibility  
+        renderUnifiedRateCardsTable(); // Add unified rate cards table
         renderForecastTable();
     } catch (error) {
         console.error('Error rendering tables:', error);
@@ -627,7 +650,7 @@ function renderUnifiedRateCardsTable() {
         row.innerHTML = `
             <td>${rate.role}</td>
             <td><span class="category-badge category-${rate.category.toLowerCase()}">${rate.category}</span></td>
-            <td>$${rate.rate.toLocaleString()}</td>
+            <td>${rate.rate.toLocaleString()}</td>
             <td>
                 <button class="btn btn-danger btn-small" onclick="deleteItem('rateCards', ${rate.id || `'${rate.role}'`})">Delete</button>
             </td>
@@ -758,7 +781,7 @@ function renderMiscCostsTable() {
             <td>${misc.item}</td>
             <td>${misc.description}</td>
             <td>${misc.category}</td>
-            <td>${misc.cost.toLocaleString()}</td>
+            <td>$${misc.cost.toLocaleString()}</td>
             <td>
                 <button class="btn btn-danger btn-small" onclick="deleteItem('miscCosts', ${misc.id})">Delete</button>
             </td>
@@ -786,7 +809,7 @@ function renderRisksTable() {
             <td>${risk.probability}</td>
             <td>${risk.impact}</td>
             <td>${riskScore}</td>
-            <td>${risk.mitigationCost.toLocaleString()}</td>
+            <td>$${risk.mitigationCost.toLocaleString()}</td>
             <td>
                 <button class="btn btn-danger btn-small" onclick="deleteItem('risks', ${risk.id})">Delete</button>
             </td>
@@ -797,8 +820,17 @@ function renderRisksTable() {
 
 function renderInternalRatesTable() {
     const tbody = document.getElementById('internalRatesTable');
+    console.log('renderInternalRatesTable - tbody element:', tbody);
+    
     if (!tbody) {
-        renderUnifiedRateCardsTable();
+        console.log('Internal rates table not found, trying alternative selectors');
+        // Try alternative selectors if the standard one doesn't work
+        const altTbody = document.querySelector('#rate-cards tbody') || 
+                         document.querySelector('.rate-cards-container tbody') ||
+                         document.querySelector('[id*="internal"] tbody');
+        if (altTbody) {
+            console.log('Found alternative tbody:', altTbody);
+        }
         return;
     }
     
@@ -806,6 +838,7 @@ function renderInternalRatesTable() {
     
     // Show internal rates from unified rateCards
     const internalRates = projectData.rateCards.filter(rate => rate.category === 'Internal');
+    console.log('Internal rates to render:', internalRates);
     
     if (internalRates.length === 0) {
         tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No internal rates added yet</td></tr>';
@@ -823,16 +856,23 @@ function renderInternalRatesTable() {
         `;
         tbody.appendChild(row);
     });
+    console.log('Internal rates table rendered successfully');
 }
 
 function renderExternalRatesTable() {
     const tbody = document.getElementById('externalRatesTable');
-    if (!tbody) return;
+    console.log('renderExternalRatesTable - tbody element:', tbody);
+    
+    if (!tbody) {
+        console.log('External rates table not found, trying alternative selectors');
+        return;
+    }
     
     tbody.innerHTML = '';
     
     // Show external rates from unified rateCards
     const externalRates = projectData.rateCards.filter(rate => rate.category === 'External');
+    console.log('External rates to render:', externalRates);
     
     if (externalRates.length === 0) {
         tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No external rates added yet</td></tr>';
@@ -850,6 +890,7 @@ function renderExternalRatesTable() {
         `;
         tbody.appendChild(row);
     });
+    console.log('External rates table rendered successfully');
 }
 
 function renderForecastTable() {
@@ -859,6 +900,9 @@ function renderForecastTable() {
     tbody.innerHTML = '';
     
     // Calculate monthly totals
+    const months = calculateProjectMonths();
+    
+    // Internal Resources
     const internalMonthly = [0, 0, 0, 0, 0, 0];
     projectData.internalResources.forEach(resource => {
         // Handle both old and new format
@@ -958,7 +1002,7 @@ function updateSummary() {
         const contingencyAmountEl = document.getElementById('contingencyAmount');
         if (contingencyAmountEl) contingencyAmountEl.textContent = contingency.toLocaleString();
         
-        // Update summary tab cost breakdown
+        // Update summary tab
         const summaryElements = {
             summaryInternalCost: internalTotal,
             summaryVendorCost: vendorTotal,
@@ -975,77 +1019,8 @@ function updateSummary() {
                 element.textContent = `${summaryElements[id].toLocaleString()}`;
             }
         });
-        
-        // Update enhanced summary tab with project info
-        updateSummaryProjectInfo();
-        
     } catch (error) {
         console.error('Error updating summary:', error);
-    }
-}
-
-// Function to update project info in summary tab
-function updateSummaryProjectInfo() {
-    try {
-        console.log('Updating summary project info...');
-        console.log('Project data:', projectData.projectInfo);
-        
-        // Update project info in summary tab
-        const projectInfoElements = {
-            summaryProjectName: projectData.projectInfo.projectName || 'Not specified',
-            summaryStartDate: projectData.projectInfo.startDate || 'Not specified', 
-            summaryEndDate: projectData.projectInfo.endDate || 'Not specified',
-            summaryProjectManager: projectData.projectInfo.projectManager || 'Not specified',
-            summaryProjectDescription: projectData.projectInfo.projectDescription || 'Not specified'
-        };
-        
-        Object.keys(projectInfoElements).forEach(id => {
-            const element = document.getElementById(id);
-            console.log(`Looking for element ${id}:`, element);
-            if (element) {
-                element.textContent = projectInfoElements[id];
-                console.log(`Updated ${id} with:`, projectInfoElements[id]);
-            } else {
-                console.log(`Element ${id} not found in DOM`);
-            }
-        });
-        
-        // Calculate project duration if both dates are provided
-        const summaryDurationEl = document.getElementById('summaryProjectDuration');
-        console.log('Duration element:', summaryDurationEl);
-        if (summaryDurationEl && projectData.projectInfo.startDate && projectData.projectInfo.endDate) {
-            const start = new Date(projectData.projectInfo.startDate);
-            const end = new Date(projectData.projectInfo.endDate);
-            const diffTime = Math.abs(end - start);
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            const diffMonths = Math.round(diffDays / 30.44);
-            summaryDurationEl.textContent = `${diffDays} days (≈${diffMonths} months)`;
-        } else if (summaryDurationEl) {
-            summaryDurationEl.textContent = 'Not specified';
-        }
-        
-        // Update resource counts
-        const resourceCountsElements = {
-            summaryInternalResourceCount: projectData.internalResources.length,
-            summaryVendorCount: projectData.vendorCosts.length,
-            summaryToolCount: projectData.toolCosts.length,
-            summaryRiskCount: projectData.risks.length
-        };
-        
-        Object.keys(resourceCountsElements).forEach(id => {
-            const element = document.getElementById(id);
-            console.log(`Looking for count element ${id}:`, element);
-            if (element) {
-                element.textContent = resourceCountsElements[id];
-                console.log(`Updated ${id} with:`, resourceCountsElements[id]);
-            } else {
-                console.log(`Count element ${id} not found in DOM`);
-            }
-        });
-        
-        console.log('Summary project info update completed');
-    } catch (error) {
-        console.error('Error in updateSummaryProjectInfo:', error);
     }
 }
 
@@ -1429,5 +1404,59 @@ function showAlert(message, type) {
     }
 }
 
+// Function to update project info in summary tab
+function updateSummaryProjectInfo() {
+    try {
+        console.log('Updating summary project info...');
+        
+        // Update project info in summary tab
+        const projectInfoElements = {
+            summaryProjectName: projectData.projectInfo.projectName || 'Not specified',
+            summaryStartDate: projectData.projectInfo.startDate || 'Not specified', 
+            summaryEndDate: projectData.projectInfo.endDate || 'Not specified',
+            summaryProjectManager: projectData.projectInfo.projectManager || 'Not specified',
+            summaryProjectDescription: projectData.projectInfo.projectDescription || 'Not specified'
+        };
+        
+        Object.keys(projectInfoElements).forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = projectInfoElements[id];
+            }
+        });
+        
+        // Calculate project duration if both dates are provided
+        const summaryDurationEl = document.getElementById('summaryProjectDuration');
+        if (summaryDurationEl && projectData.projectInfo.startDate && projectData.projectInfo.endDate) {
+            const start = new Date(projectData.projectInfo.startDate);
+            const end = new Date(projectData.projectInfo.endDate);
+            const diffTime = Math.abs(end - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const diffMonths = Math.round(diffDays / 30.44);
+            summaryDurationEl.textContent = `${diffDays} days (≈${diffMonths} months)`;
+        } else if (summaryDurationEl) {
+            summaryDurationEl.textContent = 'Not specified';
+        }
+        
+        // Update resource counts
+        const resourceCountsElements = {
+            summaryInternalResourceCount: projectData.internalResources.length,
+            summaryVendorCount: projectData.vendorCosts.length,
+            summaryToolCount: projectData.toolCosts.length,
+            summaryRiskCount: projectData.risks.length
+        };
+        
+        Object.keys(resourceCountsElements).forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = resourceCountsElements[id];
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error in updateSummaryProjectInfo:', error);
+    }
+}
+
 // Global function for delete buttons
-window.deleteItem = deleteItem;)
+window.deleteItem = deleteItem;
