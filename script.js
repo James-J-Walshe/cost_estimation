@@ -760,12 +760,25 @@ function renderRisksTable() {
 
 function renderInternalRatesTable() {
     const tbody = document.getElementById('internalRatesTable');
-    if (!tbody) return;
+    console.log('renderInternalRatesTable - tbody element:', tbody);
+    
+    if (!tbody) {
+        console.log('Internal rates table not found, trying alternative selectors');
+        // Try alternative selectors if the standard one doesn't work
+        const altTbody = document.querySelector('#rate-cards tbody') || 
+                         document.querySelector('.rate-cards-container tbody') ||
+                         document.querySelector('[id*="internal"] tbody');
+        if (altTbody) {
+            console.log('Found alternative tbody:', altTbody);
+        }
+        return;
+    }
     
     tbody.innerHTML = '';
     
     // Show internal rates from unified rateCards
     const internalRates = projectData.rateCards.filter(rate => rate.category === 'Internal');
+    console.log('Internal rates to render:', internalRates);
     
     if (internalRates.length === 0) {
         tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No internal rates added yet</td></tr>';
@@ -776,23 +789,30 @@ function renderInternalRatesTable() {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${rate.role}</td>
-            <td>$${rate.rate.toLocaleString()}</td>
+            <td>${rate.rate.toLocaleString()}</td>
             <td>
                 <button class="btn btn-danger btn-small" onclick="deleteItem('rateCards', ${rate.id || `'${rate.role}'`})">Delete</button>
             </td>
         `;
         tbody.appendChild(row);
     });
+    console.log('Internal rates table rendered successfully');
 }
 
 function renderExternalRatesTable() {
     const tbody = document.getElementById('externalRatesTable');
-    if (!tbody) return;
+    console.log('renderExternalRatesTable - tbody element:', tbody);
+    
+    if (!tbody) {
+        console.log('External rates table not found, trying alternative selectors');
+        return;
+    }
     
     tbody.innerHTML = '';
     
     // Show external rates from unified rateCards
     const externalRates = projectData.rateCards.filter(rate => rate.category === 'External');
+    console.log('External rates to render:', externalRates);
     
     if (externalRates.length === 0) {
         tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No external rates added yet</td></tr>';
@@ -803,13 +823,14 @@ function renderExternalRatesTable() {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${rate.role}</td>
-            <td>$${rate.rate.toLocaleString()}</td>
+            <td>${rate.rate.toLocaleString()}</td>
             <td>
                 <button class="btn btn-danger btn-small" onclick="deleteItem('rateCards', ${rate.id || `'${rate.role}'`})">Delete</button>
             </td>
         `;
         tbody.appendChild(row);
     });
+    console.log('External rates table rendered successfully');
 }
 
 function renderForecastTable() {
