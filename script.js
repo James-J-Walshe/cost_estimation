@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
         loadDefaultData();
         renderAllTables();
         updateSummary();
-        updateSummaryProjectInfo(); // STEP 3: Added call here
+        updateSummaryProjectInfo(); // Added from Step 3
         updateMonthHeaders();
         
         console.log('Application initialized successfully');
@@ -162,7 +162,7 @@ function switchTab(targetTab) {
         // Refresh data for specific tabs
         if (targetTab === 'summary') {
             updateSummary();
-            updateSummaryProjectInfo(); // STEP 3: Added call here
+            updateSummaryProjectInfo(); // Added from Step 3
         }
     } catch (error) {
         console.error('Error switching tabs:', error);
@@ -183,8 +183,8 @@ function initializeEventListeners() {
         if (projectNameEl) {
             projectNameEl.addEventListener('input', (e) => {
                 projectData.projectInfo.projectName = e.target.value;
-                updateSummary(); 
-                updateSummaryProjectInfo(); // STEP 3: Added call here
+                updateSummary();
+                updateSummaryProjectInfo(); // Added from Step 3
             });
         }
         
@@ -192,8 +192,8 @@ function initializeEventListeners() {
             startDateEl.addEventListener('input', (e) => {
                 projectData.projectInfo.startDate = e.target.value;
                 updateMonthHeaders();
-                updateSummary(); 
-                updateSummaryProjectInfo(); // STEP 3: Added call here
+                updateSummary();
+                updateSummaryProjectInfo(); // Added from Step 3
             });
         }
         
@@ -201,24 +201,24 @@ function initializeEventListeners() {
             endDateEl.addEventListener('input', (e) => {
                 projectData.projectInfo.endDate = e.target.value;
                 updateMonthHeaders();
-                updateSummary(); 
-                updateSummaryProjectInfo(); // STEP 3: Added call here
+                updateSummary();
+                updateSummaryProjectInfo(); // Added from Step 3
             });
         }
         
         if (projectManagerEl) {
             projectManagerEl.addEventListener('input', (e) => {
                 projectData.projectInfo.projectManager = e.target.value;
-                updateSummary(); 
-                updateSummaryProjectInfo(); // STEP 3: Added call here
+                updateSummary();
+                updateSummaryProjectInfo(); // Added from Step 3
             });
         }
         
         if (projectDescriptionEl) {
             projectDescriptionEl.addEventListener('input', (e) => {
                 projectData.projectInfo.projectDescription = e.target.value;
-                updateSummary(); 
-                updateSummaryProjectInfo(); // STEP 3: Added call here
+                updateSummary();
+                updateSummaryProjectInfo(); // Added from Step 3
             });
         }
 
@@ -227,7 +227,7 @@ function initializeEventListeners() {
             contingencyPercentageEl.addEventListener('input', (e) => {
                 projectData.contingencyPercentage = parseFloat(e.target.value) || 0;
                 updateSummary();
-                updateSummaryProjectInfo(); // STEP 3: Added call here
+                updateSummaryProjectInfo(); // Added from Step 3
             });
         }
 
@@ -320,8 +320,8 @@ function initializeEventListeners() {
     }
 }
 
-// Modal Management
-function openModal(title, type) {
+// Modal Management - ENHANCED FOR EDITING
+function openModal(title, type, editId = null) {
     try {
         if (!modal || !modalTitle || !modalFields || !modalForm) {
             console.error('Modal elements not found');
@@ -329,162 +329,199 @@ function openModal(title, type) {
         }
         
         modalTitle.textContent = title;
-        modalFields.innerHTML = getModalFields(type);
+        modalFields.innerHTML = getModalFields(type, editId);
         modal.style.display = 'block';
         modalForm.setAttribute('data-type', type);
+        
+        // Set edit mode if editing an existing item
+        if (editId) {
+            modalForm.setAttribute('data-edit-id', editId);
+            console.log('Modal opened in edit mode for ID:', editId);
+        } else {
+            modalForm.removeAttribute('data-edit-id');
+            console.log('Modal opened in add mode');
+        }
     } catch (error) {
         console.error('Error opening modal:', error);
     }
 }
 
-function getModalFields(type) {
+// ENHANCED Modal Fields Function - Support for editing
+function getModalFields(type, editId = null) {
     const months = calculateProjectMonths();
+    
+    // Get existing data if editing
+    let existingData = null;
+    if (editId) {
+        switch(type) {
+            case 'internalResource':
+                existingData = projectData.internalResources.find(item => item.id === editId);
+                break;
+            case 'vendorCost':
+                existingData = projectData.vendorCosts.find(item => item.id === editId);
+                break;
+            case 'toolCost':
+                existingData = projectData.toolCosts.find(item => item.id === editId);
+                break;
+            case 'miscCost':
+                existingData = projectData.miscCosts.find(item => item.id === editId);
+                break;
+            case 'risk':
+                existingData = projectData.risks.find(item => item.id === editId);
+                break;
+            case 'rateCard':
+                existingData = projectData.rateCards.find(item => item.id === editId);
+                break;
+        }
+    }
     
     const fields = {
         internalResource: `
             <div class="form-group">
                 <label>Role:</label>
                 <select name="role" class="form-control" required>
-                    ${projectData.rateCards.map(rate => `<option value="${rate.role}" data-category="${rate.category}">${rate.role} (${rate.category})</option>`).join('')}
+                    ${projectData.rateCards.map(rate => 
+                        `<option value="${rate.role}" data-category="${rate.category}" ${existingData && existingData.role === rate.role ? 'selected' : ''}>${rate.role} (${rate.category})</option>`
+                    ).join('')}
                 </select>
             </div>
             <div class="form-group">
                 <label>${months[0] || 'Month 1'} Days:</label>
-                <input type="number" name="month1Days" class="form-control" min="0" step="0.5" value="0">
+                <input type="number" name="month1Days" class="form-control" min="0" step="0.5" value="${existingData ? (existingData.month1Days || existingData.q1Days || 0) : 0}">
             </div>
             <div class="form-group">
                 <label>${months[1] || 'Month 2'} Days:</label>
-                <input type="number" name="month2Days" class="form-control" min="0" step="0.5" value="0">
+                <input type="number" name="month2Days" class="form-control" min="0" step="0.5" value="${existingData ? (existingData.month2Days || existingData.q2Days || 0) : 0}">
             </div>
             <div class="form-group">
                 <label>${months[2] || 'Month 3'} Days:</label>
-                <input type="number" name="month3Days" class="form-control" min="0" step="0.5" value="0">
+                <input type="number" name="month3Days" class="form-control" min="0" step="0.5" value="${existingData ? (existingData.month3Days || existingData.q3Days || 0) : 0}">
             </div>
             <div class="form-group">
                 <label>${months[3] || 'Month 4'} Days:</label>
-                <input type="number" name="month4Days" class="form-control" min="0" step="0.5" value="0">
+                <input type="number" name="month4Days" class="form-control" min="0" step="0.5" value="${existingData ? (existingData.month4Days || existingData.q4Days || 0) : 0}">
             </div>
         `,
         vendorCost: `
             <div class="form-group">
                 <label>Vendor:</label>
-                <input type="text" name="vendor" class="form-control" required>
+                <input type="text" name="vendor" class="form-control" value="${existingData ? existingData.vendor : ''}" required>
             </div>
             <div class="form-group">
                 <label>Description:</label>
-                <input type="text" name="description" class="form-control" required>
+                <input type="text" name="description" class="form-control" value="${existingData ? existingData.description : ''}" required>
             </div>
             <div class="form-group">
                 <label>Category:</label>
                 <select name="category" class="form-control" required>
-                    <option value="Implementation">Implementation</option>
-                    <option value="Consulting">Consulting</option>
-                    <option value="Training">Training</option>
-                    <option value="Support">Support</option>
-                    <option value="Other">Other</option>
+                    <option value="Implementation" ${existingData && existingData.category === 'Implementation' ? 'selected' : ''}>Implementation</option>
+                    <option value="Consulting" ${existingData && existingData.category === 'Consulting' ? 'selected' : ''}>Consulting</option>
+                    <option value="Training" ${existingData && existingData.category === 'Training' ? 'selected' : ''}>Training</option>
+                    <option value="Support" ${existingData && existingData.category === 'Support' ? 'selected' : ''}>Support</option>
+                    <option value="Other" ${existingData && existingData.category === 'Other' ? 'selected' : ''}>Other</option>
                 </select>
             </div>
             <div class="form-group">
                 <label>${months[0] || 'Month 1'} Cost:</label>
-                <input type="number" name="month1Cost" class="form-control" min="0" step="0.01" value="0">
+                <input type="number" name="month1Cost" class="form-control" min="0" step="0.01" value="${existingData ? (existingData.month1Cost || existingData.q1Cost || 0) : 0}">
             </div>
             <div class="form-group">
                 <label>${months[1] || 'Month 2'} Cost:</label>
-                <input type="number" name="month2Cost" class="form-control" min="0" step="0.01" value="0">
+                <input type="number" name="month2Cost" class="form-control" min="0" step="0.01" value="${existingData ? (existingData.month2Cost || existingData.q2Cost || 0) : 0}">
             </div>
             <div class="form-group">
                 <label>${months[2] || 'Month 3'} Cost:</label>
-                <input type="number" name="month3Cost" class="form-control" min="0" step="0.01" value="0">
+                <input type="number" name="month3Cost" class="form-control" min="0" step="0.01" value="${existingData ? (existingData.month3Cost || existingData.q3Cost || 0) : 0}">
             </div>
             <div class="form-group">
                 <label>${months[3] || 'Month 4'} Cost:</label>
-                <input type="number" name="month4Cost" class="form-control" min="0" step="0.01" value="0">
+                <input type="number" name="month4Cost" class="form-control" min="0" step="0.01" value="${existingData ? (existingData.month4Cost || existingData.q4Cost || 0) : 0}">
             </div>
         `,
         toolCost: `
             <div class="form-group">
                 <label>Tool/Software:</label>
-                <input type="text" name="tool" class="form-control" required>
+                <input type="text" name="tool" class="form-control" value="${existingData ? existingData.tool : ''}" required>
             </div>
             <div class="form-group">
                 <label>License Type:</label>
                 <select name="licenseType" class="form-control" required>
-                    <option value="Per User">Per User</option>
-                    <option value="Per Device">Per Device</option>
-                    <option value="Enterprise">Enterprise</option>
-                    <option value="One-time">One-time</option>
+                    <option value="Per User" ${existingData && existingData.licenseType === 'Per User' ? 'selected' : ''}>Per User</option>
+                    <option value="Per Device" ${existingData && existingData.licenseType === 'Per Device' ? 'selected' : ''}>Per Device</option>
+                    <option value="Enterprise" ${existingData && existingData.licenseType === 'Enterprise' ? 'selected' : ''}>Enterprise</option>
+                    <option value="One-time" ${existingData && existingData.licenseType === 'One-time' ? 'selected' : ''}>One-time</option>
                 </select>
             </div>
             <div class="form-group">
                 <label>Users/Licenses:</label>
-                <input type="number" name="users" class="form-control" min="1" required>
+                <input type="number" name="users" class="form-control" min="1" value="${existingData ? existingData.users : 1}" required>
             </div>
             <div class="form-group">
                 <label>Monthly Cost:</label>
-                <input type="number" name="monthlyCost" class="form-control" min="0" step="0.01" required>
+                <input type="number" name="monthlyCost" class="form-control" min="0" step="0.01" value="${existingData ? existingData.monthlyCost : 0}" required>
             </div>
             <div class="form-group">
                 <label>Duration (Months):</label>
-                <input type="number" name="duration" class="form-control" min="1" required>
+                <input type="number" name="duration" class="form-control" min="1" value="${existingData ? existingData.duration : 1}" required>
             </div>
         `,
         miscCost: `
             <div class="form-group">
                 <label>Item:</label>
-                <input type="text" name="item" class="form-control" required>
+                <input type="text" name="item" class="form-control" value="${existingData ? existingData.item : ''}" required>
             </div>
             <div class="form-group">
                 <label>Description:</label>
-                <input type="text" name="description" class="form-control" required>
+                <input type="text" name="description" class="form-control" value="${existingData ? existingData.description : ''}" required>
             </div>
             <div class="form-group">
                 <label>Category:</label>
                 <select name="category" class="form-control" required>
-                    <option value="Travel">Travel</option>
-                    <option value="Equipment">Equipment</option>
-                    <option value="Training">Training</option>
-                    <option value="Documentation">Documentation</option>
-                    <option value="Other">Other</option>
+                    <option value="Travel" ${existingData && existingData.category === 'Travel' ? 'selected' : ''}>Travel</option>
+                    <option value="Equipment" ${existingData && existingData.category === 'Equipment' ? 'selected' : ''}>Equipment</option>
+                    <option value="Training" ${existingData && existingData.category === 'Training' ? 'selected' : ''}>Training</option>
+                    <option value="Documentation" ${existingData && existingData.category === 'Documentation' ? 'selected' : ''}>Documentation</option>
+                    <option value="Other" ${existingData && existingData.category === 'Other' ? 'selected' : ''}>Other</option>
                 </select>
             </div>
             <div class="form-group">
                 <label>Cost:</label>
-                <input type="number" name="cost" class="form-control" min="0" step="0.01" required>
+                <input type="number" name="cost" class="form-control" min="0" step="0.01" value="${existingData ? existingData.cost : 0}" required>
             </div>
         `,
         risk: `
             <div class="form-group">
                 <label>Risk Description:</label>
-                <textarea name="description" class="form-control" required></textarea>
+                <textarea name="description" class="form-control" required>${existingData ? existingData.description : ''}</textarea>
             </div>
             <div class="form-group">
                 <label>Probability (1-5):</label>
-                <input type="number" name="probability" class="form-control" min="1" max="5" required>
+                <input type="number" name="probability" class="form-control" min="1" max="5" value="${existingData ? existingData.probability : 1}" required>
             </div>
             <div class="form-group">
                 <label>Impact (1-5):</label>
-                <input type="number" name="impact" class="form-control" min="1" max="5" required>
+                <input type="number" name="impact" class="form-control" min="1" max="5" value="${existingData ? existingData.impact : 1}" required>
             </div>
             <div class="form-group">
                 <label>Mitigation Cost:</label>
-                <input type="number" name="mitigationCost" class="form-control" min="0" step="0.01" value="0">
+                <input type="number" name="mitigationCost" class="form-control" min="0" step="0.01" value="${existingData ? existingData.mitigationCost : 0}">
             </div>
         `,
         rateCard: `
             <div class="form-group">
                 <label>Role:</label>
-                <input type="text" name="role" class="form-control" required>
+                <input type="text" name="role" class="form-control" value="${existingData ? existingData.role : ''}" required>
             </div>
             <div class="form-group">
                 <label>Category:</label>
                 <select name="category" class="form-control" required>
-                    <option value="Internal">Internal</option>
-                    <option value="External">External</option>
+                    <option value="Internal" ${existingData && existingData.category === 'Internal' ? 'selected' : ''}>Internal</option>
+                    <option value="External" ${existingData && existingData.category === 'External' ? 'selected' : ''}>External</option>
                 </select>
             </div>
             <div class="form-group">
                 <label>Daily Rate:</label>
-                <input type="number" name="rate" class="form-control" min="0" step="0.01" required>
+                <input type="number" name="rate" class="form-control" min="0" step="0.01" value="${existingData ? existingData.rate : 0}" required>
             </div>
         `
     };
@@ -492,10 +529,12 @@ function getModalFields(type) {
     return fields[type] || '';
 }
 
+// ENHANCED Modal Submit Handler - Support for editing
 function handleModalSubmit() {
     try {
         const formData = new FormData(modalForm);
         const type = modalForm.getAttribute('data-type');
+        const editId = modalForm.getAttribute('data-edit-id');
         const data = {};
         
         for (let [key, value] of formData.entries()) {
@@ -503,111 +542,214 @@ function handleModalSubmit() {
         }
         
         console.log('Modal submit - Type:', type);
+        console.log('Modal submit - Edit ID:', editId);
         console.log('Modal submit - Data:', data);
         
-        // Add item to appropriate array
-        switch(type) {
-            case 'internalResource':
-                const rate = projectData.rateCards.find(r => r.role === data.role) || 
-                            projectData.internalRates.find(r => r.role === data.role);
-                projectData.internalResources.push({
-                    id: Date.now(),
-                    role: data.role,
-                    rateCard: rate ? rate.category || 'Internal' : 'Internal',
-                    dailyRate: rate ? rate.rate : 0,
-                    month1Days: parseFloat(data.month1Days) || 0,
-                    month2Days: parseFloat(data.month2Days) || 0,
-                    month3Days: parseFloat(data.month3Days) || 0,
-                    month4Days: parseFloat(data.month4Days) || 0
-                });
-                renderInternalResourcesTable();
-                break;
-            case 'vendorCost':
-                projectData.vendorCosts.push({
-                    id: Date.now(),
-                    vendor: data.vendor,
-                    description: data.description,
-                    category: data.category,
-                    month1Cost: parseFloat(data.month1Cost) || 0,
-                    month2Cost: parseFloat(data.month2Cost) || 0,
-                    month3Cost: parseFloat(data.month3Cost) || 0,
-                    month4Cost: parseFloat(data.month4Cost) || 0
-                });
-                renderVendorCostsTable();
-                break;
-            case 'toolCost':
-                projectData.toolCosts.push({
-                    id: Date.now(),
-                    tool: data.tool,
-                    licenseType: data.licenseType,
-                    users: parseInt(data.users),
-                    monthlyCost: parseFloat(data.monthlyCost),
-                    duration: parseInt(data.duration)
-                });
-                renderToolCostsTable();
-                break;
-            case 'miscCost':
-                projectData.miscCosts.push({
-                    id: Date.now(),
-                    item: data.item,
-                    description: data.description,
-                    category: data.category,
-                    cost: parseFloat(data.cost)
-                });
-                renderMiscCostsTable();
-                break;
-            case 'risk':
-                projectData.risks.push({
-                    id: Date.now(),
-                    description: data.description,
-                    probability: parseInt(data.probability),
-                    impact: parseInt(data.impact),
-                    mitigationCost: parseFloat(data.mitigationCost) || 0
-                });
-                renderRisksTable();
-                break;
-            case 'rateCard':
-                console.log('Adding rate card:', data);
-                const newRateCard = {
-                    id: Date.now(),
-                    role: data.role,
-                    rate: parseFloat(data.rate),
-                    category: data.category
-                };
-                projectData.rateCards.push(newRateCard);
-                
-                // Update both old arrays for backward compatibility
-                if (data.category === 'Internal') {
-                    projectData.internalRates.push({
+        // Handle editing vs adding
+        if (editId) {
+            // EDIT MODE - Update existing item
+            const id = parseInt(editId);
+            switch(type) {
+                case 'internalResource':
+                    const resourceIndex = projectData.internalResources.findIndex(item => item.id === id);
+                    if (resourceIndex !== -1) {
+                        const rate = projectData.rateCards.find(r => r.role === data.role) || 
+                                    projectData.internalRates.find(r => r.role === data.role);
+                        projectData.internalResources[resourceIndex] = {
+                            ...projectData.internalResources[resourceIndex],
+                            role: data.role,
+                            rateCard: rate ? rate.category || 'Internal' : 'Internal',
+                            dailyRate: rate ? rate.rate : 0,
+                            month1Days: parseFloat(data.month1Days) || 0,
+                            month2Days: parseFloat(data.month2Days) || 0,
+                            month3Days: parseFloat(data.month3Days) || 0,
+                            month4Days: parseFloat(data.month4Days) || 0
+                        };
+                        renderInternalResourcesTable();
+                    }
+                    break;
+                case 'vendorCost':
+                    const vendorIndex = projectData.vendorCosts.findIndex(item => item.id === id);
+                    if (vendorIndex !== -1) {
+                        projectData.vendorCosts[vendorIndex] = {
+                            ...projectData.vendorCosts[vendorIndex],
+                            vendor: data.vendor,
+                            description: data.description,
+                            category: data.category,
+                            month1Cost: parseFloat(data.month1Cost) || 0,
+                            month2Cost: parseFloat(data.month2Cost) || 0,
+                            month3Cost: parseFloat(data.month3Cost) || 0,
+                            month4Cost: parseFloat(data.month4Cost) || 0
+                        };
+                        renderVendorCostsTable();
+                    }
+                    break;
+                case 'toolCost':
+                    const toolIndex = projectData.toolCosts.findIndex(item => item.id === id);
+                    if (toolIndex !== -1) {
+                        projectData.toolCosts[toolIndex] = {
+                            ...projectData.toolCosts[toolIndex],
+                            tool: data.tool,
+                            licenseType: data.licenseType,
+                            users: parseInt(data.users),
+                            monthlyCost: parseFloat(data.monthlyCost),
+                            duration: parseInt(data.duration)
+                        };
+                        renderToolCostsTable();
+                    }
+                    break;
+                case 'miscCost':
+                    const miscIndex = projectData.miscCosts.findIndex(item => item.id === id);
+                    if (miscIndex !== -1) {
+                        projectData.miscCosts[miscIndex] = {
+                            ...projectData.miscCosts[miscIndex],
+                            item: data.item,
+                            description: data.description,
+                            category: data.category,
+                            cost: parseFloat(data.cost)
+                        };
+                        renderMiscCostsTable();
+                    }
+                    break;
+                case 'risk':
+                    const riskIndex = projectData.risks.findIndex(item => item.id === id);
+                    if (riskIndex !== -1) {
+                        projectData.risks[riskIndex] = {
+                            ...projectData.risks[riskIndex],
+                            description: data.description,
+                            probability: parseInt(data.probability),
+                            impact: parseInt(data.impact),
+                            mitigationCost: parseFloat(data.mitigationCost) || 0
+                        };
+                        renderRisksTable();
+                    }
+                    break;
+                case 'rateCard':
+                    const rateIndex = projectData.rateCards.findIndex(item => item.id === id);
+                    if (rateIndex !== -1) {
+                        projectData.rateCards[rateIndex] = {
+                            ...projectData.rateCards[rateIndex],
+                            role: data.role,
+                            rate: parseFloat(data.rate),
+                            category: data.category
+                        };
+                        renderUnifiedRateCardsTable();
+                        renderInternalRatesTable(); // Update backward compatibility tables
+                        renderExternalRatesTable();
+                    }
+                    break;
+            }
+        } else {
+            // ADD MODE - Create new item (original functionality)
+            switch(type) {
+                case 'internalResource':
+                    const rate = projectData.rateCards.find(r => r.role === data.role) || 
+                                projectData.internalRates.find(r => r.role === data.role);
+                    projectData.internalResources.push({
                         id: Date.now(),
                         role: data.role,
-                        rate: parseFloat(data.rate)
+                        rateCard: rate ? rate.category || 'Internal' : 'Internal',
+                        dailyRate: rate ? rate.rate : 0,
+                        month1Days: parseFloat(data.month1Days) || 0,
+                        month2Days: parseFloat(data.month2Days) || 0,
+                        month3Days: parseFloat(data.month3Days) || 0,
+                        month4Days: parseFloat(data.month4Days) || 0
                     });
-                } else if (data.category === 'External') {
-                    projectData.externalRates.push({
+                    renderInternalResourcesTable();
+                    break;
+                case 'vendorCost':
+                    projectData.vendorCosts.push({
+                        id: Date.now(),
+                        vendor: data.vendor,
+                        description: data.description,
+                        category: data.category,
+                        month1Cost: parseFloat(data.month1Cost) || 0,
+                        month2Cost: parseFloat(data.month2Cost) || 0,
+                        month3Cost: parseFloat(data.month3Cost) || 0,
+                        month4Cost: parseFloat(data.month4Cost) || 0
+                    });
+                    renderVendorCostsTable();
+                    break;
+                case 'toolCost':
+                    projectData.toolCosts.push({
+                        id: Date.now(),
+                        tool: data.tool,
+                        licenseType: data.licenseType,
+                        users: parseInt(data.users),
+                        monthlyCost: parseFloat(data.monthlyCost),
+                        duration: parseInt(data.duration)
+                    });
+                    renderToolCostsTable();
+                    break;
+                case 'miscCost':
+                    projectData.miscCosts.push({
+                        id: Date.now(),
+                        item: data.item,
+                        description: data.description,
+                        category: data.category,
+                        cost: parseFloat(data.cost)
+                    });
+                    renderMiscCostsTable();
+                    break;
+                case 'risk':
+                    projectData.risks.push({
+                        id: Date.now(),
+                        description: data.description,
+                        probability: parseInt(data.probability),
+                        impact: parseInt(data.impact),
+                        mitigationCost: parseFloat(data.mitigationCost) || 0
+                    });
+                    renderRisksTable();
+                    break;
+                case 'rateCard':
+                    console.log('Adding rate card:', data);
+                    const newRateCard = {
                         id: Date.now(),
                         role: data.role,
-                        rate: parseFloat(data.rate)
-                    });
-                }
-                
-                console.log('Updated rateCards array:', projectData.rateCards);
-                console.log('Updated internalRates array:', projectData.internalRates);
-                console.log('Updated externalRates array:', projectData.externalRates);
-                
-                // Render the unified rate cards table
-                console.log('About to render unified rate cards table...');
-                renderUnifiedRateCardsTable();
-                break;
+                        rate: parseFloat(data.rate),
+                        category: data.category
+                    };
+                    projectData.rateCards.push(newRateCard);
+                    
+                    // Update both old arrays for backward compatibility
+                    if (data.category === 'Internal') {
+                        projectData.internalRates.push({
+                            id: Date.now(),
+                            role: data.role,
+                            rate: parseFloat(data.rate)
+                        });
+                    } else if (data.category === 'External') {
+                        projectData.externalRates.push({
+                            id: Date.now(),
+                            role: data.role,
+                            rate: parseFloat(data.rate)
+                        });
+                    }
+                    
+                    console.log('Updated rateCards array:', projectData.rateCards);
+                    console.log('Updated internalRates array:', projectData.internalRates);
+                    console.log('Updated externalRates array:', projectData.externalRates);
+                    
+                    // Render the unified rate cards table
+                    console.log('About to render unified rate cards table...');
+                    renderUnifiedRateCardsTable();
+                    break;
+            }
         }
         
         updateSummary();
-        updateSummaryProjectInfo(); // STEP 3: Added call here
+        updateSummaryProjectInfo(); // Added from Step 3
         modal.style.display = 'none';
         console.log('Modal submit completed successfully');
     } catch (error) {
         console.error('Error handling modal submit:', error);
     }
+}
+
+// NEW FUNCTION: Edit Internal Resource
+function editInternalResource(id) {
+    console.log('Editing internal resource with ID:', id);
+    openModal('Edit Internal Resource', 'internalResource', id);
 }
 
 // Table Rendering Functions
@@ -670,6 +812,7 @@ function renderUnifiedRateCardsTable() {
     console.log('Unified rate cards table rendered successfully');
 }
 
+// ENHANCED Internal Resources Table with Edit Button
 function renderInternalResourcesTable() {
     const tbody = document.getElementById('internalResourcesTable');
     if (!tbody) return;
@@ -677,7 +820,7 @@ function renderInternalResourcesTable() {
     tbody.innerHTML = '';
     
     if (projectData.internalResources.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No internal resources added yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" class="empty-state">No internal resources added yet</td></tr>';
         return;
     }
     
@@ -693,13 +836,14 @@ function renderInternalResourcesTable() {
         row.innerHTML = `
             <td>${resource.role}</td>
             <td>${resource.rateCard}</td>
-            <td>$${resource.dailyRate.toLocaleString()}</td>
+            <td>${resource.dailyRate.toLocaleString()}</td>
             <td>${month1Days}</td>
             <td>${month2Days}</td>
             <td>${month3Days}</td>
             <td>${month4Days}</td>
-            <td>$${totalCost.toLocaleString()}</td>
+            <td>${totalCost.toLocaleString()}</td>
             <td>
+                <button class="btn btn-primary btn-small" onclick="editInternalResource(${resource.id})" style="margin-right: 5px;">Edit</button>
                 <button class="btn btn-danger btn-small" onclick="deleteItem('internalResources', ${resource.id})">Delete</button>
             </td>
         `;
@@ -731,11 +875,11 @@ function renderVendorCostsTable() {
             <td>${vendor.vendor}</td>
             <td>${vendor.description}</td>
             <td>${vendor.category}</td>
-            <td>$${month1Cost.toLocaleString()}</td>
-            <td>$${month2Cost.toLocaleString()}</td>
-            <td>$${month3Cost.toLocaleString()}</td>
-            <td>$${month4Cost.toLocaleString()}</td>
-            <td>$${totalCost.toLocaleString()}</td>
+            <td>${month1Cost.toLocaleString()}</td>
+            <td>${month2Cost.toLocaleString()}</td>
+            <td>${month3Cost.toLocaleString()}</td>
+            <td>${month4Cost.toLocaleString()}</td>
+            <td>${totalCost.toLocaleString()}</td>
             <td>
                 <button class="btn btn-danger btn-small" onclick="deleteItem('vendorCosts', ${vendor.id})">Delete</button>
             </td>
@@ -982,7 +1126,7 @@ function deleteItem(arrayName, id) {
         }
         renderAllTables();
         updateSummary();
-        updateSummaryProjectInfo(); // STEP 3: Added call here
+        updateSummaryProjectInfo(); // Added from Step 3
     }
 }
 
@@ -1235,7 +1379,7 @@ function newProject() {
             // Re-render all tables and summaries
             renderAllTables();
             updateSummary();
-            updateSummaryProjectInfo(); // STEP 3: Added call here
+            updateSummaryProjectInfo(); // Added from Step 3
             updateMonthHeaders();
             
             // Switch to project info tab
@@ -1266,7 +1410,7 @@ function loadProject() {
                     loadDefaultData();
                     renderAllTables();
                     updateSummary();
-                    updateSummaryProjectInfo(); // STEP 3: Added call here
+                    updateSummaryProjectInfo(); // Added from Step 3
                     updateMonthHeaders();
                     showAlert('Project loaded successfully!', 'success');
                 } catch (err) {
@@ -1416,7 +1560,7 @@ function showAlert(message, type) {
     }
 }
 
-// Function to update project info in summary tab
+// Function to update project info in summary tab (From Step 3)
 function updateSummaryProjectInfo() {
     try {
         console.log('Updating summary project info...');
@@ -1470,5 +1614,6 @@ function updateSummaryProjectInfo() {
     }
 }
 
-// Global function for delete buttons
+// Global functions for table buttons
 window.deleteItem = deleteItem;
+window.editInternalResource = editInternalResource;
