@@ -10,6 +10,7 @@
         <header>
             <h1>ICT Project Cost Estimation Tool</h1>
             <div class="header-actions">
+                <button id="newProjectBtn" class="btn btn-primary">New Project</button>
                 <button id="saveBtn" class="btn btn-primary">Save Project</button>
                 <button id="downloadBtn" class="btn btn-secondary">Download Project</button>
                 <button id="loadBtn" class="btn btn-secondary">Load Project</button>
@@ -265,46 +266,97 @@
 
             <!-- Summary Tab -->
             <div id="summary" class="tab-content">
-                <h2>Project Cost Summary</h2>
+                <h2>Project Summary</h2>
                 <div class="summary-overview">
-                    <div class="summary-section">
-                        <h3>Cost Breakdown</h3>
-                        <div class="cost-breakdown">
-                            <div class="breakdown-item">
-                                <span>Internal Resources:</span>
-                                <span class="cost" id="summaryInternalCost">$0</span>
+                    <div class="summary-columns">
+                        <!-- Column 1: Project Information -->
+                        <div class="summary-section project-info-summary">
+                            <h3>Project Information</h3>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <span class="info-label">Project Name:</span>
+                                    <span class="info-value" id="summaryProjectName">Not specified</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Project Manager:</span>
+                                    <span class="info-value" id="summaryProjectManager">Not specified</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Start Date:</span>
+                                    <span class="info-value" id="summaryStartDate">Not specified</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">End Date:</span>
+                                    <span class="info-value" id="summaryEndDate">Not specified</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">Duration:</span>
+                                    <span class="info-value" id="summaryProjectDuration">Not specified</span>
+                                </div>
+                                <div class="info-item full-width">
+                                    <span class="info-label">Description:</span>
+                                    <span class="info-value" id="summaryProjectDescription">Not specified</span>
+                                </div>
                             </div>
-                            <div class="breakdown-item">
-                                <span>Vendor Costs:</span>
-                                <span class="cost" id="summaryVendorCost">$0</span>
+                            
+                            <h4>Project Scope</h4>
+                            <div class="scope-grid">
+                                <div class="scope-item">
+                                    <span class="scope-number" id="summaryInternalResourceCount">0</span>
+                                    <span class="scope-label">Internal Resources</span>
+                                </div>
+                                <div class="scope-item">
+                                    <span class="scope-number" id="summaryVendorCount">0</span>
+                                    <span class="scope-label">Vendor Contracts</span>
+                                </div>
+                                <div class="scope-item">
+                                    <span class="scope-number" id="summaryToolCount">0</span>
+                                    <span class="scope-label">Tools & Software</span>
+                                </div>
+                                <div class="scope-item">
+                                    <span class="scope-number" id="summaryRiskCount">0</span>
+                                    <span class="scope-label">Identified Risks</span>
+                                </div>
                             </div>
-                            <div class="breakdown-item">
-                                <span>Tool Costs:</span>
-                                <span class="cost" id="summaryToolCost">$0</span>
-                            </div>
-                            <div class="breakdown-item">
-                                <span>Miscellaneous:</span>
-                                <span class="cost" id="summaryMiscCost">$0</span>
-                            </div>
-                            <div class="breakdown-item subtotal">
-                                <span>Subtotal:</span>
-                                <span class="cost" id="summarySubtotal">$0</span>
-                            </div>
-                            <div class="breakdown-item">
-                                <span>Contingency:</span>
-                                <span class="cost" id="summaryContingency">$0</span>
-                            </div>
-                            <div class="breakdown-item total">
-                                <span>Total Project Cost:</span>
-                                <span class="cost" id="summaryTotal">$0</span>
+                        </div>
+                        
+                        <!-- Column 2: Cost Breakdown -->
+                        <div class="summary-section cost-summary">
+                            <h3>Cost Breakdown</h3>
+                            <div class="cost-breakdown">
+                                <div class="breakdown-item">
+                                    <span>Internal Resources:</span>
+                                    <span class="cost" id="summaryInternalCost">$0</span>
+                                </div>
+                                <div class="breakdown-item">
+                                    <span>Vendor Costs:</span>
+                                    <span class="cost" id="summaryVendorCost">$0</span>
+                                </div>
+                                <div class="breakdown-item">
+                                    <span>Tool Costs:</span>
+                                    <span class="cost" id="summaryToolCost">$0</span>
+                                </div>
+                                <div class="breakdown-item">
+                                    <span>Miscellaneous:</span>
+                                    <span class="cost" id="summaryMiscCost">$0</span>
+                                </div>
+                                <div class="breakdown-item subtotal">
+                                    <span>Subtotal:</span>
+                                    <span class="cost" id="summarySubtotal">$0</span>
+                                </div>
+                                <div class="breakdown-item">
+                                    <span>Contingency:</span>
+                                    <span class="cost" id="summaryContingency">$0</span>
+                                </div>
+                                <div class="breakdown-item total">
+                                    <span>Total Project Cost:</span>
+                                    <span class="cost" id="summaryTotal">$0</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
-
     <!-- Modal for adding items -->
     <div id="modal" class="modal">
         <div class="modal-content">
