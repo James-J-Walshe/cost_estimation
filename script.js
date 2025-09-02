@@ -571,26 +571,9 @@ function handleModalSubmit() {
                 console.log('Updated internalRates array:', projectData.internalRates);
                 console.log('Updated externalRates array:', projectData.externalRates);
                 
-                // Render the appropriate tables
-                console.log('About to render tables...');
-                console.log('Looking for internalRatesTable:', document.getElementById('internalRatesTable'));
-                console.log('Looking for externalRatesTable:', document.getElementById('externalRatesTable'));
-                
-                // Let's also check what table elements DO exist
-                const allTables = document.querySelectorAll('table');
-                console.log('All tables found:', allTables.length);
-                allTables.forEach((table, index) => {
-                    console.log(`Table ${index}:`, table.id, table.className);
-                });
-                
-                const allTbodies = document.querySelectorAll('tbody');
-                console.log('All tbody elements found:', allTbodies.length);
-                allTbodies.forEach((tbody, index) => {
-                    console.log(`Tbody ${index}:`, tbody.id, tbody.className, tbody.closest('div')?.id);
-                });
-                
-                renderInternalRatesTable();
-                renderExternalRatesTable();
+                // Render the unified rate cards table
+                console.log('About to render unified rate cards table...');
+                renderUnifiedRateCardsTable();
                 break;
         }
         
