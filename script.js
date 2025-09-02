@@ -258,17 +258,26 @@ function initializeEventListeners() {
             }
         });
 
-        // Save/Load buttons - Updated to include download functionality
+        // Save/Load buttons - Updated to include download and new project functionality
         const saveBtn = document.getElementById('saveBtn');
-        const downloadBtn = document.getElementById('downloadBtn');
         const loadBtn = document.getElementById('loadBtn');
         const exportBtn = document.getElementById('exportBtn');
+        const newProjectBtn = document.getElementById('newProjectBtn');
         
         if (saveBtn) saveBtn.addEventListener('click', saveProject);
-        if (downloadBtn) downloadBtn.addEventListener('click', downloadProject);
         if (loadBtn) loadBtn.addEventListener('click', loadProject);
         if (exportBtn) exportBtn.addEventListener('click', exportToExcel);
+        if (newProjectBtn) newProjectBtn.addEventListener('click', newProject);
         
+        // Add download project functionality if button exists
+        const downloadBtn = document.getElementById('downloadBtn');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', downloadProject);
+        } else {
+            // If no download button exists, modify the save button to also download
+            console.log('No download button found, save button will also download file');
+        }
+
         // Modal form submission
         if (modalForm) {
             modalForm.addEventListener('submit', (e) => {
@@ -1139,6 +1148,90 @@ function downloadProject() {
     } catch (error) {
         console.error('Error downloading project:', error);
         showAlert('Error downloading project file: ' + error.message, 'error');
+    }
+}
+
+function newProject() {
+    if (confirm('Are you sure you want to start a new project? This will clear all current data. Make sure to save or download your current project first.')) {
+        try {
+            // Reset project data to initial state
+            projectData = {
+                projectInfo: {
+                    projectName: '',
+                    startDate: '',
+                    endDate: '',
+                    projectManager: '',
+                    projectDescription: ''
+                },
+                internalResources: [],
+                vendorCosts: [],
+                toolCosts: [],
+                miscCosts: [],
+                risks: [],
+                rateCards: [
+                    { role: 'Project Manager', rate: 800, category: 'Internal' },
+                    { role: 'Business Analyst', rate: 650, category: 'Internal' },
+                    { role: 'Technical Lead', rate: 750, category: 'Internal' },
+                    { role: 'Developer', rate: 600, category: 'Internal' },
+                    { role: 'Tester', rate: 550, category: 'Internal' },
+                    { role: 'Senior Consultant', rate: 1200, category: 'External' },
+                    { role: 'Technical Architect', rate: 1500, category: 'External' },
+                    { role: 'Implementation Specialist', rate: 900, category: 'External' },
+                    { role: 'Support Specialist', rate: 700, category: 'External' }
+                ],
+                internalRates: [
+                    { role: 'Project Manager', rate: 800 },
+                    { role: 'Business Analyst', rate: 650 },
+                    { role: 'Technical Lead', rate: 750 },
+                    { role: 'Developer', rate: 600 },
+                    { role: 'Tester', rate: 550 }
+                ],
+                externalRates: [
+                    { role: 'Senior Consultant', rate: 1200 },
+                    { role: 'Technical Architect', rate: 1500 },
+                    { role: 'Implementation Specialist', rate: 900 },
+                    { role: 'Support Specialist', rate: 700 }
+                ],
+                contingencyPercentage: 10
+            };
+            
+            // Clear form fields
+            const formFields = {
+                projectName: '',
+                startDate: '',
+                endDate: '',
+                projectManager: '',
+                projectDescription: '',
+                contingencyPercentage: 10
+            };
+            
+            Object.keys(formFields).forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.value = formFields[id];
+                }
+            });
+            
+            // Clear localStorage
+            if (typeof(Storage) !== "undefined" && localStorage) {
+                localStorage.removeItem('ictProjectData');
+            }
+            
+            // Re-render all tables and summaries
+            renderAllTables();
+            updateSummary();
+            updateMonthHeaders();
+            
+            // Switch to project info tab
+            switchTab('project-info');
+            
+            showAlert('New project started successfully! Please enter your project information.', 'success');
+            console.log('New project created');
+            
+        } catch (error) {
+            console.error('Error creating new project:', error);
+            showAlert('Error creating new project: ' + error.message, 'error');
+        }
     }
 }
 
