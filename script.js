@@ -181,6 +181,7 @@ function initializeEventListeners() {
         if (projectNameEl) {
             projectNameEl.addEventListener('input', (e) => {
                 projectData.projectInfo.projectName = e.target.value;
+                updateSummary(); // Trigger summary update
             });
         }
         
@@ -188,6 +189,7 @@ function initializeEventListeners() {
             startDateEl.addEventListener('input', (e) => {
                 projectData.projectInfo.startDate = e.target.value;
                 updateMonthHeaders();
+                updateSummary(); // Trigger summary update
             });
         }
         
@@ -195,18 +197,21 @@ function initializeEventListeners() {
             endDateEl.addEventListener('input', (e) => {
                 projectData.projectInfo.endDate = e.target.value;
                 updateMonthHeaders();
+                updateSummary(); // Trigger summary update
             });
         }
         
         if (projectManagerEl) {
             projectManagerEl.addEventListener('input', (e) => {
                 projectData.projectInfo.projectManager = e.target.value;
+                updateSummary(); // Trigger summary update
             });
         }
         
         if (projectDescriptionEl) {
             projectDescriptionEl.addEventListener('input', (e) => {
                 projectData.projectInfo.projectDescription = e.target.value;
+                updateSummary(); // Trigger summary update
             });
         }
 
