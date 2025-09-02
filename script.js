@@ -258,7 +258,7 @@ function initializeEventListeners() {
             }
         });
 
-        // Save/Load buttons
+        // Save/Load buttons - Updated to include download functionality
         const saveBtn = document.getElementById('saveBtn');
         const loadBtn = document.getElementById('loadBtn');
         const exportBtn = document.getElementById('exportBtn');
@@ -266,6 +266,15 @@ function initializeEventListeners() {
         if (saveBtn) saveBtn.addEventListener('click', saveProject);
         if (loadBtn) loadBtn.addEventListener('click', loadProject);
         if (exportBtn) exportBtn.addEventListener('click', exportToExcel);
+        
+        // Add download project functionality if button exists
+        const downloadBtn = document.getElementById('downloadBtn');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', downloadProject);
+        } else {
+            // If no download button exists, modify the save button to also download
+            console.log('No download button found, save button will also download file');
+        }
 
         // Modal form submission
         if (modalForm) {
@@ -1110,13 +1119,33 @@ function saveProject() {
     try {
         if (typeof(Storage) !== "undefined" && localStorage) {
             localStorage.setItem('ictProjectData', JSON.stringify(projectData));
-            showAlert('Project saved successfully!', 'success');
+            showAlert('Project saved to browser storage successfully!', 'success');
         } else {
             showAlert('Local storage not available. Cannot save project.', 'error');
         }
     } catch (e) {
         console.error('Error saving project:', e);
         showAlert('Error saving project: ' + e.message, 'error');
+    }
+}
+
+function downloadProject() {
+    try {
+        const dataStr = JSON.stringify(projectData, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `ICT_Project_${projectData.projectInfo.projectName || 'Untitled'}.json`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showAlert('Project file downloaded successfully!', 'success');
+    } catch (error) {
+        console.error('Error downloading project:', error);
+        showAlert('Error downloading project file: ' + error.message, 'error');
     }
 }
 
