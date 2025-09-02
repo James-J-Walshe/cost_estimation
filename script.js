@@ -260,22 +260,15 @@ function initializeEventListeners() {
 
         // Save/Load buttons - Updated to include download functionality
         const saveBtn = document.getElementById('saveBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
         const loadBtn = document.getElementById('loadBtn');
         const exportBtn = document.getElementById('exportBtn');
         
         if (saveBtn) saveBtn.addEventListener('click', saveProject);
+        if (downloadBtn) downloadBtn.addEventListener('click', downloadProject);
         if (loadBtn) loadBtn.addEventListener('click', loadProject);
         if (exportBtn) exportBtn.addEventListener('click', exportToExcel);
         
-        // Add download project functionality if button exists
-        const downloadBtn = document.getElementById('downloadBtn');
-        if (downloadBtn) {
-            downloadBtn.addEventListener('click', downloadProject);
-        } else {
-            // If no download button exists, modify the save button to also download
-            console.log('No download button found, save button will also download file');
-        }
-
         // Modal form submission
         if (modalForm) {
             modalForm.addEventListener('submit', (e) => {
