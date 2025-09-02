@@ -595,10 +595,54 @@ function renderAllTables() {
         renderRisksTable();
         renderInternalRatesTable(); // Keep for backward compatibility
         renderExternalRatesTable(); // Keep for backward compatibility  
+        renderUnifiedRateCardsTable(); // Add unified rate cards table
         renderForecastTable();
     } catch (error) {
         console.error('Error rendering tables:', error);
     }
+}
+
+// Unified rate cards table rendering
+function renderUnifiedRateCardsTable() {
+    const tbody = document.getElementById('rateCardsTable');
+    console.log('renderUnifiedRateCardsTable - tbody element:', tbody);
+    
+    if (!tbody) {
+        console.log('rateCardsTable not found');
+        return;
+    }
+    
+    tbody.innerHTML = '';
+    
+    if (projectData.rateCards.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No rate cards added yet</td></tr>';
+        return;
+    }
+    
+    // Sort by category then by role
+    const sortedRates = [...projectData.rateCards].sort((a, b) => {
+        if (a.category !== b.category) {
+            return a.category.localeCompare(b.category);
+        }
+        return a.role.localeCompare(b.role);
+    });
+    
+    console.log('Rates to render:', sortedRates);
+    
+    sortedRates.forEach(rate => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${rate.role}</td>
+            <td><span class="category-badge category-${rate.category.toLowerCase()}">${rate.category}</span></td>
+            <td>${rate.rate.toLocaleString()}</td>
+            <td>
+                <button class="btn btn-danger btn-small" onclick="deleteItem('rateCards', ${rate.id || `'${rate.role}'`})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    console.log('Unified rate cards table rendered successfully');
 }
 
 function renderInternalResourcesTable() {
