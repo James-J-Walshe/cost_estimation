@@ -709,7 +709,7 @@ function renderUnifiedRateCardsTable() {
             <td><span class="category-badge category-${rate.category.toLowerCase()}">${rate.category}</span></td>
             <td>$${rate.rate.toLocaleString()}</td>
             <td>
-                <button class="btn btn-danger btn-small" onclick="deleteItem('rateCards', ${rate.id || `'${rate.role}'`})">Delete</button>
+                <button class="btn btn-danger btn-small" onclick="deleteItem('rateCards', ${rate.id || '\\'' + rate.role + '\\''})">Delete</button>
             </td>
         `;
         tbody.appendChild(row);
