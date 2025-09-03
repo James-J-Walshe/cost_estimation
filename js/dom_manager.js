@@ -1,278 +1,429 @@
-// dom-manager.js - Centralized DOM Element Management
-// ============================================================================
+// DOM Manager Module
+// Handles all DOM manipulation, event listeners, and modal management
 
-const DOMManager = {
-    elements: {},
-    initialized: false,
+class DOMManager {
+    constructor() {
+        this.elements = {};
+        this.modal = null;
+        this.modalContent = null;
+        this.modalTitle = null;
+        this.modalForm = null;
+        this.modalFields = null;
+        this.closeModal = null;
+        this.cancelModal = null;
+    }
 
-    /**
-     * Initialize DOM manager and cache all elements
-     */
-    init() {
+    // Initialize all DOM elements
+    initializeDOMElements() {
         try {
-            this.cacheElements();
-            this.validateCriticalElements();
-            this.initialized = true;
-            console.log('DOMManager initialized successfully');
+            // Tab elements
+            this.elements.tabButtons = document.querySelectorAll('.tab-btn');
+            this.elements.tabContents = document.querySelectorAll('.tab-content');
+            
+            // Modal elements
+            this.modal = document.getElementById('modal');
+            this.modalContent = document.querySelector('.modal-content');
+            this.modalTitle = document.getElementById('modalTitle');
+            this.modalForm = document.getElementById('modalForm');
+            this.modalFields = document.getElementById('modalFields');
+            this.closeModal = document.querySelector('.close');
+            this.cancelModal = document.getElementById('cancelModal');
+
+            console.log('DOM elements initialized');
             return true;
         } catch (error) {
-            console.error('Error initializing DOMManager:', error);
+            console.error('Error initializing DOM elements:', error);
             return false;
         }
-    },
+    }
 
-    /**
-     * Cache all DOM elements for efficient access
-     */
-    cacheElements() {
-        // Navigation elements
-        this.elements.tabButtons = document.querySelectorAll('.tab-btn');
-        this.elements.tabContents = document.querySelectorAll('.tab-content');
+    // Initialize tab navigation
+    initializeTabs() {
+        if (!this.elements.tabButtons) {
+            console.error('Tab buttons not found');
+            return;
+        }
+        
+        this.elements.tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const targetTab = button.getAttribute('data-tab');
+                this.switchTab(targetTab);
+            });
+        });
+    }
 
-        // Modal elements
-        this.elements.modal = document.getElementById('modal');
-        this.elements.modalContent = document.querySelector('.modal-content');
-        this.elements.modalTitle = document.getElementById('modalTitle');
-        this.elements.modalForm = document.getElementById('modalForm');
-        this.elements.modalFields = document.getElementById('modalFields');
-        this.elements.closeModal = document.querySelector('.close');
-        this.elements.cancelModal = document.getElementById('cancelModal');
+    // Switch between tabs
+    switchTab(targetTab) {
+        try {
+            // Update active tab button
+            this.elements.tabButtons.forEach(btn => btn.classList.remove('active'));
+            const targetButton = document.querySelector(`[data-tab="${targetTab}"]`);
+            if (targetButton) {
+                targetButton.classList.add('active');
+            }
+            
+            // Update active tab content
+            this.elements.tabContents.forEach(content => content.classList.remove('active'));
+            const targetContent = document.getElementById(targetTab);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+            
+            // Trigger tab-specific updates
+            if (targetTab === 'summary' && window.updateSummary) {
+                window.updateSummary();
+            }
+        } catch (error) {
+            console.error('Error switching tabs:', error);
+        }
+    }
 
-        // Form elements
-        this.elements.projectName = document.getElementById('projectName');
-        this.elements.startDate = document.getElementById('startDate');
-        this.elements.endDate = document.getElementById('endDate');
-        this.elements.projectManager = document.getElementById('projectManager');
-        this.elements.projectDescription = document.getElementById('projectDescription');
-        this.elements.contingencyPercentage = document.getElementById('contingencyPercentage');
+    // Initialize all event listeners
+    initializeEventListeners() {
+        try {
+            this.initializeProjectInfoListeners();
+            this.initializeButtonListeners();
+            this.initializeModalListeners();
+            console.log('Event listeners initialized');
+        } catch (error) {
+            console.error('Error initializing event listeners:', error);
+        }
+    }
 
-        // Summary display elements
-        this.elements.totalProjectCost = document.getElementById('totalProjectCost');
-        this.elements.totalInternalCost = document.getElementById('totalInternalCost');
-        this.elements.totalExternalCost = document.getElementById('totalExternalCost');
-        this.elements.contingencyAmount = document.getElementById('contingencyAmount');
-
-        // Summary tab elements
-        this.elements.summaryInternalCost = document.getElementById('summaryInternalCost');
-        this.elements.summaryVendorCost = document.getElementById('summaryVendorCost');
-        this.elements.summaryToolCost = document.getElementById('summaryToolCost');
-        this.elements.summaryMiscCost = document.getElementById('summaryMiscCost');
-        this.elements.summarySubtotal = document.getElementById('summarySubtotal');
-        this.elements.summaryContingency = document.getElementById('summaryContingency');
-        this.elements.summaryTotal = document.getElementById('summaryTotal');
-
-        // Table body elements
-        this.elements.internalResourcesTable = document.getElementById('internalResourcesTable');
-        this.elements.vendorCostsTable = document.getElementById('vendorCostsTable');
-        this.elements.toolCostsTable = document.getElementById('toolCostsTable');
-        this.elements.miscCostsTable = document.getElementById('miscCostsTable');
-        this.elements.risksTable = document.getElementById('risksTable');
-        this.elements.internalRatesTable = document.getElementById('internalRatesTable');
-        this.elements.externalRatesTable = document.getElementById('externalRatesTable');
-        this.elements.rateCardsTable = document.getElementById('rateCardsTable');
-        this.elements.forecastTable = document.getElementById('forecastTable');
-
-        // Button elements
-        this.elements.saveBtn = document.getElementById('saveBtn');
-        this.elements.loadBtn = document.getElementById('loadBtn');
-        this.elements.exportBtn = document.getElementById('exportBtn');
-        this.elements.newProjectBtn = document.getElementById('newProjectBtn');
-        this.elements.downloadBtn = document.getElementById('downloadBtn');
-        this.elements.printBtn = document.getElementById('printBtn');
-
-        // Add buttons
-        this.elements.addInternalResource = document.getElementById('addInternalResource');
-        this.elements.addVendorCost = document.getElementById('addVendorCost');
-        this.elements.addToolCost = document.getElementById('addToolCost');
-        this.elements.addMiscCost = document.getElementById('addMiscCost');
-        this.elements.addRisk = document.getElementById('addRisk');
-        this.elements.addInternalRate = document.getElementById('addInternalRate');
-        this.elements.addExternalRate = document.getElementById('addExternalRate');
-        this.elements.addRate = document.getElementById('addRate');
-
-        // Content area
-        this.elements.content = document.querySelector('.content');
-        this.elements.appContainer = document.querySelector('.app-container');
-
-        console.log('DOM elements cached:', Object.keys(this.elements).length, 'elements');
-    },
-
-    /**
-     * Validate that critical elements exist
-     */
-    validateCriticalElements() {
-        const critical = [
-            'tabButtons', 'tabContents', 'modal', 'modalForm',
-            'projectName', 'startDate', 'endDate'
+    // Project info form listeners
+    initializeProjectInfoListeners() {
+        const projectFields = [
+            { id: 'projectName', prop: 'projectName' },
+            { id: 'startDate', prop: 'startDate', callback: window.updateMonthHeaders },
+            { id: 'endDate', prop: 'endDate', callback: window.updateMonthHeaders },
+            { id: 'projectManager', prop: 'projectManager' },
+            { id: 'projectDescription', prop: 'projectDescription' }
         ];
 
-        const missing = critical.filter(elementName => {
-            const element = this.elements[elementName];
-            return !element || (element.length !== undefined && element.length === 0);
+        projectFields.forEach(field => {
+            const element = document.getElementById(field.id);
+            if (element) {
+                element.addEventListener('input', (e) => {
+                    if (window.projectData && window.projectData.projectInfo) {
+                        window.projectData.projectInfo[field.prop] = e.target.value;
+                    }
+                    if (field.callback) field.callback();
+                    if (window.updateSummary) window.updateSummary();
+                });
+            }
         });
 
-        if (missing.length > 0) {
-            console.warn('Missing critical DOM elements:', missing);
-            return false;
+        // Contingency percentage
+        const contingencyEl = document.getElementById('contingencyPercentage');
+        if (contingencyEl) {
+            contingencyEl.addEventListener('input', (e) => {
+                if (window.projectData) {
+                    window.projectData.contingencyPercentage = parseFloat(e.target.value) || 0;
+                }
+                if (window.updateSummary) window.updateSummary();
+            });
         }
+    }
 
-        console.log('All critical DOM elements validated successfully');
-        return true;
-    },
+    // Initialize button listeners
+    initializeButtonListeners() {
+        const addButtons = [
+            { id: 'addInternalResource', type: 'internalResource', title: 'Add Internal Resource' },
+            { id: 'addVendorCost', type: 'vendorCost', title: 'Add Vendor Cost' },
+            { id: 'addToolCost', type: 'toolCost', title: 'Add Tool Cost' },
+            { id: 'addMiscCost', type: 'miscCost', title: 'Add Miscellaneous Cost' },
+            { id: 'addRisk', type: 'risk', title: 'Add Risk' },
+            { id: 'addInternalRate', type: 'rateCard', title: 'Add Rate Card' },
+            { id: 'addExternalRate', type: 'rateCard', title: 'Add Rate Card' },
+            { id: 'addRate', type: 'rateCard', title: 'Add Rate Card' }
+        ];
 
-    /**
-     * Get cached element by name
-     */
-    get(elementName) {
-        if (!this.initialized) {
-            console.warn('DOMManager not initialized. Call init() first.');
-            return null;
+        addButtons.forEach(btn => {
+            const element = document.getElementById(btn.id);
+            if (element) {
+                element.addEventListener('click', () => {
+                    this.openModal(btn.title, btn.type);
+                });
+            }
+        });
+
+        // Save/Load buttons
+        const actionButtons = [
+            { id: 'saveBtn', handler: window.saveProject },
+            { id: 'loadBtn', handler: window.loadProject },
+            { id: 'exportBtn', handler: window.exportToExcel },
+            { id: 'newProjectBtn', handler: window.newProject },
+            { id: 'downloadBtn', handler: window.downloadProject }
+        ];
+
+        actionButtons.forEach(btn => {
+            const element = document.getElementById(btn.id);
+            if (element && btn.handler) {
+                element.addEventListener('click', btn.handler);
+            }
+        });
+    }
+
+    // Initialize modal event listeners
+    initializeModalListeners() {
+        if (this.closeModal) {
+            this.closeModal.addEventListener('click', () => {
+                this.modal.style.display = 'none';
+            });
         }
+        
+        if (this.cancelModal) {
+            this.cancelModal.addEventListener('click', () => {
+                this.modal.style.display = 'none';
+            });
+        }
+        
+        window.addEventListener('click', (e) => {
+            if (e.target === this.modal) {
+                this.modal.style.display = 'none';
+            }
+        });
 
-        return this.elements[elementName] || null;
-    },
+        // Modal form submission
+        if (this.modalForm) {
+            this.modalForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                if (window.handleModalSubmit) {
+                    window.handleModalSubmit();
+                }
+            });
+        }
+        
+        // Modal save button backup
+        const modalSaveBtn = document.querySelector('.modal-actions .btn-primary');
+        if (modalSaveBtn) {
+            modalSaveBtn.addEventListener('click', (e) => {
+                if (e.target.type === 'submit') return;
+                e.preventDefault();
+                if (window.handleModalSubmit) {
+                    window.handleModalSubmit();
+                }
+            });
+        }
+    }
 
-    /**
-     * Get element by ID (with caching)
-     */
-    getElementById(id) {
-        // Check cache first
-        for (const [key, value] of Object.entries(this.elements)) {
-            if (value && value.id === id) {
-                return value;
+    // Open modal with specified content
+    openModal(title, type) {
+        try {
+            if (!this.modal || !this.modalTitle || !this.modalFields || !this.modalForm) {
+                console.error('Modal elements not found');
+                return;
+            }
+            
+            this.modalTitle.textContent = title;
+            this.modalFields.innerHTML = this.getModalFields(type);
+            this.modal.style.display = 'block';
+            this.modalForm.setAttribute('data-type', type);
+        } catch (error) {
+            console.error('Error opening modal:', error);
+        }
+    }
+
+    // Generate modal fields based on type
+    getModalFields(type) {
+        const months = window.calculateProjectMonths ? window.calculateProjectMonths() : 
+                      ['Month 1', 'Month 2', 'Month 3', 'Month 4', 'Month 5', 'Month 6'];
+        
+        const fields = {
+            internalResource: `
+                <div class="form-group">
+                    <label>Role:</label>
+                    <select name="role" class="form-control" required>
+                        ${window.projectData?.rateCards?.map(rate => 
+                            `<option value="${rate.role}" data-category="${rate.category}">${rate.role} (${rate.category})</option>`
+                        ).join('') || ''}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>${months[0]} Days:</label>
+                    <input type="number" name="month1Days" class="form-control" min="0" step="0.5" value="0">
+                </div>
+                <div class="form-group">
+                    <label>${months[1]} Days:</label>
+                    <input type="number" name="month2Days" class="form-control" min="0" step="0.5" value="0">
+                </div>
+                <div class="form-group">
+                    <label>${months[2]} Days:</label>
+                    <input type="number" name="month3Days" class="form-control" min="0" step="0.5" value="0">
+                </div>
+                <div class="form-group">
+                    <label>${months[3]} Days:</label>
+                    <input type="number" name="month4Days" class="form-control" min="0" step="0.5" value="0">
+                </div>
+            `,
+            vendorCost: `
+                <div class="form-group">
+                    <label>Vendor:</label>
+                    <input type="text" name="vendor" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Description:</label>
+                    <input type="text" name="description" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Category:</label>
+                    <select name="category" class="form-control" required>
+                        <option value="Implementation">Implementation</option>
+                        <option value="Consulting">Consulting</option>
+                        <option value="Training">Training</option>
+                        <option value="Support">Support</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>${months[0]} Cost:</label>
+                    <input type="number" name="month1Cost" class="form-control" min="0" step="0.01" value="0">
+                </div>
+                <div class="form-group">
+                    <label>${months[1]} Cost:</label>
+                    <input type="number" name="month2Cost" class="form-control" min="0" step="0.01" value="0">
+                </div>
+                <div class="form-group">
+                    <label>${months[2]} Cost:</label>
+                    <input type="number" name="month3Cost" class="form-control" min="0" step="0.01" value="0">
+                </div>
+                <div class="form-group">
+                    <label>${months[3]} Cost:</label>
+                    <input type="number" name="month4Cost" class="form-control" min="0" step="0.01" value="0">
+                </div>
+            `,
+            toolCost: `
+                <div class="form-group">
+                    <label>Tool/Software:</label>
+                    <input type="text" name="tool" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>License Type:</label>
+                    <select name="licenseType" class="form-control" required>
+                        <option value="Per User">Per User</option>
+                        <option value="Per Device">Per Device</option>
+                        <option value="Enterprise">Enterprise</option>
+                        <option value="One-time">One-time</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Users/Licenses:</label>
+                    <input type="number" name="users" class="form-control" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Monthly Cost:</label>
+                    <input type="number" name="monthlyCost" class="form-control" min="0" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Duration (Months):</label>
+                    <input type="number" name="duration" class="form-control" min="1" required>
+                </div>
+            `,
+            miscCost: `
+                <div class="form-group">
+                    <label>Item:</label>
+                    <input type="text" name="item" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Description:</label>
+                    <input type="text" name="description" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Category:</label>
+                    <select name="category" class="form-control" required>
+                        <option value="Travel">Travel</option>
+                        <option value="Equipment">Equipment</option>
+                        <option value="Training">Training</option>
+                        <option value="Documentation">Documentation</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Cost:</label>
+                    <input type="number" name="cost" class="form-control" min="0" step="0.01" required>
+                </div>
+            `,
+            risk: `
+                <div class="form-group">
+                    <label>Risk Description:</label>
+                    <textarea name="description" class="form-control" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Probability (1-5):</label>
+                    <input type="number" name="probability" class="form-control" min="1" max="5" required>
+                </div>
+                <div class="form-group">
+                    <label>Impact (1-5):</label>
+                    <input type="number" name="impact" class="form-control" min="1" max="5" required>
+                </div>
+                <div class="form-group">
+                    <label>Mitigation Cost:</label>
+                    <input type="number" name="mitigationCost" class="form-control" min="0" step="0.01" value="0">
+                </div>
+            `,
+            rateCard: `
+                <div class="form-group">
+                    <label>Role:</label>
+                    <input type="text" name="role" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Category:</label>
+                    <select name="category" class="form-control" required>
+                        <option value="Internal">Internal</option>
+                        <option value="External">External</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Daily Rate:</label>
+                    <input type="number" name="rate" class="form-control" min="0" step="0.01" required>
+                </div>
+            `
+        };
+        
+        return fields[type] || '';
+    }
+
+    // Update month headers across the application
+    updateMonthHeaders() {
+        const months = window.calculateProjectMonths ? window.calculateProjectMonths() : 
+                      ['Month 1', 'Month 2', 'Month 3', 'Month 4', 'Month 5', 'Month 6'];
+        
+        // Update forecast table headers (6 months shown)
+        for (let i = 1; i <= 6; i++) {
+            const header = document.getElementById(`month${i}Header`);
+            if (header && months[i-1]) {
+                header.textContent = months[i-1];
             }
         }
-
-        // Fallback to document.getElementById
-        return document.getElementById(id);
-    },
-
-    /**
-     * Find elements by selector
-     */
-    querySelector(selector) {
-        return document.querySelector(selector);
-    },
-
-    /**
-     * Find multiple elements by selector
-     */
-    querySelectorAll(selector) {
-        return document.querySelectorAll(selector);
-    },
-
-    /**
-     * Check if element exists and is visible
-     */
-    isElementVisible(elementName) {
-        const element = this.get(elementName);
-        if (!element) return false;
-
-        return element.offsetWidth > 0 && element.offsetHeight > 0;
-    },
-
-    /**
-     * Show element
-     */
-    show(elementName) {
-        const element = this.get(elementName);
-        if (element) {
-            element.style.display = '';
+        
+        // Update internal resources headers (4 months shown)
+        for (let i = 1; i <= 4; i++) {
+            const header = document.getElementById(`month${i}DaysHeader`);
+            if (header && months[i-1]) {
+                header.textContent = `${months[i-1]} Days`;
+            }
         }
-    },
-
-    /**
-     * Hide element
-     */
-    hide(elementName) {
-        const element = this.get(elementName);
-        if (element) {
-            element.style.display = 'none';
+        
+        // Update vendor costs headers (4 months shown)
+        for (let i = 1; i <= 4; i++) {
+            const header = document.getElementById(`month${i}CostHeader`);
+            if (header && months[i-1]) {
+                header.textContent = `${months[i-1]} Cost`;
+            }
         }
-    },
+    }
 
-    /**
-     * Add CSS class to element
-     */
-    addClass(elementName, className) {
-        const element = this.get(elementName);
-        if (element) {
-            element.classList.add(className);
-        }
-    },
-
-    /**
-     * Remove CSS class from element
-     */
-    removeClass(elementName, className) {
-        const element = this.get(elementName);
-        if (element) {
-            element.classList.remove(className);
-        }
-    },
-
-    /**
-     * Toggle CSS class on element
-     */
-    toggleClass(elementName, className) {
-        const element = this.get(elementName);
-        if (element) {
-            element.classList.toggle(className);
-        }
-    },
-
-    /**
-     * Set element text content
-     */
-    setText(elementName, text) {
-        const element = this.get(elementName);
-        if (element) {
-            element.textContent = text;
-        }
-    },
-
-    /**
-     * Set element HTML content
-     */
-    setHTML(elementName, html) {
-        const element = this.get(elementName);
-        if (element) {
-            element.innerHTML = html;
-        }
-    },
-
-    /**
-     * Get element value
-     */
-    getValue(elementName) {
-        const element = this.get(elementName);
-        return element ? element.value : null;
-    },
-
-    /**
-     * Set element value
-     */
-    setValue(elementName, value) {
-        const element = this.get(elementName);
-        if (element) {
-            element.value = value;
-        }
-    },
-
-    /**
-     * Create and insert alert element
-     */
-    showAlert(message, type = 'info') {
+    // Show alert messages
+    showAlert(message, type) {
         try {
             const alert = document.createElement('div');
             alert.className = `alert alert-${type}`;
             alert.textContent = message;
-
-            const content = this.get('content');
+            
+            const content = document.querySelector('.content');
             if (content) {
                 content.insertBefore(alert, content.firstChild);
-
-                // Auto-remove after 5 seconds
+                
                 setTimeout(() => {
                     if (alert.parentNode) {
                         alert.remove();
@@ -285,45 +436,14 @@ const DOMManager = {
             console.error('Error showing alert:', error);
             console.log(`${type.toUpperCase()}: ${message}`);
         }
-    },
-
-    /**
-     * Refresh cache for specific element
-     */
-    refreshElement(elementName, selector) {
-        if (selector) {
-            this.elements[elementName] = document.querySelector(selector);
-        } else {
-            // Try to find by ID
-            const id = elementName.replace(/([A-Z])/g, '-$1').toLowerCase();
-            this.elements[elementName] = document.getElementById(id);
-        }
-    },
-
-    /**
-     * Get diagnostic information
-     */
-    getDiagnostics() {
-        const total = Object.keys(this.elements).length;
-        const existing = Object.values(this.elements).filter(el => el !== null).length;
-        const missing = total - existing;
-
-        return {
-            total,
-            existing,
-            missing,
-            initialized: this.initialized,
-            missingElements: Object.entries(this.elements)
-                .filter(([key, value]) => value === null)
-                .map(([key]) => key)
-        };
     }
-};
-
-// Export for use in other modules
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = DOMManager;
 }
 
-// Make available globally
-window.DOMManager = DOMManager;
+// Create and export DOM manager instance
+window.domManager = new DOMManager();
+
+// Export functions that need to be globally accessible
+window.updateMonthHeaders = () => window.domManager.updateMonthHeaders();
+window.showAlert = (message, type) => window.domManager.showAlert(message, type);
+window.openModal = (title, type) => window.domManager.openModal(title, type);
+window.switchTab = (targetTab) => window.domManager.switchTab(targetTab);
