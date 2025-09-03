@@ -65,7 +65,6 @@ document.addEventListener('DOMContentLoaded', function() {
         loadDefaultData();
         renderAllTables();
         updateSummary();
-        updateSummaryProjectInfo(); // Added from Step 3
         updateMonthHeaders();
         
         console.log('Application initialized successfully');
@@ -99,11 +98,70 @@ function calculateProjectMonths() {
     return months;
 }
 
-// Update all month headers
+// NEW: Fix the forecast table headers to be dynamic instead of hardcoded
+function updateForecastTableHeaders() {
+    const months = calculateProjectMonths();
+    
+    // Update the hardcoded headers in HTML to be dynamic
+    const headers = document.querySelectorAll('#resource-plan table thead th');
+    if (headers.length > 0) {
+        // Skip first header (Category), then update the next 6 month headers
+        for (let i = 1; i <= 6 && i < headers.length - 1; i++) {
+            if (headers[i] && months[i-1]) {
+                headers[i].textContent = months[i-1];
+            }
+        }
+    }
+}
+
+// NEW: Fix table headers in Internal Resources to use dynamic month names
+function updateInternalResourcesHeaders() {
+    const months = calculateProjectMonths();
+    
+    // Update the headers to show actual month names instead of hardcoded labels
+    const headers = document.querySelectorAll('#internal-resources table thead th');
+    if (headers.length >= 7) {
+        // Headers 3, 4, 5, 6 are the month columns
+        for (let i = 0; i < 4; i++) {
+            const headerIndex = i + 3; // Start from 4th column (index 3)
+            if (headers[headerIndex] && months[i]) {
+                headers[headerIndex].textContent = `${months[i]} Days`;
+            }
+        }
+    }
+}
+
+// NEW: Fix table headers in Vendor Costs to use dynamic month names
+function updateVendorCostsHeaders() {
+    const months = calculateProjectMonths();
+    
+    // Update the headers to show actual month names instead of hardcoded labels
+    const headers = document.querySelectorAll('#vendor-costs table thead th');
+    if (headers.length >= 8) {
+        // Headers 3, 4, 5, 6 are the month columns
+        for (let i = 0; i < 4; i++) {
+            const headerIndex = i + 3; // Start from 4th column (index 3)
+            if (headers[headerIndex] && months[i]) {
+                headers[headerIndex].textContent = `${months[i]} Cost`;
+            }
+        }
+    }
+}
+
+// ENHANCED: Update all month headers to cover all tables
 function updateMonthHeaders() {
     const months = calculateProjectMonths();
     
     // Update forecast table headers (6 months shown)
+    updateForecastTableHeaders();
+    
+    // Update internal resources headers (4 months shown)
+    updateInternalResourcesHeaders();
+    
+    // Update vendor costs headers (4 months shown)
+    updateVendorCostsHeaders();
+    
+    // Update existing month headers for compatibility
     for (let i = 1; i <= 6; i++) {
         const header = document.getElementById(`month${i}Header`);
         if (header && months[i-1]) {
@@ -111,7 +169,7 @@ function updateMonthHeaders() {
         }
     }
     
-    // Update internal resources headers (4 months shown)
+    // Update internal resources headers (4 months shown) - legacy support
     for (let i = 1; i <= 4; i++) {
         const header = document.getElementById(`month${i}DaysHeader`);
         if (header && months[i-1]) {
@@ -119,7 +177,7 @@ function updateMonthHeaders() {
         }
     }
     
-    // Update vendor costs headers (4 months shown)
+    // Update vendor costs headers (4 months shown) - legacy support
     for (let i = 1; i <= 4; i++) {
         const header = document.getElementById(`month${i}CostHeader`);
         if (header && months[i-1]) {
@@ -162,7 +220,6 @@ function switchTab(targetTab) {
         // Refresh data for specific tabs
         if (targetTab === 'summary') {
             updateSummary();
-            updateSummaryProjectInfo(); // Added from Step 3
         }
     } catch (error) {
         console.error('Error switching tabs:', error);
@@ -184,7 +241,6 @@ function initializeEventListeners() {
             projectNameEl.addEventListener('input', (e) => {
                 projectData.projectInfo.projectName = e.target.value;
                 updateSummary();
-                updateSummaryProjectInfo(); // Added from Step 3
             });
         }
         
@@ -193,7 +249,6 @@ function initializeEventListeners() {
                 projectData.projectInfo.startDate = e.target.value;
                 updateMonthHeaders();
                 updateSummary();
-                updateSummaryProjectInfo(); // Added from Step 3
             });
         }
         
@@ -202,7 +257,6 @@ function initializeEventListeners() {
                 projectData.projectInfo.endDate = e.target.value;
                 updateMonthHeaders();
                 updateSummary();
-                updateSummaryProjectInfo(); // Added from Step 3
             });
         }
         
@@ -210,7 +264,6 @@ function initializeEventListeners() {
             projectManagerEl.addEventListener('input', (e) => {
                 projectData.projectInfo.projectManager = e.target.value;
                 updateSummary();
-                updateSummaryProjectInfo(); // Added from Step 3
             });
         }
         
@@ -218,7 +271,6 @@ function initializeEventListeners() {
             projectDescriptionEl.addEventListener('input', (e) => {
                 projectData.projectInfo.projectDescription = e.target.value;
                 updateSummary();
-                updateSummaryProjectInfo(); // Added from Step 3
             });
         }
 
@@ -227,7 +279,6 @@ function initializeEventListeners() {
             contingencyPercentageEl.addEventListener('input', (e) => {
                 projectData.contingencyPercentage = parseFloat(e.target.value) || 0;
                 updateSummary();
-                updateSummaryProjectInfo(); // Added from Step 3
             });
         }
 
@@ -286,9 +337,12 @@ function initializeEventListeners() {
         const downloadBtn = document.getElementById('downloadBtn');
         if (downloadBtn) {
             downloadBtn.addEventListener('click', downloadProject);
-        } else {
-            // If no download button exists, modify the save button to also download
-            console.log('No download button found, save button will also download file');
+        }
+
+        // Add print button functionality if it exists
+        const printBtn = document.getElementById('printBtn');
+        if (printBtn) {
+            printBtn.addEventListener('click', printReport);
         }
 
         // Modal form submission
@@ -305,7 +359,6 @@ function initializeEventListeners() {
         if (modalSaveBtn) {
             modalSaveBtn.addEventListener('click', (e) => {
                 if (e.target.type === 'submit') {
-                    // Let the form submit handler take care of it
                     return;
                 }
                 e.preventDefault();
@@ -320,8 +373,8 @@ function initializeEventListeners() {
     }
 }
 
-// Modal Management - ENHANCED FOR EDITING
-function openModal(title, type, editId = null) {
+// Modal Management
+function openModal(title, type) {
     try {
         if (!modal || !modalTitle || !modalFields || !modalForm) {
             console.error('Modal elements not found');
@@ -329,199 +382,162 @@ function openModal(title, type, editId = null) {
         }
         
         modalTitle.textContent = title;
-        modalFields.innerHTML = getModalFields(type, editId);
+        modalFields.innerHTML = getModalFields(type);
         modal.style.display = 'block';
         modalForm.setAttribute('data-type', type);
-        
-        // Set edit mode if editing an existing item
-        if (editId) {
-            modalForm.setAttribute('data-edit-id', editId);
-            console.log('Modal opened in edit mode for ID:', editId);
-        } else {
-            modalForm.removeAttribute('data-edit-id');
-            console.log('Modal opened in add mode');
-        }
     } catch (error) {
         console.error('Error opening modal:', error);
     }
 }
 
-// ENHANCED Modal Fields Function - Support for editing
-function getModalFields(type, editId = null) {
+function getModalFields(type) {
     const months = calculateProjectMonths();
-    
-    // Get existing data if editing
-    let existingData = null;
-    if (editId) {
-        switch(type) {
-            case 'internalResource':
-                existingData = projectData.internalResources.find(item => item.id === editId);
-                break;
-            case 'vendorCost':
-                existingData = projectData.vendorCosts.find(item => item.id === editId);
-                break;
-            case 'toolCost':
-                existingData = projectData.toolCosts.find(item => item.id === editId);
-                break;
-            case 'miscCost':
-                existingData = projectData.miscCosts.find(item => item.id === editId);
-                break;
-            case 'risk':
-                existingData = projectData.risks.find(item => item.id === editId);
-                break;
-            case 'rateCard':
-                existingData = projectData.rateCards.find(item => item.id === editId);
-                break;
-        }
-    }
     
     const fields = {
         internalResource: `
             <div class="form-group">
                 <label>Role:</label>
                 <select name="role" class="form-control" required>
-                    ${projectData.rateCards.map(rate => 
-                        `<option value="${rate.role}" data-category="${rate.category}" ${existingData && existingData.role === rate.role ? 'selected' : ''}>${rate.role} (${rate.category})</option>`
-                    ).join('')}
+                    ${projectData.rateCards.map(rate => `<option value="${rate.role}" data-category="${rate.category}">${rate.role} (${rate.category})</option>`).join('')}
                 </select>
             </div>
             <div class="form-group">
                 <label>${months[0] || 'Month 1'} Days:</label>
-                <input type="number" name="month1Days" class="form-control" min="0" step="0.5" value="${existingData ? (existingData.month1Days || existingData.q1Days || 0) : 0}">
+                <input type="number" name="month1Days" class="form-control" min="0" step="0.5" value="0">
             </div>
             <div class="form-group">
                 <label>${months[1] || 'Month 2'} Days:</label>
-                <input type="number" name="month2Days" class="form-control" min="0" step="0.5" value="${existingData ? (existingData.month2Days || existingData.q2Days || 0) : 0}">
+                <input type="number" name="month2Days" class="form-control" min="0" step="0.5" value="0">
             </div>
             <div class="form-group">
                 <label>${months[2] || 'Month 3'} Days:</label>
-                <input type="number" name="month3Days" class="form-control" min="0" step="0.5" value="${existingData ? (existingData.month3Days || existingData.q3Days || 0) : 0}">
+                <input type="number" name="month3Days" class="form-control" min="0" step="0.5" value="0">
             </div>
             <div class="form-group">
                 <label>${months[3] || 'Month 4'} Days:</label>
-                <input type="number" name="month4Days" class="form-control" min="0" step="0.5" value="${existingData ? (existingData.month4Days || existingData.q4Days || 0) : 0}">
+                <input type="number" name="month4Days" class="form-control" min="0" step="0.5" value="0">
             </div>
         `,
         vendorCost: `
             <div class="form-group">
                 <label>Vendor:</label>
-                <input type="text" name="vendor" class="form-control" value="${existingData ? existingData.vendor : ''}" required>
+                <input type="text" name="vendor" class="form-control" required>
             </div>
             <div class="form-group">
                 <label>Description:</label>
-                <input type="text" name="description" class="form-control" value="${existingData ? existingData.description : ''}" required>
+                <input type="text" name="description" class="form-control" required>
             </div>
             <div class="form-group">
                 <label>Category:</label>
                 <select name="category" class="form-control" required>
-                    <option value="Implementation" ${existingData && existingData.category === 'Implementation' ? 'selected' : ''}>Implementation</option>
-                    <option value="Consulting" ${existingData && existingData.category === 'Consulting' ? 'selected' : ''}>Consulting</option>
-                    <option value="Training" ${existingData && existingData.category === 'Training' ? 'selected' : ''}>Training</option>
-                    <option value="Support" ${existingData && existingData.category === 'Support' ? 'selected' : ''}>Support</option>
-                    <option value="Other" ${existingData && existingData.category === 'Other' ? 'selected' : ''}>Other</option>
+                    <option value="Implementation">Implementation</option>
+                    <option value="Consulting">Consulting</option>
+                    <option value="Training">Training</option>
+                    <option value="Support">Support</option>
+                    <option value="Other">Other</option>
                 </select>
             </div>
             <div class="form-group">
                 <label>${months[0] || 'Month 1'} Cost:</label>
-                <input type="number" name="month1Cost" class="form-control" min="0" step="0.01" value="${existingData ? (existingData.month1Cost || existingData.q1Cost || 0) : 0}">
+                <input type="number" name="month1Cost" class="form-control" min="0" step="0.01" value="0">
             </div>
             <div class="form-group">
                 <label>${months[1] || 'Month 2'} Cost:</label>
-                <input type="number" name="month2Cost" class="form-control" min="0" step="0.01" value="${existingData ? (existingData.month2Cost || existingData.q2Cost || 0) : 0}">
+                <input type="number" name="month2Cost" class="form-control" min="0" step="0.01" value="0">
             </div>
             <div class="form-group">
                 <label>${months[2] || 'Month 3'} Cost:</label>
-                <input type="number" name="month3Cost" class="form-control" min="0" step="0.01" value="${existingData ? (existingData.month3Cost || existingData.q3Cost || 0) : 0}">
+                <input type="number" name="month3Cost" class="form-control" min="0" step="0.01" value="0">
             </div>
             <div class="form-group">
                 <label>${months[3] || 'Month 4'} Cost:</label>
-                <input type="number" name="month4Cost" class="form-control" min="0" step="0.01" value="${existingData ? (existingData.month4Cost || existingData.q4Cost || 0) : 0}">
+                <input type="number" name="month4Cost" class="form-control" min="0" step="0.01" value="0">
             </div>
         `,
         toolCost: `
             <div class="form-group">
                 <label>Tool/Software:</label>
-                <input type="text" name="tool" class="form-control" value="${existingData ? existingData.tool : ''}" required>
+                <input type="text" name="tool" class="form-control" required>
             </div>
             <div class="form-group">
                 <label>License Type:</label>
                 <select name="licenseType" class="form-control" required>
-                    <option value="Per User" ${existingData && existingData.licenseType === 'Per User' ? 'selected' : ''}>Per User</option>
-                    <option value="Per Device" ${existingData && existingData.licenseType === 'Per Device' ? 'selected' : ''}>Per Device</option>
-                    <option value="Enterprise" ${existingData && existingData.licenseType === 'Enterprise' ? 'selected' : ''}>Enterprise</option>
-                    <option value="One-time" ${existingData && existingData.licenseType === 'One-time' ? 'selected' : ''}>One-time</option>
+                    <option value="Per User">Per User</option>
+                    <option value="Per Device">Per Device</option>
+                    <option value="Enterprise">Enterprise</option>
+                    <option value="One-time">One-time</option>
                 </select>
             </div>
             <div class="form-group">
                 <label>Users/Licenses:</label>
-                <input type="number" name="users" class="form-control" min="1" value="${existingData ? existingData.users : 1}" required>
+                <input type="number" name="users" class="form-control" min="1" required>
             </div>
             <div class="form-group">
                 <label>Monthly Cost:</label>
-                <input type="number" name="monthlyCost" class="form-control" min="0" step="0.01" value="${existingData ? existingData.monthlyCost : 0}" required>
+                <input type="number" name="monthlyCost" class="form-control" min="0" step="0.01" required>
             </div>
             <div class="form-group">
                 <label>Duration (Months):</label>
-                <input type="number" name="duration" class="form-control" min="1" value="${existingData ? existingData.duration : 1}" required>
+                <input type="number" name="duration" class="form-control" min="1" required>
             </div>
         `,
         miscCost: `
             <div class="form-group">
                 <label>Item:</label>
-                <input type="text" name="item" class="form-control" value="${existingData ? existingData.item : ''}" required>
+                <input type="text" name="item" class="form-control" required>
             </div>
             <div class="form-group">
                 <label>Description:</label>
-                <input type="text" name="description" class="form-control" value="${existingData ? existingData.description : ''}" required>
+                <input type="text" name="description" class="form-control" required>
             </div>
             <div class="form-group">
                 <label>Category:</label>
                 <select name="category" class="form-control" required>
-                    <option value="Travel" ${existingData && existingData.category === 'Travel' ? 'selected' : ''}>Travel</option>
-                    <option value="Equipment" ${existingData && existingData.category === 'Equipment' ? 'selected' : ''}>Equipment</option>
-                    <option value="Training" ${existingData && existingData.category === 'Training' ? 'selected' : ''}>Training</option>
-                    <option value="Documentation" ${existingData && existingData.category === 'Documentation' ? 'selected' : ''}>Documentation</option>
-                    <option value="Other" ${existingData && existingData.category === 'Other' ? 'selected' : ''}>Other</option>
+                    <option value="Travel">Travel</option>
+                    <option value="Equipment">Equipment</option>
+                    <option value="Training">Training</option>
+                    <option value="Documentation">Documentation</option>
+                    <option value="Other">Other</option>
                 </select>
             </div>
             <div class="form-group">
                 <label>Cost:</label>
-                <input type="number" name="cost" class="form-control" min="0" step="0.01" value="${existingData ? existingData.cost : 0}" required>
+                <input type="number" name="cost" class="form-control" min="0" step="0.01" required>
             </div>
         `,
         risk: `
             <div class="form-group">
                 <label>Risk Description:</label>
-                <textarea name="description" class="form-control" required>${existingData ? existingData.description : ''}</textarea>
+                <textarea name="description" class="form-control" required></textarea>
             </div>
             <div class="form-group">
                 <label>Probability (1-5):</label>
-                <input type="number" name="probability" class="form-control" min="1" max="5" value="${existingData ? existingData.probability : 1}" required>
+                <input type="number" name="probability" class="form-control" min="1" max="5" required>
             </div>
             <div class="form-group">
                 <label>Impact (1-5):</label>
-                <input type="number" name="impact" class="form-control" min="1" max="5" value="${existingData ? existingData.impact : 1}" required>
+                <input type="number" name="impact" class="form-control" min="1" max="5" required>
             </div>
             <div class="form-group">
                 <label>Mitigation Cost:</label>
-                <input type="number" name="mitigationCost" class="form-control" min="0" step="0.01" value="${existingData ? existingData.mitigationCost : 0}">
+                <input type="number" name="mitigationCost" class="form-control" min="0" step="0.01" value="0">
             </div>
         `,
         rateCard: `
             <div class="form-group">
                 <label>Role:</label>
-                <input type="text" name="role" class="form-control" value="${existingData ? existingData.role : ''}" required>
+                <input type="text" name="role" class="form-control" required>
             </div>
             <div class="form-group">
                 <label>Category:</label>
                 <select name="category" class="form-control" required>
-                    <option value="Internal" ${existingData && existingData.category === 'Internal' ? 'selected' : ''}>Internal</option>
-                    <option value="External" ${existingData && existingData.category === 'External' ? 'selected' : ''}>External</option>
+                    <option value="Internal">Internal</option>
+                    <option value="External">External</option>
                 </select>
             </div>
             <div class="form-group">
                 <label>Daily Rate:</label>
-                <input type="number" name="rate" class="form-control" min="0" step="0.01" value="${existingData ? existingData.rate : 0}" required>
+                <input type="number" name="rate" class="form-control" min="0" step="0.01" required>
             </div>
         `
     };
@@ -529,12 +545,10 @@ function getModalFields(type, editId = null) {
     return fields[type] || '';
 }
 
-// ENHANCED Modal Submit Handler - Support for editing
 function handleModalSubmit() {
     try {
         const formData = new FormData(modalForm);
         const type = modalForm.getAttribute('data-type');
-        const editId = modalForm.getAttribute('data-edit-id');
         const data = {};
         
         for (let [key, value] of formData.entries()) {
@@ -542,214 +556,106 @@ function handleModalSubmit() {
         }
         
         console.log('Modal submit - Type:', type);
-        console.log('Modal submit - Edit ID:', editId);
         console.log('Modal submit - Data:', data);
         
-        // Handle editing vs adding
-        if (editId) {
-            // EDIT MODE - Update existing item
-            const id = parseInt(editId);
-            switch(type) {
-                case 'internalResource':
-                    const resourceIndex = projectData.internalResources.findIndex(item => item.id === id);
-                    if (resourceIndex !== -1) {
-                        const rate = projectData.rateCards.find(r => r.role === data.role) || 
-                                    projectData.internalRates.find(r => r.role === data.role);
-                        projectData.internalResources[resourceIndex] = {
-                            ...projectData.internalResources[resourceIndex],
-                            role: data.role,
-                            rateCard: rate ? rate.category || 'Internal' : 'Internal',
-                            dailyRate: rate ? rate.rate : 0,
-                            month1Days: parseFloat(data.month1Days) || 0,
-                            month2Days: parseFloat(data.month2Days) || 0,
-                            month3Days: parseFloat(data.month3Days) || 0,
-                            month4Days: parseFloat(data.month4Days) || 0
-                        };
-                        renderInternalResourcesTable();
-                    }
-                    break;
-                case 'vendorCost':
-                    const vendorIndex = projectData.vendorCosts.findIndex(item => item.id === id);
-                    if (vendorIndex !== -1) {
-                        projectData.vendorCosts[vendorIndex] = {
-                            ...projectData.vendorCosts[vendorIndex],
-                            vendor: data.vendor,
-                            description: data.description,
-                            category: data.category,
-                            month1Cost: parseFloat(data.month1Cost) || 0,
-                            month2Cost: parseFloat(data.month2Cost) || 0,
-                            month3Cost: parseFloat(data.month3Cost) || 0,
-                            month4Cost: parseFloat(data.month4Cost) || 0
-                        };
-                        renderVendorCostsTable();
-                    }
-                    break;
-                case 'toolCost':
-                    const toolIndex = projectData.toolCosts.findIndex(item => item.id === id);
-                    if (toolIndex !== -1) {
-                        projectData.toolCosts[toolIndex] = {
-                            ...projectData.toolCosts[toolIndex],
-                            tool: data.tool,
-                            licenseType: data.licenseType,
-                            users: parseInt(data.users),
-                            monthlyCost: parseFloat(data.monthlyCost),
-                            duration: parseInt(data.duration)
-                        };
-                        renderToolCostsTable();
-                    }
-                    break;
-                case 'miscCost':
-                    const miscIndex = projectData.miscCosts.findIndex(item => item.id === id);
-                    if (miscIndex !== -1) {
-                        projectData.miscCosts[miscIndex] = {
-                            ...projectData.miscCosts[miscIndex],
-                            item: data.item,
-                            description: data.description,
-                            category: data.category,
-                            cost: parseFloat(data.cost)
-                        };
-                        renderMiscCostsTable();
-                    }
-                    break;
-                case 'risk':
-                    const riskIndex = projectData.risks.findIndex(item => item.id === id);
-                    if (riskIndex !== -1) {
-                        projectData.risks[riskIndex] = {
-                            ...projectData.risks[riskIndex],
-                            description: data.description,
-                            probability: parseInt(data.probability),
-                            impact: parseInt(data.impact),
-                            mitigationCost: parseFloat(data.mitigationCost) || 0
-                        };
-                        renderRisksTable();
-                    }
-                    break;
-                case 'rateCard':
-                    const rateIndex = projectData.rateCards.findIndex(item => item.id === id);
-                    if (rateIndex !== -1) {
-                        projectData.rateCards[rateIndex] = {
-                            ...projectData.rateCards[rateIndex],
-                            role: data.role,
-                            rate: parseFloat(data.rate),
-                            category: data.category
-                        };
-                        renderUnifiedRateCardsTable();
-                        renderInternalRatesTable(); // Update backward compatibility tables
-                        renderExternalRatesTable();
-                    }
-                    break;
-            }
-        } else {
-            // ADD MODE - Create new item (original functionality)
-            switch(type) {
-                case 'internalResource':
-                    const rate = projectData.rateCards.find(r => r.role === data.role) || 
-                                projectData.internalRates.find(r => r.role === data.role);
-                    projectData.internalResources.push({
+        // Add item to appropriate array
+        switch(type) {
+            case 'internalResource':
+                const rate = projectData.rateCards.find(r => r.role === data.role) || 
+                            projectData.internalRates.find(r => r.role === data.role);
+                projectData.internalResources.push({
+                    id: Date.now(),
+                    role: data.role,
+                    rateCard: rate ? rate.category || 'Internal' : 'Internal',
+                    dailyRate: rate ? rate.rate : 0,
+                    month1Days: parseFloat(data.month1Days) || 0,
+                    month2Days: parseFloat(data.month2Days) || 0,
+                    month3Days: parseFloat(data.month3Days) || 0,
+                    month4Days: parseFloat(data.month4Days) || 0
+                });
+                renderInternalResourcesTable();
+                break;
+            case 'vendorCost':
+                projectData.vendorCosts.push({
+                    id: Date.now(),
+                    vendor: data.vendor,
+                    description: data.description,
+                    category: data.category,
+                    month1Cost: parseFloat(data.month1Cost) || 0,
+                    month2Cost: parseFloat(data.month2Cost) || 0,
+                    month3Cost: parseFloat(data.month3Cost) || 0,
+                    month4Cost: parseFloat(data.month4Cost) || 0
+                });
+                renderVendorCostsTable();
+                break;
+            case 'toolCost':
+                projectData.toolCosts.push({
+                    id: Date.now(),
+                    tool: data.tool,
+                    licenseType: data.licenseType,
+                    users: parseInt(data.users),
+                    monthlyCost: parseFloat(data.monthlyCost),
+                    duration: parseInt(data.duration)
+                });
+                renderToolCostsTable();
+                break;
+            case 'miscCost':
+                projectData.miscCosts.push({
+                    id: Date.now(),
+                    item: data.item,
+                    description: data.description,
+                    category: data.category,
+                    cost: parseFloat(data.cost)
+                });
+                renderMiscCostsTable();
+                break;
+            case 'risk':
+                projectData.risks.push({
+                    id: Date.now(),
+                    description: data.description,
+                    probability: parseInt(data.probability),
+                    impact: parseInt(data.impact),
+                    mitigationCost: parseFloat(data.mitigationCost) || 0
+                });
+                renderRisksTable();
+                break;
+            case 'rateCard':
+                console.log('Adding rate card:', data);
+                const newRateCard = {
+                    id: Date.now(),
+                    role: data.role,
+                    rate: parseFloat(data.rate),
+                    category: data.category
+                };
+                projectData.rateCards.push(newRateCard);
+                
+                // Update both old arrays for backward compatibility
+                if (data.category === 'Internal') {
+                    projectData.internalRates.push({
                         id: Date.now(),
                         role: data.role,
-                        rateCard: rate ? rate.category || 'Internal' : 'Internal',
-                        dailyRate: rate ? rate.rate : 0,
-                        month1Days: parseFloat(data.month1Days) || 0,
-                        month2Days: parseFloat(data.month2Days) || 0,
-                        month3Days: parseFloat(data.month3Days) || 0,
-                        month4Days: parseFloat(data.month4Days) || 0
+                        rate: parseFloat(data.rate)
                     });
-                    renderInternalResourcesTable();
-                    break;
-                case 'vendorCost':
-                    projectData.vendorCosts.push({
-                        id: Date.now(),
-                        vendor: data.vendor,
-                        description: data.description,
-                        category: data.category,
-                        month1Cost: parseFloat(data.month1Cost) || 0,
-                        month2Cost: parseFloat(data.month2Cost) || 0,
-                        month3Cost: parseFloat(data.month3Cost) || 0,
-                        month4Cost: parseFloat(data.month4Cost) || 0
-                    });
-                    renderVendorCostsTable();
-                    break;
-                case 'toolCost':
-                    projectData.toolCosts.push({
-                        id: Date.now(),
-                        tool: data.tool,
-                        licenseType: data.licenseType,
-                        users: parseInt(data.users),
-                        monthlyCost: parseFloat(data.monthlyCost),
-                        duration: parseInt(data.duration)
-                    });
-                    renderToolCostsTable();
-                    break;
-                case 'miscCost':
-                    projectData.miscCosts.push({
-                        id: Date.now(),
-                        item: data.item,
-                        description: data.description,
-                        category: data.category,
-                        cost: parseFloat(data.cost)
-                    });
-                    renderMiscCostsTable();
-                    break;
-                case 'risk':
-                    projectData.risks.push({
-                        id: Date.now(),
-                        description: data.description,
-                        probability: parseInt(data.probability),
-                        impact: parseInt(data.impact),
-                        mitigationCost: parseFloat(data.mitigationCost) || 0
-                    });
-                    renderRisksTable();
-                    break;
-                case 'rateCard':
-                    console.log('Adding rate card:', data);
-                    const newRateCard = {
+                } else if (data.category === 'External') {
+                    projectData.externalRates.push({
                         id: Date.now(),
                         role: data.role,
-                        rate: parseFloat(data.rate),
-                        category: data.category
-                    };
-                    projectData.rateCards.push(newRateCard);
-                    
-                    // Update both old arrays for backward compatibility
-                    if (data.category === 'Internal') {
-                        projectData.internalRates.push({
-                            id: Date.now(),
-                            role: data.role,
-                            rate: parseFloat(data.rate)
-                        });
-                    } else if (data.category === 'External') {
-                        projectData.externalRates.push({
-                            id: Date.now(),
-                            role: data.role,
-                            rate: parseFloat(data.rate)
-                        });
-                    }
-                    
-                    console.log('Updated rateCards array:', projectData.rateCards);
-                    console.log('Updated internalRates array:', projectData.internalRates);
-                    console.log('Updated externalRates array:', projectData.externalRates);
-                    
-                    // Render the unified rate cards table
-                    console.log('About to render unified rate cards table...');
-                    renderUnifiedRateCardsTable();
-                    break;
-            }
+                        rate: parseFloat(data.rate)
+                    });
+                }
+                
+                console.log('Updated rateCards array:', projectData.rateCards);
+                renderUnifiedRateCardsTable();
+                break;
         }
         
         updateSummary();
-        updateSummaryProjectInfo(); // Added from Step 3
+        renderForecastTable(); // Make sure forecast table is updated
         modal.style.display = 'none';
         console.log('Modal submit completed successfully');
     } catch (error) {
         console.error('Error handling modal submit:', error);
     }
-}
-
-// NEW FUNCTION: Edit Internal Resource
-function editInternalResource(id) {
-    console.log('Editing internal resource with ID:', id);
-    openModal('Edit Internal Resource', 'internalResource', id);
 }
 
 // Table Rendering Functions
@@ -760,9 +666,9 @@ function renderAllTables() {
         renderToolCostsTable();
         renderMiscCostsTable();
         renderRisksTable();
-        renderInternalRatesTable(); // Keep for backward compatibility
-        renderExternalRatesTable(); // Keep for backward compatibility  
-        renderUnifiedRateCardsTable(); // Add unified rate cards table
+        renderInternalRatesTable();
+        renderExternalRatesTable();
+        renderUnifiedRateCardsTable();
         renderForecastTable();
     } catch (error) {
         console.error('Error rendering tables:', error);
@@ -801,7 +707,7 @@ function renderUnifiedRateCardsTable() {
         row.innerHTML = `
             <td>${rate.role}</td>
             <td><span class="category-badge category-${rate.category.toLowerCase()}">${rate.category}</span></td>
-            <td>${rate.rate.toLocaleString()}</td>
+            <td>$${rate.rate.toLocaleString()}</td>
             <td>
                 <button class="btn btn-danger btn-small" onclick="deleteItem('rateCards', ${rate.id || `'${rate.role}'`})">Delete</button>
             </td>
@@ -812,7 +718,6 @@ function renderUnifiedRateCardsTable() {
     console.log('Unified rate cards table rendered successfully');
 }
 
-// ENHANCED Internal Resources Table with Edit Button
 function renderInternalResourcesTable() {
     const tbody = document.getElementById('internalResourcesTable');
     if (!tbody) return;
@@ -820,12 +725,11 @@ function renderInternalResourcesTable() {
     tbody.innerHTML = '';
     
     if (projectData.internalResources.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" class="empty-state">No internal resources added yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No internal resources added yet</td></tr>';
         return;
     }
     
     projectData.internalResources.forEach(resource => {
-        // Handle both old format (q1Days) and new format (month1Days)
         const month1Days = resource.month1Days || resource.q1Days || 0;
         const month2Days = resource.month2Days || resource.q2Days || 0;
         const month3Days = resource.month3Days || resource.q3Days || 0;
@@ -836,14 +740,13 @@ function renderInternalResourcesTable() {
         row.innerHTML = `
             <td>${resource.role}</td>
             <td>${resource.rateCard}</td>
-            <td>${resource.dailyRate.toLocaleString()}</td>
+            <td>$${resource.dailyRate.toLocaleString()}</td>
             <td>${month1Days}</td>
             <td>${month2Days}</td>
             <td>${month3Days}</td>
             <td>${month4Days}</td>
-            <td>${totalCost.toLocaleString()}</td>
+            <td>$${totalCost.toLocaleString()}</td>
             <td>
-                <button class="btn btn-primary btn-small" onclick="editInternalResource(${resource.id})" style="margin-right: 5px;">Edit</button>
                 <button class="btn btn-danger btn-small" onclick="deleteItem('internalResources', ${resource.id})">Delete</button>
             </td>
         `;
@@ -863,7 +766,6 @@ function renderVendorCostsTable() {
     }
     
     projectData.vendorCosts.forEach(vendor => {
-        // Handle both old format (q1Cost) and new format (month1Cost)
         const month1Cost = vendor.month1Cost || vendor.q1Cost || 0;
         const month2Cost = vendor.month2Cost || vendor.q2Cost || 0;
         const month3Cost = vendor.month3Cost || vendor.q3Cost || 0;
@@ -875,7 +777,7 @@ function renderVendorCostsTable() {
             <td>${vendor.vendor}</td>
             <td>${vendor.description}</td>
             <td>${vendor.category}</td>
-            <td>${month1Cost.toLocaleString()}</td>
+            <td>$${month1Cost.toLocaleString()}</td>
             <td>${month2Cost.toLocaleString()}</td>
             <td>${month3Cost.toLocaleString()}</td>
             <td>${month4Cost.toLocaleString()}</td>
@@ -976,14 +878,7 @@ function renderInternalRatesTable() {
     console.log('renderInternalRatesTable - tbody element:', tbody);
     
     if (!tbody) {
-        console.log('Internal rates table not found, trying alternative selectors');
-        // Try alternative selectors if the standard one doesn't work
-        const altTbody = document.querySelector('#rate-cards tbody') || 
-                         document.querySelector('.rate-cards-container tbody') ||
-                         document.querySelector('[id*="internal"] tbody');
-        if (altTbody) {
-            console.log('Found alternative tbody:', altTbody);
-        }
+        console.log('Internal rates table not found');
         return;
     }
     
@@ -1017,7 +912,7 @@ function renderExternalRatesTable() {
     console.log('renderExternalRatesTable - tbody element:', tbody);
     
     if (!tbody) {
-        console.log('External rates table not found, trying alternative selectors');
+        console.log('External rates table not found');
         return;
     }
     
@@ -1046,39 +941,41 @@ function renderExternalRatesTable() {
     console.log('External rates table rendered successfully');
 }
 
+// ENHANCED: renderForecastTable to show 6 months as per HTML structure
 function renderForecastTable() {
     const tbody = document.getElementById('forecastTable');
     if (!tbody) return;
     
     tbody.innerHTML = '';
     
-    // Calculate monthly totals
+    // Calculate monthly totals for 6 months
     const months = calculateProjectMonths();
     
-    // Internal Resources
+    // Internal Resources - extend to 6 months
     const internalMonthly = [0, 0, 0, 0, 0, 0];
     projectData.internalResources.forEach(resource => {
-        // Handle both old and new format
-        internalMonthly[0] += (resource.month1Days || resource.q1Days || 0) * resource.dailyRate;
-        internalMonthly[1] += (resource.month2Days || resource.q2Days || 0) * resource.dailyRate;
-        internalMonthly[2] += (resource.month3Days || resource.q3Days || 0) * resource.dailyRate;
-        internalMonthly[3] += (resource.month4Days || resource.q4Days || 0) * resource.dailyRate;
+        internalMonthly[0] += (resource.month1Days || 0) * resource.dailyRate;
+        internalMonthly[1] += (resource.month2Days || 0) * resource.dailyRate;
+        internalMonthly[2] += (resource.month3Days || 0) * resource.dailyRate;
+        internalMonthly[3] += (resource.month4Days || 0) * resource.dailyRate;
+        // Months 5 and 6 would be 0 unless we extend the data model
     });
     
-    // Vendor Costs
+    // Vendor Costs - extend to 6 months
     const vendorMonthly = [0, 0, 0, 0, 0, 0];
     projectData.vendorCosts.forEach(vendor => {
-        // Handle both old and new format
-        vendorMonthly[0] += vendor.month1Cost || vendor.q1Cost || 0;
-        vendorMonthly[1] += vendor.month2Cost || vendor.q2Cost || 0;
-        vendorMonthly[2] += vendor.month3Cost || vendor.q3Cost || 0;
-        vendorMonthly[3] += vendor.month4Cost || vendor.q4Cost || 0;
+        vendorMonthly[0] += vendor.month1Cost || 0;
+        vendorMonthly[1] += vendor.month2Cost || 0;
+        vendorMonthly[2] += vendor.month3Cost || 0;
+        vendorMonthly[3] += vendor.month4Cost || 0;
+        // Months 5 and 6 would be 0 unless we extend the data model
     });
     
-    // Add rows
+    // Calculate totals
     const internalTotal = internalMonthly.reduce((sum, val) => sum + val, 0);
     const vendorTotal = vendorMonthly.reduce((sum, val) => sum + val, 0);
     
+    // Render the rows to match HTML table structure (6 months + total)
     tbody.innerHTML = `
         <tr>
             <td><strong>Internal Resources</strong></td>
@@ -1126,7 +1023,6 @@ function deleteItem(arrayName, id) {
         }
         renderAllTables();
         updateSummary();
-        updateSummaryProjectInfo(); // Added from Step 3
     }
 }
 
@@ -1154,7 +1050,7 @@ function updateSummary() {
         
         // Update contingency display
         const contingencyAmountEl = document.getElementById('contingencyAmount');
-        if (contingencyAmountEl) contingencyAmountEl.textContent = contingency.toLocaleString();
+        if (contingencyAmountEl) contingencyAmountEl.textContent = `${contingency.toLocaleString()}`;
         
         // Update summary tab
         const summaryElements = {
@@ -1173,6 +1069,10 @@ function updateSummary() {
                 element.textContent = `${summaryElements[id].toLocaleString()}`;
             }
         });
+
+        // Update project info in summary if elements exist
+        updateSummaryProjectInfo();
+        
     } catch (error) {
         console.error('Error updating summary:', error);
     }
@@ -1180,7 +1080,6 @@ function updateSummary() {
 
 function calculateInternalResourcesTotal() {
     return projectData.internalResources.reduce((total, resource) => {
-        // Handle both old format (q1Days) and new format (month1Days)
         const month1Days = resource.month1Days || resource.q1Days || 0;
         const month2Days = resource.month2Days || resource.q2Days || 0;
         const month3Days = resource.month3Days || resource.q3Days || 0;
@@ -1192,7 +1091,6 @@ function calculateInternalResourcesTotal() {
 
 function calculateVendorCostsTotal() {
     return projectData.vendorCosts.reduce((total, vendor) => {
-        // Handle both old format (q1Cost) and new format (month1Cost)
         const month1Cost = vendor.month1Cost || vendor.q1Cost || 0;
         const month2Cost = vendor.month2Cost || vendor.q2Cost || 0;
         const month3Cost = vendor.month3Cost || vendor.q3Cost || 0;
@@ -1212,6 +1110,164 @@ function calculateMiscCostsTotal() {
     return projectData.miscCosts.reduce((total, misc) => {
         return total + misc.cost;
     }, 0);
+}
+
+// NEW: Print functionality
+function printReport() {
+    try {
+        const printWindow = window.open('', '_blank');
+        const printContent = generatePrintContent();
+        
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>ICT Project Cost Estimate - ${projectData.projectInfo.projectName || 'Project'}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; }
+                    h1, h2, h3 { color: #2c3e50; }
+                    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                    th { background-color: #f2f2f2; }
+                    .summary-section { background-color: #f8f9fa; padding: 15px; margin: 20px 0; }
+                    .total-cost { font-size: 1.2em; font-weight: bold; color: #28a745; }
+                    @media print { .no-print { display: none; } }
+                </style>
+            </head>
+            <body>
+                ${printContent}
+                <div class="no-print" style="margin-top: 20px;">
+                    <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer;">Print</button>
+                    <button onclick="window.close()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; cursor: pointer; margin-left: 10px;">Close</button>
+                </div>
+            </body>
+            </html>
+        `);
+        
+        printWindow.document.close();
+        printWindow.focus();
+    } catch (error) {
+        console.error('Error generating print report:', error);
+        showAlert('Error generating print report: ' + error.message, 'error');
+    }
+}
+
+// NEW: Generate print content
+function generatePrintContent() {
+    const months = calculateProjectMonths();
+    
+    let content = `
+        <h1>ICT Project Cost Estimate</h1>
+        <div class="summary-section">
+            <h2>Project Information</h2>
+            <p><strong>Project Name:</strong> ${projectData.projectInfo.projectName || 'Not specified'}</p>
+            <p><strong>Start Date:</strong> ${projectData.projectInfo.startDate || 'Not specified'}</p>
+            <p><strong>End Date:</strong> ${projectData.projectInfo.endDate || 'Not specified'}</p>
+            <p><strong>Project Manager:</strong> ${projectData.projectInfo.projectManager || 'Not specified'}</p>
+            <p><strong>Description:</strong> ${projectData.projectInfo.projectDescription || 'Not specified'}</p>
+        </div>
+    `;
+
+    // Rate Cards
+    if (projectData.rateCards && projectData.rateCards.length > 0) {
+        content += `
+            <h2>Rate Cards</h2>
+            <table>
+                <thead>
+                    <tr><th>Role</th><th>Category</th><th>Daily Rate</th></tr>
+                </thead>
+                <tbody>
+        `;
+        projectData.rateCards.forEach(rate => {
+            content += `<tr><td>${rate.role}</td><td>${rate.category}</td><td>${rate.rate.toLocaleString()}</td></tr>`;
+        });
+        content += `</tbody></table>`;
+    }
+
+    // Internal Resources
+    if (projectData.internalResources.length > 0) {
+        content += `
+            <h2>Internal Resources</h2>
+            <table>
+                <thead>
+                    <tr><th>Role</th><th>Rate Card</th><th>Daily Rate</th><th>${months[0]} Days</th><th>${months[1]} Days</th><th>${months[2]} Days</th><th>${months[3]} Days</th><th>Total Cost</th></tr>
+                </thead>
+                <tbody>
+        `;
+        projectData.internalResources.forEach(resource => {
+            const month1Days = resource.month1Days || 0;
+            const month2Days = resource.month2Days || 0;
+            const month3Days = resource.month3Days || 0;
+            const month4Days = resource.month4Days || 0;
+            const totalCost = (month1Days + month2Days + month3Days + month4Days) * resource.dailyRate;
+            content += `<tr><td>${resource.role}</td><td>${resource.rateCard}</td><td>${resource.dailyRate.toLocaleString()}</td><td>${month1Days}</td><td>${month2Days}</td><td>${month3Days}</td><td>${month4Days}</td><td>${totalCost.toLocaleString()}</td></tr>`;
+        });
+        content += `</tbody></table>`;
+    }
+
+    // Vendor Costs
+    if (projectData.vendorCosts.length > 0) {
+        content += `
+            <h2>Vendor Costs</h2>
+            <table>
+                <thead>
+                    <tr><th>Vendor</th><th>Description</th><th>Category</th><th>${months[0]} Cost</th><th>${months[1]} Cost</th><th>${months[2]} Cost</th><th>${months[3]} Cost</th><th>Total Cost</th></tr>
+                </thead>
+                <tbody>
+        `;
+        projectData.vendorCosts.forEach(vendor => {
+            const month1Cost = vendor.month1Cost || 0;
+            const month2Cost = vendor.month2Cost || 0;
+            const month3Cost = vendor.month3Cost || 0;
+            const month4Cost = vendor.month4Cost || 0;
+            const totalCost = month1Cost + month2Cost + month3Cost + month4Cost;
+            content += `<tr><td>${vendor.vendor}</td><td>${vendor.description}</td><td>${vendor.category}</td><td>${month1Cost.toLocaleString()}</td><td>${month2Cost.toLocaleString()}</td><td>${month3Cost.toLocaleString()}</td><td>${month4Cost.toLocaleString()}</td><td>${totalCost.toLocaleString()}</td></tr>`;
+        });
+        content += `</tbody></table>`;
+    }
+
+    // Tool Costs
+    if (projectData.toolCosts.length > 0) {
+        content += `
+            <h2>Tool Costs</h2>
+            <table>
+                <thead>
+                    <tr><th>Tool/Software</th><th>License Type</th><th>Users/Licenses</th><th>Monthly Cost</th><th>Duration (Months)</th><th>Total Cost</th></tr>
+                </thead>
+                <tbody>
+        `;
+        projectData.toolCosts.forEach(tool => {
+            const totalCost = tool.users * tool.monthlyCost * tool.duration;
+            content += `<tr><td>${tool.tool}</td><td>${tool.licenseType}</td><td>${tool.users}</td><td>${tool.monthlyCost.toLocaleString()}</td><td>${tool.duration}</td><td>${totalCost.toLocaleString()}</td></tr>`;
+        });
+        content += `</tbody></table>`;
+    }
+
+    // Summary
+    const internalTotal = calculateInternalResourcesTotal();
+    const vendorTotal = calculateVendorCostsTotal();
+    const toolTotal = calculateToolCostsTotal();
+    const miscTotal = calculateMiscCostsTotal();
+    const subtotal = internalTotal + vendorTotal + toolTotal + miscTotal;
+    const contingency = subtotal * (projectData.contingencyPercentage / 100);
+    const total = subtotal + contingency;
+
+    content += `
+        <div class="summary-section">
+            <h2>Project Summary</h2>
+            <table>
+                <tr><td>Internal Resources</td><td>${internalTotal.toLocaleString()}</td></tr>
+                <tr><td>Vendor Costs</td><td>${vendorTotal.toLocaleString()}</td></tr>
+                <tr><td>Tool Costs</td><td>${toolTotal.toLocaleString()}</td></tr>
+                <tr><td>Miscellaneous</td><td>${miscTotal.toLocaleString()}</td></tr>
+                <tr><td><strong>Subtotal</strong></td><td><strong>${subtotal.toLocaleString()}</strong></td></tr>
+                <tr><td>Contingency (${projectData.contingencyPercentage}%)</td><td>${contingency.toLocaleString()}</td></tr>
+                <tr><td class="total-cost">Total Project Cost</td><td class="total-cost">${total.toLocaleString()}</td></tr>
+            </table>
+        </div>
+    `;
+
+    return content;
 }
 
 // Data Management
@@ -1310,6 +1366,7 @@ function downloadProject() {
     }
 }
 
+// NEW: New Project functionality
 function newProject() {
     if (confirm('Are you sure you want to start a new project? This will clear all current data. Make sure to save or download your current project first.')) {
         try {
@@ -1355,21 +1412,14 @@ function newProject() {
             };
             
             // Clear form fields
-            const formFields = {
-                projectName: '',
-                startDate: '',
-                endDate: '',
-                projectManager: '',
-                projectDescription: '',
-                contingencyPercentage: 10
-            };
-            
-            Object.keys(formFields).forEach(id => {
+            const formFields = ['projectName', 'startDate', 'endDate', 'projectManager', 'projectDescription'];
+            formFields.forEach(id => {
                 const element = document.getElementById(id);
-                if (element) {
-                    element.value = formFields[id];
-                }
+                if (element) element.value = '';
             });
+            
+            const contingencyEl = document.getElementById('contingencyPercentage');
+            if (contingencyEl) contingencyEl.value = '10';
             
             // Clear localStorage
             if (typeof(Storage) !== "undefined" && localStorage) {
@@ -1379,14 +1429,12 @@ function newProject() {
             // Re-render all tables and summaries
             renderAllTables();
             updateSummary();
-            updateSummaryProjectInfo(); // Added from Step 3
             updateMonthHeaders();
             
             // Switch to project info tab
             switchTab('project-info');
             
             showAlert('New project started successfully! Please enter your project information.', 'success');
-            console.log('New project created');
             
         } catch (error) {
             console.error('Error creating new project:', error);
@@ -1410,7 +1458,6 @@ function loadProject() {
                     loadDefaultData();
                     renderAllTables();
                     updateSummary();
-                    updateSummaryProjectInfo(); // Added from Step 3
                     updateMonthHeaders();
                     showAlert('Project loaded successfully!', 'success');
                 } catch (err) {
@@ -1560,12 +1607,12 @@ function showAlert(message, type) {
     }
 }
 
-// Function to update project info in summary tab (From Step 3)
+// NEW: Function to update project info in summary tab (if elements exist)
 function updateSummaryProjectInfo() {
     try {
         console.log('Updating summary project info...');
         
-        // Update project info in summary tab
+        // Update project info in summary tab if elements exist
         const projectInfoElements = {
             summaryProjectName: projectData.projectInfo.projectName || 'Not specified',
             summaryStartDate: projectData.projectInfo.startDate || 'Not specified', 
@@ -1594,7 +1641,7 @@ function updateSummaryProjectInfo() {
             summaryDurationEl.textContent = 'Not specified';
         }
         
-        // Update resource counts
+        // Update resource counts if elements exist
         const resourceCountsElements = {
             summaryInternalResourceCount: projectData.internalResources.length,
             summaryVendorCount: projectData.vendorCosts.length,
@@ -1614,6 +1661,11 @@ function updateSummaryProjectInfo() {
     }
 }
 
-// Global functions for table buttons
+// Global function for delete buttons
 window.deleteItem = deleteItem;
-window.editInternalResource = editInternalResource;
+
+// Export functions for global access
+window.printReport = printReport;
+window.newProject = newProject;
+window.updateMonthHeaders = updateMonthHeaders;
+window.renderForecastTable = renderForecastTable;
