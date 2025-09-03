@@ -127,6 +127,8 @@ class DOMManager {
 
     // Initialize button listeners
     initializeButtonListeners() {
+        console.log('Initializing button listeners...');
+        
         const addButtons = [
             { id: 'addInternalResource', type: 'internalResource', title: 'Add Internal Resource' },
             { id: 'addVendorCost', type: 'vendorCost', title: 'Add Vendor Cost' },
@@ -140,10 +142,15 @@ class DOMManager {
 
         addButtons.forEach(btn => {
             const element = document.getElementById(btn.id);
+            console.log(`Looking for button ${btn.id}:`, element);
             if (element) {
                 element.addEventListener('click', () => {
+                    console.log(`${btn.id} button clicked`);
                     this.openModal(btn.title, btn.type);
                 });
+                console.log(`Event listener added to ${btn.id}`);
+            } else {
+                console.warn(`Button ${btn.id} not found in DOM`);
             }
         });
 
@@ -158,10 +165,18 @@ class DOMManager {
 
         actionButtons.forEach(btn => {
             const element = document.getElementById(btn.id);
+            console.log(`Looking for action button ${btn.id}:`, element);
             if (element && btn.handler) {
                 element.addEventListener('click', btn.handler);
+                console.log(`Event listener added to ${btn.id}`);
+            } else if (element) {
+                console.warn(`Handler not found for button ${btn.id}`);
+            } else {
+                console.warn(`Action button ${btn.id} not found in DOM`);
             }
         });
+        
+        console.log('Button listener initialization complete');
     }
 
     // Initialize modal event listeners
