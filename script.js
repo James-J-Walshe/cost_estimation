@@ -44,27 +44,41 @@ let projectData = {
 // Initialize Application
 document.addEventListener('DOMContentLoaded', function() {
     try {
-        // Initialize DOM manager
-        if (window.domManager && window.domManager.initializeDOMElements()) {
-            window.domManager.initializeTabs();
-            window.domManager.initializeEventListeners();
+        console.log('Starting application initialization...');
+        
+        // Check if DOM manager is available
+        if (!window.domManager) {
+            console.error('DOM Manager not found! Make sure dom-manager.js is loaded first.');
+            alert('DOM Manager not loaded. Please check that dom-manager.js is included before script.js');
+            return;
         }
         
-        console.log('DOM elements initialized');
+        console.log('DOM Manager found, initializing...');
         
+        // Initialize DOM manager
+        if (window.domManager.initializeDOMElements()) {
+            console.log('DOM elements initialized successfully');
+            window.domManager.initializeTabs();
+            console.log('Tabs initialized');
+            window.domManager.initializeEventListeners();
+            console.log('Event listeners initialized');
+        } else {
+            console.error('Failed to initialize DOM elements');
+            return;
+        }
+        
+        console.log('Loading data and rendering tables...');
         loadDefaultData();
         renderAllTables();
         updateSummary();
         
         // Update month headers using DOM manager
-        if (window.domManager) {
-            window.domManager.updateMonthHeaders();
-        }
+        window.domManager.updateMonthHeaders();
         
         console.log('Application initialized successfully');
     } catch (error) {
         console.error('Error initializing application:', error);
-        alert('Error initializing application. Please check the console for details.');
+        alert('Error initializing application: ' + error.message + '. Please check the console for details.');
     }
 });
 
