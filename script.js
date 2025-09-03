@@ -766,4 +766,333 @@ function saveProject() {
             localStorage.setItem('ictProjectData', JSON.stringify(projectData));
             if (window.domManager) {
                 window.domManager.showAlert('Project saved to browser storage successfully!', 'success');
+            }
+        } else {
+            if (window.domManager) {
+                window.domManager.showAlert('Local storage not available. Cannot save project.', 'error');
+            }
+        }
+    } catch (e) {
+        console.error('Error saving project:', e);
+        if (window.domManager) {
+            window.domManager.showAlert('Error saving project: ' + e.message, 'error');
+        }
+    }
+}
+
+function downloadProject() {
+    try {
+        const dataStr = JSON.stringify(projectData, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `ICT_Project_${projectData.projectInfo.projectName || 'Untitled'}.json`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        if (window.domManager) {
+            window.domManager.showAlert('Project file downloaded successfully!', 'success');
+        }
+    } catch (error) {
+        console.error('Error downloading project:', error);
+        if (window.domManager) {
+            window.domManager.showAlert('Error downloading project file: ' + error.message, 'error');
+        }
+    }
+}
+
+function newProject() {
+    if (confirm('Are you sure you want to start a new project? This will clear all current data. Make sure to save or download your current project first.')) {
+        try {
+            // Reset project data to initial state
+            projectData = {
+                projectInfo: {
+                    projectName: '',
+                    startDate: '',
+                    endDate: '',
+                    projectManager: '',
+                    projectDescription: ''
+                },
+                internalResources: [],
+                vendorCosts: [],
+                toolCosts: [],
+                miscCosts: [],
+                risks: [],
+                rateCards: [
+                    { role: 'Project Manager', rate: 800, category: 'Internal' },
+                    { role: 'Business Analyst', rate: 650, category: 'Internal' },
+                    { role: 'Technical Lead', rate: 750, category: 'Internal' },
+                    { role: 'Developer', rate: 600, category: 'Internal' },
+                    { role: 'Tester', rate: 550, category: 'Internal' },
+                    { role: 'Senior Consultant', rate: 1200, category: 'External' },
+                    { role: 'Technical Architect', rate: 1500, category: 'External' },
+                    { role: 'Implementation Specialist', rate: 900, category: 'External' },
+                    { role: 'Support Specialist', rate: 700, category: 'External' }
+                ],
+                internalRates: [
+                    { role: 'Project Manager', rate: 800 },
+                    { role: 'Business Analyst', rate: 650 },
+                    { role: 'Technical Lead', rate: 750 },
+                    { role: 'Developer', rate: 600 },
+                    { role: 'Tester', rate: 550 }
+                ],
+                externalRates: [
+                    { role: 'Senior Consultant', rate: 1200 },
+                    { role: 'Technical Architect', rate: 1500 },
+                    { role: 'Implementation Specialist', rate: 900 },
+                    { role: 'Support Specialist', rate: 700 }
+                ],
+                contingencyPercentage: 10
+            };
             
+            // Clear form fields
+            const formFields = {
+                projectName: '',
+                startDate: '',
+                endDate: '',
+                projectManager: '',
+                projectDescription: '',
+                contingencyPercentage: 10
+            };
+            
+            Object.keys(formFields).forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.value = formFields[id];
+                }
+            });
+            
+            // Clear localStorage
+            if (typeof(Storage) !== "undefined" && localStorage) {
+                localStorage.removeItem('ictProjectData');
+            }
+            
+            // Re-render all tables and summaries
+            renderAllTables();
+            updateSummary();
+            if (window.domManager) {
+                window.domManager.updateMonthHeaders();
+            }
+            
+            // Switch to project info tab
+            if (window.domManager) {
+                window.domManager.switchTab('project-info');
+            }
+            
+            if (window.domManager) {
+                window.domManager.showAlert('New project started successfully! Please enter your project information.', 'success');
+            }
+            console.log('New project created');
+            
+        } catch (error) {
+            console.error('Error creating new project:', error);
+            if (window.domManager) {
+                window.domManager.showAlert('Error creating new project: ' + error.message, 'error');
+            }
+        }
+    }
+}
+
+function loadProject() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    projectData = { ...projectData, ...data };
+                    loadDefaultData();
+                    renderAllTables();
+                    updateSummary();
+                    if (window.domManager) {
+                        window.domManager.updateMonthHeaders();
+                        window.domManager.showAlert('Project loaded successfully!', 'success');
+                    }
+                } catch (err) {
+                    console.error('Error loading project:', err);
+                    if (window.domManager) {
+                        window.domManager.showAlert('Error loading project file: ' + err.message, 'error');
+                    }
+                }
+            };
+            reader.readAsText(file);
+        }
+    };
+    input.click();
+}
+
+function exportToExcel() {
+    try {
+        // Create a simple CSV export since we can't use external libraries
+        const csvContent = generateCSVExport();
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `ICT_Cost_Estimate_${projectData.projectInfo.projectName || 'Project'}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        if (window.domManager) {
+            window.domManager.showAlert('Export completed successfully!', 'success');
+        }
+    } catch (error) {
+        console.error('Error exporting:', error);
+        if (window.domManager) {
+            window.domManager.showAlert('Error exporting project: ' + error.message, 'error');
+        }
+    }
+}
+
+function generateCSVExport() {
+    const months = calculateProjectMonths();
+    let csv = 'ICT Project Cost Estimate Export\n\n';
+    
+    // Project Info
+    csv += 'PROJECT INFORMATION\n';
+    csv += `Project Name,"${projectData.projectInfo.projectName}"\n`;
+    csv += `Start Date,"${projectData.projectInfo.startDate}"\n`;
+    csv += `End Date,"${projectData.projectInfo.endDate}"\n`;
+    csv += `Project Manager,"${projectData.projectInfo.projectManager}"\n`;
+    csv += `Description,"${projectData.projectInfo.projectDescription}"\n\n`;
+    
+    // Rate Cards
+    csv += 'RATE CARDS\n';
+    csv += 'Role,Category,Daily Rate\n';
+    projectData.rateCards.forEach(rate => {
+        csv += `"${rate.role}","${rate.category}",${rate.rate}\n`;
+    });
+    
+    // Internal Resources
+    csv += '\nINTERNAL RESOURCES\n';
+    csv += `Role,Rate Card,Daily Rate,${months[0]} Days,${months[1]} Days,${months[2]} Days,${months[3]} Days,Total Cost\n`;
+    projectData.internalResources.forEach(resource => {
+        const month1Days = resource.month1Days || resource.q1Days || 0;
+        const month2Days = resource.month2Days || resource.q2Days || 0;
+        const month3Days = resource.month3Days || resource.q3Days || 0;
+        const month4Days = resource.month4Days || resource.q4Days || 0;
+        const totalCost = (month1Days + month2Days + month3Days + month4Days) * resource.dailyRate;
+        csv += `"${resource.role}","${resource.rateCard}",${resource.dailyRate},${month1Days},${month2Days},${month3Days},${month4Days},${totalCost}\n`;
+    });
+    
+    // Vendor Costs
+    csv += '\nVENDOR COSTS\n';
+    csv += `Vendor,Description,Category,${months[0]} Cost,${months[1]} Cost,${months[2]} Cost,${months[3]} Cost,Total Cost\n`;
+    projectData.vendorCosts.forEach(vendor => {
+        const month1Cost = vendor.month1Cost || vendor.q1Cost || 0;
+        const month2Cost = vendor.month2Cost || vendor.q2Cost || 0;
+        const month3Cost = vendor.month3Cost || vendor.q3Cost || 0;
+        const month4Cost = vendor.month4Cost || vendor.q4Cost || 0;
+        const totalCost = month1Cost + month2Cost + month3Cost + month4Cost;
+        csv += `"${vendor.vendor}","${vendor.description}","${vendor.category}",${month1Cost},${month2Cost},${month3Cost},${month4Cost},${totalCost}\n`;
+    });
+    
+    // Tool Costs
+    csv += '\nTOOL COSTS\n';
+    csv += 'Tool/Software,License Type,Users/Licenses,Monthly Cost,Duration (Months),Total Cost\n';
+    projectData.toolCosts.forEach(tool => {
+        const totalCost = tool.users * tool.monthlyCost * tool.duration;
+        csv += `"${tool.tool}","${tool.licenseType}",${tool.users},${tool.monthlyCost},${tool.duration},${totalCost}\n`;
+    });
+    
+    // Miscellaneous Costs
+    csv += '\nMISCELLANEOUS COSTS\n';
+    csv += 'Item,Description,Category,Cost\n';
+    projectData.miscCosts.forEach(misc => {
+        csv += `"${misc.item}","${misc.description}","${misc.category}",${misc.cost}\n`;
+    });
+    
+    // Risks
+    csv += '\nRISKS\n';
+    csv += 'Description,Probability,Impact,Risk Score,Mitigation Cost\n';
+    projectData.risks.forEach(risk => {
+        const riskScore = risk.probability * risk.impact;
+        csv += `"${risk.description}",${risk.probability},${risk.impact},${riskScore},${risk.mitigationCost}\n`;
+    });
+    
+    // Summary
+    csv += '\nPROJECT SUMMARY\n';
+    const internalTotal = calculateInternalResourcesTotal();
+    const vendorTotal = calculateVendorCostsTotal();
+    const toolTotal = calculateToolCostsTotal();
+    const miscTotal = calculateMiscCostsTotal();
+    const subtotal = internalTotal + vendorTotal + toolTotal + miscTotal;
+    const contingency = subtotal * (projectData.contingencyPercentage / 100);
+    const total = subtotal + contingency;
+    
+    csv += `Internal Resources,${internalTotal}\n`;
+    csv += `Vendor Costs,${vendorTotal}\n`;
+    csv += `Tool Costs,${toolTotal}\n`;
+    csv += `Miscellaneous,${miscTotal}\n`;
+    csv += `Subtotal,${subtotal}\n`;
+    csv += `Contingency (${projectData.contingencyPercentage}%),${contingency}\n`;
+    csv += `Total Project Cost,${total}\n`;
+    
+    return csv;
+}
+
+// Function to update project info in summary tab
+function updateSummaryProjectInfo() {
+    try {
+        console.log('Updating summary project info...');
+        
+        // Update project info in summary tab
+        const projectInfoElements = {
+            summaryProjectName: projectData.projectInfo.projectName || 'Not specified',
+            summaryStartDate: projectData.projectInfo.startDate || 'Not specified', 
+            summaryEndDate: projectData.projectInfo.endDate || 'Not specified',
+            summaryProjectManager: projectData.projectInfo.projectManager || 'Not specified',
+            summaryProjectDescription: projectData.projectInfo.projectDescription || 'Not specified'
+        };
+        
+        Object.keys(projectInfoElements).forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = projectInfoElements[id];
+            }
+        });
+        
+        // Calculate project duration if both dates are provided
+        const summaryDurationEl = document.getElementById('summaryProjectDuration');
+        if (summaryDurationEl && projectData.projectInfo.startDate && projectData.projectInfo.endDate) {
+            const start = new Date(projectData.projectInfo.startDate);
+            const end = new Date(projectData.projectInfo.endDate);
+            const diffTime = Math.abs(end - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const diffMonths = Math.round(diffDays / 30.44);
+            summaryDurationEl.textContent = `${diffDays} days (≈${diffMonths} months)`;
+        } else if (summaryDurationEl) {
+            summaryDurationEl.textContent = 'Not specified';
+        }
+        
+        // Update resource counts
+        const resourceCountsElements = {
+            summaryInternalResourceCount: projectData.internalResources.length,
+            summaryVendorCount: projectData.vendorCosts.length,
+            summaryToolCount: projectData.toolCosts.length,
+            summaryRiskCount: projectData.risks.length
+        };
+        
+        Object.keys(resourceCountsElements).forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.textContent = resourceCountsElements[id];
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error in updateSummaryProjectInfo:', error);
+    }
+}
+
+// Global function for delete buttons
+window.deleteItem = deleteItem;
