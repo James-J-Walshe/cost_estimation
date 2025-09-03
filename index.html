@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -10,275 +11,259 @@
         <header>
             <h1>ICT Project Cost Estimation Tool</h1>
             <div class="header-actions">
-                <button id="newProjectBtn" class="btn btn-primary">New Project</button>
-                <button id="saveBtn" class="btn btn-primary">Save Project</button>
-                <button id="downloadBtn" class="btn btn-secondary">Download Project</button>
-                <button id="loadBtn" class="btn btn-secondary">Load Project</button>
-                <button id="exportBtn" class="btn btn-secondary">Export to Excel</button>
+                <!-- Desktop buttons -->
+                <div class="desktop-menu">
+                    <button id="newProjectBtn" class="btn btn-secondary">New Project</button>
+                    <button id="saveBtn" class="btn btn-secondary">Save Project</button>
+                    <button id="loadBtn" class="btn btn-secondary">Load Project</button>
+                    <button id="exportBtn" class="btn btn-secondary">Export to Excel</button>
+                    <button id="settingsBtn" class="btn btn-icon" title="Settings">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Mobile hamburger menu -->
+                <div class="mobile-menu">
+                    <button id="hamburgerBtn" class="btn btn-icon" aria-label="Menu">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                        </svg>
+                    </button>
+                    <div id="mobileDropdown" class="mobile-dropdown">
+                        <button id="newProjectBtnMobile" class="dropdown-item">
+                            <span>New Project</span>
+                        </button>
+                        <button id="saveBtnMobile" class="dropdown-item">
+                            <span>Save Project</span>
+                        </button>
+                        <button id="loadBtnMobile" class="dropdown-item">
+                            <span>Load Project</span>
+                        </button>
+                        <button id="exportBtnMobile" class="dropdown-item">
+                            <span>Export to Excel</span>
+                        </button>
+                        <button id="settingsBtnMobile" class="dropdown-item">
+                            <span>Settings</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </header>
 
-        <nav class="tab-navigation">
-            <button class="tab-btn active" data-tab="project-info">Project Info</button>
-            <button class="tab-btn" data-tab="summary">Summary</button>
-            <button class="tab-btn" data-tab="resource-plan">Resource Plan</button>
-            <button class="tab-btn" data-tab="internal-resources">Internal Resources</button>
-            <button class="tab-btn" data-tab="vendor-costs">Vendor Costs</button>
-            <button class="tab-btn" data-tab="tool-costs">Tool Costs</button>
-            <button class="tab-btn" data-tab="miscellaneous">Miscellaneous</button>
-            <button class="tab-btn" data-tab="risks">Risks & Contingency</button>
-            <button class="tab-btn" data-tab="rate-cards">Rate Cards</button>
-        </nav>
+        <!-- Main App View -->
+        <div id="mainApp" class="main-view">
+            <nav class="tab-navigation">
+                <button class="tab-btn active" data-tab="summary">Summary</button>
+                <button class="tab-btn" data-tab="resource-plan">Resource Plan</button>
+                <button class="tab-btn" data-tab="internal-resources">Internal Resources</button>
+                <button class="tab-btn" data-tab="vendor-costs">Vendor Costs</button>
+                <button class="tab-btn" data-tab="tool-costs">Tool Costs</button>
+                <button class="tab-btn" data-tab="miscellaneous">Miscellaneous</button>
+                <button class="tab-btn" data-tab="risks">Risks & Contingency</button>
+            </nav>
 
-        <main class="content">
-            <!-- Project Info Tab -->
-            <div id="project-info" class="tab-content active">
-                <h2>Project Information</h2>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="projectName">Project Name:</label>
-                        <input type="text" id="projectName" class="form-control" placeholder="Enter project name">
+            <main class="content">
+                <!-- Resource Plan Tab -->
+                <div id="resource-plan" class="tab-content">
+                    <h2>Resource Plan Overview</h2>
+                    <div class="cost-summary">
+                        <div class="summary-card">
+                            <h3>Total Project Cost</h3>
+                            <div class="cost-amount" id="totalProjectCost">$0</div>
+                        </div>
+                        <div class="summary-card">
+                            <h3>Internal Resources</h3>
+                            <div class="cost-amount" id="totalInternalCost">$0</div>
+                        </div>
+                        <div class="summary-card">
+                            <h3>External Resources</h3>
+                            <div class="cost-amount" id="totalExternalCost">$0</div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="projectManager">Project Manager:</label>
-                        <input type="text" id="projectManager" class="form-control" placeholder="Enter project manager name">
-                    </div>
-                    <div class="form-group">
-                        <label for="startDate">Start Date:</label>
-                        <input type="date" id="startDate" class="form-control">
-                    </div>
-                    <div class="form-group">
-                        <label for="endDate">End Date:</label>
-                        <input type="date" id="endDate" class="form-control">
-                    </div>
-                    <div class="form-group full-width">
-                        <label for="projectDescription">Project Description:</label>
-                        <textarea id="projectDescription" class="form-control" rows="4" placeholder="Enter project description"></textarea>
+                    
+                    <div class="forecast-section">
+                        <h3>Cost Forecast by Month</h3>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th id="month1Header">Month 1</th>
+                                        <th id="month2Header">Month 2</th>
+                                        <th id="month3Header">Month 3</th>
+                                        <th id="month4Header">Month 4</th>
+                                        <th id="month5Header">Month 5</th>
+                                        <th id="month6Header">Month 6</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="forecastTable">
+                                    <!-- Populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Resource Plan Tab -->
-            <div id="resource-plan" class="tab-content">
-                <h2>Resource Plan Overview</h2>
-                <div class="cost-summary">
-                    <div class="summary-card">
-                        <h3>Total Project Cost</h3>
-                        <div class="cost-amount" id="totalProjectCost">$0</div>
+                <!-- Internal Resources Tab -->
+                <div id="internal-resources" class="tab-content">
+                    <h2>Internal Resources</h2>
+                    <div class="section-actions">
+                        <button id="addInternalResource" class="btn btn-primary">Add Resource</button>
                     </div>
-                    <div class="summary-card">
-                        <h3>Internal Resources</h3>
-                        <div class="cost-amount" id="totalInternalCost">$0</div>
-                    </div>
-                    <div class="summary-card">
-                        <h3>External Resources</h3>
-                        <div class="cost-amount" id="totalExternalCost">$0</div>
-                    </div>
-                </div>
-                
-                <div class="forecast-section">
-                    <h3>Cost Forecast by Month</h3>
                     <div class="table-container">
                         <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th>Category</th>
-                                    <th id="month1Header">Month 1</th>
-                                    <th id="month2Header">Month 2</th>
-                                    <th id="month3Header">Month 3</th>
-                                    <th id="month4Header">Month 4</th>
-                                    <th id="month5Header">Month 5</th>
-                                    <th id="month6Header">Month 6</th>
-                                    <th>Total</th>
+                                    <th>Role</th>
+                                    <th>Rate Card</th>
+                                    <th>Daily Rate</th>
+                                    <th id="month1DaysHeader">Month 1 Days</th>
+                                    <th id="month2DaysHeader">Month 2 Days</th>
+                                    <th id="month3DaysHeader">Month 3 Days</th>
+                                    <th id="month4DaysHeader">Month 4 Days</th>
+                                    <th>Total Cost</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="forecastTable">
+                            <tbody id="internalResourcesTable">
                                 <!-- Populated by JavaScript -->
                             </tbody>
                         </table>
                     </div>
                 </div>
-            </div>
 
-            <!-- Internal Resources Tab -->
-            <div id="internal-resources" class="tab-content">
-                <h2>Internal Resources</h2>
-                <div class="section-actions">
-                    <button id="addInternalResource" class="btn btn-primary">Add Resource</button>
-                </div>
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Role</th>
-                                <th>Rate Card</th>
-                                <th>Daily Rate</th>
-                                <th id="month1DaysHeader">Month 1 Days</th>
-                                <th id="month2DaysHeader">Month 2 Days</th>
-                                <th id="month3DaysHeader">Month 3 Days</th>
-                                <th id="month4DaysHeader">Month 4 Days</th>
-                                <th>Total Cost</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="internalResourcesTable">
-                            <!-- Populated by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Vendor Costs Tab -->
-            <div id="vendor-costs" class="tab-content">
-                <h2>Vendor Costs</h2>
-                <div class="section-actions">
-                    <button id="addVendorCost" class="btn btn-primary">Add Vendor Cost</button>
-                </div>
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Vendor</th>
-                                <th>Description</th>
-                                <th>Category</th>
-                                <th id="month1CostHeader">Month 1 Cost</th>
-                                <th id="month2CostHeader">Month 2 Cost</th>
-                                <th id="month3CostHeader">Month 3 Cost</th>
-                                <th id="month4CostHeader">Month 4 Cost</th>
-                                <th>Total Cost</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="vendorCostsTable">
-                            <!-- Populated by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Tool Costs Tab -->
-            <div id="tool-costs" class="tab-content">
-                <h2>Project Tool Costs</h2>
-                <div class="section-actions">
-                    <button id="addToolCost" class="btn btn-primary">Add Tool Cost</button>
-                </div>
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Tool/Software</th>
-                                <th>License Type</th>
-                                <th>Users/Licenses</th>
-                                <th>Monthly Cost</th>
-                                <th>Duration (Months)</th>
-                                <th>Total Cost</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="toolCostsTable">
-                            <!-- Populated by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Miscellaneous Tab -->
-            <div id="miscellaneous" class="tab-content">
-                <h2>Miscellaneous Costs</h2>
-                <div class="section-actions">
-                    <button id="addMiscCost" class="btn btn-primary">Add Miscellaneous Cost</button>
-                </div>
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Item</th>
-                                <th>Description</th>
-                                <th>Category</th>
-                                <th>Cost</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="miscCostsTable">
-                            <!-- Populated by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Risks & Contingency Tab -->
-            <div id="risks" class="tab-content">
-                <h2>Risks & Contingency</h2>
-                <div class="risk-summary">
-                    <div class="form-group">
-                        <label for="contingencyPercentage">Contingency Percentage:</label>
-                        <input type="number" id="contingencyPercentage" class="form-control" value="10" min="0" max="100">
-                        <small>Percentage of total project cost</small>
+                <!-- Vendor Costs Tab -->
+                <div id="vendor-costs" class="tab-content">
+                    <h2>Vendor Costs</h2>
+                    <div class="section-actions">
+                        <button id="addVendorCost" class="btn btn-primary">Add Vendor Cost</button>
                     </div>
-                    <div class="cost-display">
-                        <strong>Contingency Amount: $<span id="contingencyAmount">0</span></strong>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Vendor</th>
+                                    <th>Description</th>
+                                    <th>Category</th>
+                                    <th id="month1CostHeader">Month 1 Cost</th>
+                                    <th id="month2CostHeader">Month 2 Cost</th>
+                                    <th id="month3CostHeader">Month 3 Cost</th>
+                                    <th id="month4CostHeader">Month 4 Cost</th>
+                                    <th>Total Cost</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vendorCostsTable">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-                <div class="section-actions">
-                    <button id="addRisk" class="btn btn-primary">Add Risk</button>
-                </div>
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Risk Description</th>
-                                <th>Probability</th>
-                                <th>Impact</th>
-                                <th>Risk Score</th>
-                                <th>Mitigation Cost</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="risksTable">
-                            <!-- Populated by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
 
-            <!-- Rate Cards Tab -->
-            <div id="rate-cards" class="tab-content">
-                <h2>Rate Cards</h2>
-                <div class="section-actions">
-                    <button id="addRate" class="btn btn-primary">Add Rate Card</button>
+                <!-- Tool Costs Tab -->
+                <div id="tool-costs" class="tab-content">
+                    <h2>Project Tool Costs</h2>
+                    <div class="section-actions">
+                        <button id="addToolCost" class="btn btn-primary">Add Tool Cost</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Tool/Software</th>
+                                    <th>License Type</th>
+                                    <th>Users/Licenses</th>
+                                    <th>Monthly Cost</th>
+                                    <th>Duration (Months)</th>
+                                    <th>Total Cost</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="toolCostsTable">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Role</th>
-                                <th>Category</th>
-                                <th>Daily Rate</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="rateCardsTable">
-                            <!-- Populated by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
 
-            <!-- Summary Tab -->
-            <div id="summary" class="tab-content">
-                <h2>Project Summary</h2>
-                <div class="summary-overview">
+                <!-- Miscellaneous Tab -->
+                <div id="miscellaneous" class="tab-content">
+                    <h2>Miscellaneous Costs</h2>
+                    <div class="section-actions">
+                        <button id="addMiscCost" class="btn btn-primary">Add Miscellaneous Cost</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Description</th>
+                                    <th>Category</th>
+                                    <th>Cost</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="miscCostsTable">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Risks & Contingency Tab -->
+                <div id="risks" class="tab-content">
+                    <h2>Risks & Contingency</h2>
+                    <div class="risk-summary">
+                        <div class="form-group">
+                            <label for="contingencyPercentage">Contingency Percentage:</label>
+                            <input type="number" id="contingencyPercentage" class="form-control" value="10" min="0" max="100">
+                            <small>Percentage of total project cost</small>
+                        </div>
+                        <div class="cost-display">
+                            <strong>Contingency Amount: $<span id="contingencyAmount">0</span></strong>
+                        </div>
+                    </div>
+                    <div class="section-actions">
+                        <button id="addRisk" class="btn btn-primary">Add Risk</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Risk Description</th>
+                                    <th>Probability</th>
+                                    <th>Impact</th>
+                                    <th>Risk Score</th>
+                                    <th>Mitigation Cost</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="risksTable">
+                                <!-- Populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Summary Tab -->
+                <div id="summary" class="tab-content active">
+                    <h2>Project Cost Summary</h2>
+                    
+                    <!-- Project Information Summary -->
                     <div class="summary-columns">
-                        <!-- Column 1: Project Information -->
-                        <div class="summary-section project-info-summary">
+                        <div class="project-info-summary">
                             <h3>Project Information</h3>
                             <div class="info-grid">
                                 <div class="info-item">
-                                    <span class="info-label">Project Name:</span>
+                                    <span class="info-label">Name:</span>
                                     <span class="info-value" id="summaryProjectName">Not specified</span>
                                 </div>
                                 <div class="info-item">
-                                    <span class="info-label">Project Manager:</span>
+                                    <span class="info-label">Manager:</span>
                                     <span class="info-value" id="summaryProjectManager">Not specified</span>
                                 </div>
                                 <div class="info-item">
@@ -299,7 +284,7 @@
                                 </div>
                             </div>
                             
-                            <h4>Project Scope</h4>
+                            <h4 style="margin-bottom: 1rem;">Project Scope</h4>
                             <div class="scope-grid">
                                 <div class="scope-item">
                                     <span class="scope-number" id="summaryInternalResourceCount">0</span>
@@ -307,21 +292,20 @@
                                 </div>
                                 <div class="scope-item">
                                     <span class="scope-number" id="summaryVendorCount">0</span>
-                                    <span class="scope-label">Vendor Contracts</span>
+                                    <span class="scope-label">Vendors</span>
                                 </div>
                                 <div class="scope-item">
                                     <span class="scope-number" id="summaryToolCount">0</span>
-                                    <span class="scope-label">Tools & Software</span>
+                                    <span class="scope-label">Tools</span>
                                 </div>
                                 <div class="scope-item">
                                     <span class="scope-number" id="summaryRiskCount">0</span>
-                                    <span class="scope-label">Identified Risks</span>
+                                    <span class="scope-label">Risks</span>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Column 2: Cost Breakdown -->
-                        <div class="summary-section cost-summary">
+                        <div class="summary-section">
                             <h3>Cost Breakdown</h3>
                             <div class="cost-breakdown">
                                 <div class="breakdown-item">
@@ -356,8 +340,140 @@
                         </div>
                     </div>
                 </div>
+            </main>
+        </div>
+
+        <!-- Settings View -->
+        <div id="settingsApp" class="settings-view" style="display: none;">
+            <div class="settings-header">
+                <button id="backToMain" class="btn btn-secondary">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 8px;">
+                        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                    </svg>
+                    Back to Project
+                </button>
+                <h1>Settings</h1>
             </div>
             
+            <div class="settings-container">
+                <nav class="settings-sidebar">
+                    <button class="settings-nav-btn active" data-settings-tab="project-info">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                        </svg>
+                        Project Information
+                    </button>
+                    <button class="settings-nav-btn" data-settings-tab="rate-cards">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M11,8C11,9.66 9.66,11 8,11C6.34,11 5,9.66 5,8C5,6.34 6.34,5 8,5C9.66,5 11,6.34 11,8M14,19H18V17H14V19M14,15H18V13H14V15M14,11H18V9H14V11M3,21V19L5,17L7,19V21H3M8,13C5.67,13 1,14.17 1,16.5V19H5V17H9V19H13V16.5C13,14.17 8.33,13 8,13Z"/>
+                        </svg>
+                        Rate Cards
+                    </button>
+                </nav>
+                
+                <div class="settings-content">
+                    <!-- Project Info Settings -->
+                    <div id="settings-project-info" class="settings-tab-content active">
+                        <h2>Project Information</h2>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="projectName">Project Name:</label>
+                                <input type="text" id="projectName" class="form-control" placeholder="Enter project name">
+                            </div>
+                            <div class="form-group">
+                                <label for="startDate">Start Date:</label>
+                                <input type="date" id="startDate" class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label for="projectManager">Project Manager:</label>
+                                <input type="text" id="projectManager" class="form-control" placeholder="Enter project manager name">
+                            </div>
+                            <div class="form-group">
+                                <label for="endDate">End Date:</label>
+                                <input type="date" id="endDate" class="form-control">
+                            </div>
+                            <div class="form-group full-width">
+                                <label for="projectDescription">Project Description:</label>
+                                <textarea id="projectDescription" class="form-control" rows="4" placeholder="Enter project description"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rate Cards Settings -->
+                    <div id="settings-rate-cards" class="settings-tab-content">
+                        <h2>Rate Cards</h2>
+                        <div class="rate-cards-container">
+                            <div class="rate-card-section">
+                                <h3>All Rate Cards</h3>
+                                <div class="section-actions">
+                                    <button id="addRate" class="btn btn-primary">Add Rate Card</button>
+                                </div>
+                                <div class="table-container">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Role</th>
+                                                <th>Category</th>
+                                                <th>Daily Rate</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="rateCardsTable">
+                                            <!-- Populated by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <!-- Keep old tables for backward compatibility -->
+                            <div class="rate-card-section" style="display: none;">
+                                <h3>Internal Rate Card</h3>
+                                <div class="section-actions">
+                                    <button id="addInternalRate" class="btn btn-primary">Add Role</button>
+                                </div>
+                                <div class="table-container">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Role</th>
+                                                <th>Daily Rate</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="internalRatesTable">
+                                            <!-- Populated by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <div class="rate-card-section" style="display: none;">
+                                <h3>External Rate Card</h3>
+                                <div class="section-actions">
+                                    <button id="addExternalRate" class="btn btn-primary">Add Role</button>
+                                </div>
+                                <div class="table-container">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Role</th>
+                                                <th>Daily Rate</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="externalRatesTable">
+                                            <!-- Populated by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal for adding items -->
     <div id="modal" class="modal">
         <div class="modal-content">
