@@ -1,5 +1,5 @@
 // script.js - Main application logic working with modular structure
-// This file contains the business logic that works with the modular components
+// Clean version with no syntax errors
 // ============================================================================
 
 // ============================================================================
@@ -55,7 +55,7 @@ function updateInternalResourcesHeaders() {
         for (let i = 0; i < 4; i++) {
             const headerIndex = i + 3; // Start from 4th column (index 3)
             if (headers[headerIndex] && months[i]) {
-                headers[headerIndex].textContent = `${months[i]} Days`;
+                headers[headerIndex].textContent = months[i] + ' Days';
             }
         }
     }
@@ -71,7 +71,7 @@ function updateVendorCostsHeaders() {
         for (let i = 0; i < 4; i++) {
             const headerIndex = i + 3; // Start from 4th column (index 3)
             if (headers[headerIndex] && months[i]) {
-                headers[headerIndex].textContent = `${months[i]} Cost`;
+                headers[headerIndex].textContent = months[i] + ' Cost';
             }
         }
     }
@@ -112,152 +112,45 @@ function getModalFields(type) {
     const months = calculateProjectMonths();
     
     const fields = {
-        internalResource: `
-            <div class="form-group">
-                <label>Role:</label>
-                <select name="role" class="form-control" required>
-                    ${AppState.getResources('rateCards').map(rate => `<option value="${rate.role}" data-category="${rate.category}">${rate.role} (${rate.category})</option>`).join('')}
-                </select>
-            </div>
-            <div class="form-group">
-                <label>${months[0] || 'Month 1'} Days:</label>
-                <input type="number" name="month1Days" class="form-control" min="0" step="0.5" value="0">
-            </div>
-            <div class="form-group">
-                <label>${months[1] || 'Month 2'} Days:</label>
-                <input type="number" name="month2Days" class="form-control" min="0" step="0.5" value="0">
-            </div>
-            <div class="form-group">
-                <label>${months[2] || 'Month 3'} Days:</label>
-                <input type="number" name="month3Days" class="form-control" min="0" step="0.5" value="0">
-            </div>
-            <div class="form-group">
-                <label>${months[3] || 'Month 4'} Days:</label>
-                <input type="number" name="month4Days" class="form-control" min="0" step="0.5" value="0">
-            </div>
-        `,
-        vendorCost: `
-            <div class="form-group">
-                <label>Vendor:</label>
-                <input type="text" name="vendor" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label>Description:</label>
-                <input type="text" name="description" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label>Category:</label>
-                <select name="category" class="form-control" required>
-                    <option value="Implementation">Implementation</option>
-                    <option value="Consulting">Consulting</option>
-                    <option value="Training">Training</option>
-                    <option value="Support">Support</option>
-                    <option value="Other">Other</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>${months[0] || 'Month 1'} Cost:</label>
-                <input type="number" name="month1Cost" class="form-control" min="0" step="0.01" value="0">
-            </div>
-            <div class="form-group">
-                <label>${months[1] || 'Month 2'} Cost:</label>
-                <input type="number" name="month2Cost" class="form-control" min="0" step="0.01" value="0">
-            </div>
-            <div class="form-group">
-                <label>${months[2] || 'Month 3'} Cost:</label>
-                <input type="number" name="month3Cost" class="form-control" min="0" step="0.01" value="0">
-            </div>
-            <div class="form-group">
-                <label>${months[3] || 'Month 4'} Cost:</label>
-                <input type="number" name="month4Cost" class="form-control" min="0" step="0.01" value="0">
-            </div>
-        `,
-        toolCost: `
-            <div class="form-group">
-                <label>Tool/Software:</label>
-                <input type="text" name="tool" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label>License Type:</label>
-                <select name="licenseType" class="form-control" required>
-                    <option value="Per User">Per User</option>
-                    <option value="Per Device">Per Device</option>
-                    <option value="Enterprise">Enterprise</option>
-                    <option value="One-time">One-time</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Users/Licenses:</label>
-                <input type="number" name="users" class="form-control" min="1" required>
-            </div>
-            <div class="form-group">
-                <label>Monthly Cost:</label>
-                <input type="number" name="monthlyCost" class="form-control" min="0" step="0.01" required>
-            </div>
-            <div class="form-group">
-                <label>Duration (Months):</label>
-                <input type="number" name="duration" class="form-control" min="1" required>
-            </div>
-        `,
-        miscCost: `
-            <div class="form-group">
-                <label>Item:</label>
-                <input type="text" name="item" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label>Description:</label>
-                <input type="text" name="description" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label>Category:</label>
-                <select name="category" class="form-control" required>
-                    <option value="Travel">Travel</option>
-                    <option value="Equipment">Equipment</option>
-                    <option value="Training">Training</option>
-                    <option value="Documentation">Documentation</option>
-                    <option value="Other">Other</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Cost:</label>
-                <input type="number" name="cost" class="form-control" min="0" step="0.01" required>
-            </div>
-        `,
-        risk: `
-            <div class="form-group">
-                <label>Risk Description:</label>
-                <textarea name="description" class="form-control" required></textarea>
-            </div>
-            <div class="form-group">
-                <label>Probability (1-5):</label>
-                <input type="number" name="probability" class="form-control" min="1" max="5" required>
-            </div>
-            <div class="form-group">
-                <label>Impact (1-5):</label>
-                <input type="number" name="impact" class="form-control" min="1" max="5" required>
-            </div>
-            <div class="form-group">
-                <label>Mitigation Cost:</label>
-                <input type="number" name="mitigationCost" class="form-control" min="0" step="0.01" value="0">
-            </div>
-        `,
-        rateCard: `
-            <div class="form-group">
-                <label>Role:</label>
-                <input type="text" name="role" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label>Category:</label>
-                <select name="category" class="form-control" required>
-                    <option value="Internal">Internal</option>
-                    <option value="External">External</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Daily Rate:</label>
-                <input type="number" name="rate" class="form-control" min="0" step="0.01" required>
-            </div>
-        `
+        internalResource: '<div class="form-group"><label>Role:</label><select name="role" class="form-control" required>' + 
+            AppState.getResources('rateCards').map(rate => '<option value="' + rate.role + '" data-category="' + rate.category + '">' + rate.role + ' (' + rate.category + ')</option>').join('') +
+            '</select></div>' +
+            '<div class="form-group"><label>' + (months[0] || 'Month 1') + ' Days:</label><input type="number" name="month1Days" class="form-control" min="0" step="0.5" value="0"></div>' +
+            '<div class="form-group"><label>' + (months[1] || 'Month 2') + ' Days:</label><input type="number" name="month2Days" class="form-control" min="0" step="0.5" value="0"></div>' +
+            '<div class="form-group"><label>' + (months[2] || 'Month 3') + ' Days:</label><input type="number" name="month3Days" class="form-control" min="0" step="0.5" value="0"></div>' +
+            '<div class="form-group"><label>' + (months[3] || 'Month 4') + ' Days:</label><input type="number" name="month4Days" class="form-control" min="0" step="0.5" value="0"></div>',
+            
+        vendorCost: '<div class="form-group"><label>Vendor:</label><input type="text" name="vendor" class="form-control" required></div>' +
+            '<div class="form-group"><label>Description:</label><input type="text" name="description" class="form-control" required></div>' +
+            '<div class="form-group"><label>Category:</label><select name="category" class="form-control" required>' +
+            '<option value="Implementation">Implementation</option><option value="Consulting">Consulting</option><option value="Training">Training</option><option value="Support">Support</option><option value="Other">Other</option></select></div>' +
+            '<div class="form-group"><label>' + (months[0] || 'Month 1') + ' Cost:</label><input type="number" name="month1Cost" class="form-control" min="0" step="0.01" value="0"></div>' +
+            '<div class="form-group"><label>' + (months[1] || 'Month 2') + ' Cost:</label><input type="number" name="month2Cost" class="form-control" min="0" step="0.01" value="0"></div>' +
+            '<div class="form-group"><label>' + (months[2] || 'Month 3') + ' Cost:</label><input type="number" name="month3Cost" class="form-control" min="0" step="0.01" value="0"></div>' +
+            '<div class="form-group"><label>' + (months[3] || 'Month 4') + ' Cost:</label><input type="number" name="month4Cost" class="form-control" min="0" step="0.01" value="0"></div>',
+            
+        toolCost: '<div class="form-group"><label>Tool/Software:</label><input type="text" name="tool" class="form-control" required></div>' +
+            '<div class="form-group"><label>License Type:</label><select name="licenseType" class="form-control" required>' +
+            '<option value="Per User">Per User</option><option value="Per Device">Per Device</option><option value="Enterprise">Enterprise</option><option value="One-time">One-time</option></select></div>' +
+            '<div class="form-group"><label>Users/Licenses:</label><input type="number" name="users" class="form-control" min="1" required></div>' +
+            '<div class="form-group"><label>Monthly Cost:</label><input type="number" name="monthlyCost" class="form-control" min="0" step="0.01" required></div>' +
+            '<div class="form-group"><label>Duration (Months):</label><input type="number" name="duration" class="form-control" min="1" required></div>',
+            
+        miscCost: '<div class="form-group"><label>Item:</label><input type="text" name="item" class="form-control" required></div>' +
+            '<div class="form-group"><label>Description:</label><input type="text" name="description" class="form-control" required></div>' +
+            '<div class="form-group"><label>Category:</label><select name="category" class="form-control" required>' +
+            '<option value="Travel">Travel</option><option value="Equipment">Equipment</option><option value="Training">Training</option><option value="Documentation">Documentation</option><option value="Other">Other</option></select></div>' +
+            '<div class="form-group"><label>Cost:</label><input type="number" name="cost" class="form-control" min="0" step="0.01" required></div>',
+            
+        risk: '<div class="form-group"><label>Risk Description:</label><textarea name="description" class="form-control" required></textarea></div>' +
+            '<div class="form-group"><label>Probability (1-5):</label><input type="number" name="probability" class="form-control" min="1" max="5" required></div>' +
+            '<div class="form-group"><label>Impact (1-5):</label><input type="number" name="impact" class="form-control" min="1" max="5" required></div>' +
+            '<div class="form-group"><label>Mitigation Cost:</label><input type="number" name="mitigationCost" class="form-control" min="0" step="0.01" value="0"></div>',
+            
+        rateCard: '<div class="form-group"><label>Role:</label><input type="text" name="role" class="form-control" required></div>' +
+            '<div class="form-group"><label>Category:</label><select name="category" class="form-control" required>' +
+            '<option value="Internal">Internal</option><option value="External">External</option></select></div>' +
+            '<div class="form-group"><label>Daily Rate:</label><input type="number" name="rate" class="form-control" min="0" step="0.01" required></div>'
     };
     
     return fields[type] || '';
@@ -270,8 +163,8 @@ function handleModalSubmit() {
         const type = modalForm.getAttribute('data-type');
         const data = {};
         
-        for (let [key, value] of formData.entries()) {
-            data[key] = value;
+        for (let pair of formData.entries()) {
+            data[pair[0]] = pair[1];
         }
         
         console.log('Modal submit - Type:', type);
@@ -400,19 +293,48 @@ function renderInternalResourcesTable() {
         
         const totalCost = (month1Days + month2Days + month3Days + month4Days) * resource.dailyRate;
         const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${resource.role}</td>
-            <td>${resource.rateCard}</td>
-            <td>$${resource.dailyRate.toLocaleString()}</td>
-            <td>${month1Days}</td>
-            <td>${month2Days}</td>
-            <td>${month3Days}</td>
-            <td>${month4Days}</td>
-            <td>$${totalCost.toLocaleString()}</td>
-            <td>
-                <button class="btn btn-danger btn-small" onclick="deleteItem('vendorCosts', ${vendor.id})">Delete</button>
-            </td>
-        `;
+        row.innerHTML = '<td>' + resource.role + '</td>' +
+            '<td>' + resource.rateCard + '</td>' +
+            '<td>$' + resource.dailyRate.toLocaleString() + '</td>' +
+            '<td>' + month1Days + '</td>' +
+            '<td>' + month2Days + '</td>' +
+            '<td>' + month3Days + '</td>' +
+            '<td>' + month4Days + '</td>' +
+            '<td>$' + totalCost.toLocaleString() + '</td>' +
+            '<td><button class="btn btn-danger btn-small" onclick="deleteItem(\'internalResources\', ' + resource.id + ')">Delete</button></td>';
+        tbody.appendChild(row);
+    });
+}
+
+function renderVendorCostsTable() {
+    const tbody = DOMManager.get('vendorCostsTable');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    const vendors = AppState.getResources('vendorCosts');
+    if (vendors.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No vendor costs added yet</td></tr>';
+        return;
+    }
+    
+    vendors.forEach(vendor => {
+        const month1Cost = vendor.month1Cost || 0;
+        const month2Cost = vendor.month2Cost || 0;
+        const month3Cost = vendor.month3Cost || 0;
+        const month4Cost = vendor.month4Cost || 0;
+        
+        const totalCost = month1Cost + month2Cost + month3Cost + month4Cost;
+        const row = document.createElement('tr');
+        row.innerHTML = '<td>' + vendor.vendor + '</td>' +
+            '<td>' + vendor.description + '</td>' +
+            '<td>' + vendor.category + '</td>' +
+            '<td>$' + month1Cost.toLocaleString() + '</td>' +
+            '<td>$' + month2Cost.toLocaleString() + '</td>' +
+            '<td>$' + month3Cost.toLocaleString() + '</td>' +
+            '<td>$' + month4Cost.toLocaleString() + '</td>' +
+            '<td>$' + totalCost.toLocaleString() + '</td>' +
+            '<td><button class="btn btn-danger btn-small" onclick="deleteItem(\'vendorCosts\', ' + vendor.id + ')">Delete</button></td>';
         tbody.appendChild(row);
     });
 }
@@ -432,17 +354,13 @@ function renderToolCostsTable() {
     tools.forEach(tool => {
         const totalCost = tool.users * tool.monthlyCost * tool.duration;
         const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${tool.tool}</td>
-            <td>${tool.licenseType}</td>
-            <td>${tool.users}</td>
-            <td>${tool.monthlyCost.toLocaleString()}</td>
-            <td>${tool.duration}</td>
-            <td>${totalCost.toLocaleString()}</td>
-            <td>
-                <button class="btn btn-danger btn-small" onclick="deleteItem('toolCosts', ${tool.id})">Delete</button>
-            </td>
-        `;
+        row.innerHTML = '<td>' + tool.tool + '</td>' +
+            '<td>' + tool.licenseType + '</td>' +
+            '<td>' + tool.users + '</td>' +
+            '<td>$' + tool.monthlyCost.toLocaleString() + '</td>' +
+            '<td>' + tool.duration + '</td>' +
+            '<td>$' + totalCost.toLocaleString() + '</td>' +
+            '<td><button class="btn btn-danger btn-small" onclick="deleteItem(\'toolCosts\', ' + tool.id + ')">Delete</button></td>';
         tbody.appendChild(row);
     });
 }
@@ -461,15 +379,11 @@ function renderMiscCostsTable() {
     
     miscCosts.forEach(misc => {
         const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${misc.item}</td>
-            <td>${misc.description}</td>
-            <td>${misc.category}</td>
-            <td>${misc.cost.toLocaleString()}</td>
-            <td>
-                <button class="btn btn-danger btn-small" onclick="deleteItem('miscCosts', ${misc.id})">Delete</button>
-            </td>
-        `;
+        row.innerHTML = '<td>' + misc.item + '</td>' +
+            '<td>' + misc.description + '</td>' +
+            '<td>' + misc.category + '</td>' +
+            '<td>$' + misc.cost.toLocaleString() + '</td>' +
+            '<td><button class="btn btn-danger btn-small" onclick="deleteItem(\'miscCosts\', ' + misc.id + ')">Delete</button></td>';
         tbody.appendChild(row);
     });
 }
@@ -489,16 +403,12 @@ function renderRisksTable() {
     risks.forEach(risk => {
         const riskScore = risk.probability * risk.impact;
         const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${risk.description}</td>
-            <td>${risk.probability}</td>
-            <td>${risk.impact}</td>
-            <td>${riskScore}</td>
-            <td>${risk.mitigationCost.toLocaleString()}</td>
-            <td>
-                <button class="btn btn-danger btn-small" onclick="deleteItem('risks', ${risk.id})">Delete</button>
-            </td>
-        `;
+        row.innerHTML = '<td>' + risk.description + '</td>' +
+            '<td>' + risk.probability + '</td>' +
+            '<td>' + risk.impact + '</td>' +
+            '<td>' + riskScore + '</td>' +
+            '<td>$' + risk.mitigationCost.toLocaleString() + '</td>' +
+            '<td><button class="btn btn-danger btn-small" onclick="deleteItem(\'risks\', ' + risk.id + ')">Delete</button></td>';
         tbody.appendChild(row);
     });
 }
@@ -519,13 +429,9 @@ function renderInternalRatesTable() {
     
     internalRates.forEach(rate => {
         const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${rate.role}</td>
-            <td>${rate.rate.toLocaleString()}</td>
-            <td>
-                <button class="btn btn-danger btn-small" onclick="deleteItem('rateCards', ${rate.id || `'${rate.role}'`})">Delete</button>
-            </td>
-        `;
+        row.innerHTML = '<td>' + rate.role + '</td>' +
+            '<td>$' + rate.rate.toLocaleString() + '</td>' +
+            '<td><button class="btn btn-danger btn-small" onclick="deleteItem(\'rateCards\', ' + (rate.id || '\'' + rate.role + '\'') + ')">Delete</button></td>';
         tbody.appendChild(row);
     });
 }
@@ -546,13 +452,9 @@ function renderExternalRatesTable() {
     
     externalRates.forEach(rate => {
         const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${rate.role}</td>
-            <td>${rate.rate.toLocaleString()}</td>
-            <td>
-                <button class="btn btn-danger btn-small" onclick="deleteItem('rateCards', ${rate.id || `'${rate.role}'`})">Delete</button>
-            </td>
-        `;
+        row.innerHTML = '<td>' + rate.role + '</td>' +
+            '<td>$' + rate.rate.toLocaleString() + '</td>' +
+            '<td><button class="btn btn-danger btn-small" onclick="deleteItem(\'rateCards\', ' + (rate.id || '\'' + rate.role + '\'') + ')">Delete</button></td>';
         tbody.appendChild(row);
     });
 }
@@ -570,7 +472,7 @@ function renderUnifiedRateCardsTable() {
     }
     
     // Sort by category then by role
-    const sortedRates = [...rateCards].sort((a, b) => {
+    const sortedRates = rateCards.slice().sort((a, b) => {
         if (a.category !== b.category) {
             return a.category.localeCompare(b.category);
         }
@@ -579,14 +481,10 @@ function renderUnifiedRateCardsTable() {
     
     sortedRates.forEach(rate => {
         const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${rate.role}</td>
-            <td><span class="category-badge category-${rate.category.toLowerCase()}">${rate.category}</span></td>
-            <td>${rate.rate.toLocaleString()}</td>
-            <td>
-                <button class="btn btn-danger btn-small" onclick="deleteItem('rateCards', ${rate.id || `'${rate.role}'`})">Delete</button>
-            </td>
-        `;
+        row.innerHTML = '<td>' + rate.role + '</td>' +
+            '<td><span class="category-badge category-' + rate.category.toLowerCase() + '">' + rate.category + '</span></td>' +
+            '<td>$' + rate.rate.toLocaleString() + '</td>' +
+            '<td><button class="btn btn-danger btn-small" onclick="deleteItem(\'rateCards\', ' + (rate.id || '\'' + rate.role + '\'') + ')">Delete</button></td>';
         tbody.appendChild(row);
     });
 }
@@ -626,28 +524,22 @@ function renderForecastTable() {
     const vendorTotal = vendorMonthly.reduce((sum, val) => sum + val, 0);
     
     // Render the rows to match HTML table structure (6 months + total)
-    tbody.innerHTML = `
-        <tr>
-            <td><strong>Internal Resources</strong></td>
-            <td>${internalMonthly[0].toLocaleString()}</td>
-            <td>${internalMonthly[1].toLocaleString()}</td>
-            <td>${internalMonthly[2].toLocaleString()}</td>
-            <td>${internalMonthly[3].toLocaleString()}</td>
-            <td>${internalMonthly[4].toLocaleString()}</td>
-            <td>${internalMonthly[5].toLocaleString()}</td>
-            <td><strong>${internalTotal.toLocaleString()}</strong></td>
-        </tr>
-        <tr>
-            <td><strong>Vendor Costs</strong></td>
-            <td>${vendorMonthly[0].toLocaleString()}</td>
-            <td>${vendorMonthly[1].toLocaleString()}</td>
-            <td>${vendorMonthly[2].toLocaleString()}</td>
-            <td>${vendorMonthly[3].toLocaleString()}</td>
-            <td>${vendorMonthly[4].toLocaleString()}</td>
-            <td>${vendorMonthly[5].toLocaleString()}</td>
-            <td><strong>${vendorTotal.toLocaleString()}</strong></td>
-        </tr>
-    `;
+    tbody.innerHTML = '<tr><td><strong>Internal Resources</strong></td>' +
+        '<td>$' + internalMonthly[0].toLocaleString() + '</td>' +
+        '<td>$' + internalMonthly[1].toLocaleString() + '</td>' +
+        '<td>$' + internalMonthly[2].toLocaleString() + '</td>' +
+        '<td>$' + internalMonthly[3].toLocaleString() + '</td>' +
+        '<td>$' + internalMonthly[4].toLocaleString() + '</td>' +
+        '<td>$' + internalMonthly[5].toLocaleString() + '</td>' +
+        '<td><strong>$' + internalTotal.toLocaleString() + '</strong></td></tr>' +
+        '<tr><td><strong>Vendor Costs</strong></td>' +
+        '<td>$' + vendorMonthly[0].toLocaleString() + '</td>' +
+        '<td>$' + vendorMonthly[1].toLocaleString() + '</td>' +
+        '<td>$' + vendorMonthly[2].toLocaleString() + '</td>' +
+        '<td>$' + vendorMonthly[3].toLocaleString() + '</td>' +
+        '<td>$' + vendorMonthly[4].toLocaleString() + '</td>' +
+        '<td>$' + vendorMonthly[5].toLocaleString() + '</td>' +
+        '<td><strong>$' + vendorTotal.toLocaleString() + '</strong></td></tr>';
 }
 
 // ============================================================================
@@ -656,7 +548,7 @@ function renderForecastTable() {
 
 function calculateInternalResourcesTotal() {
     const resources = AppState.getResources('internalResources');
-    return resources.reduce((total, resource) => {
+    return resources.reduce(function(total, resource) {
         const month1Days = resource.month1Days || 0;
         const month2Days = resource.month2Days || 0;
         const month3Days = resource.month3Days || 0;
@@ -668,7 +560,7 @@ function calculateInternalResourcesTotal() {
 
 function calculateVendorCostsTotal() {
     const vendors = AppState.getResources('vendorCosts');
-    return vendors.reduce((total, vendor) => {
+    return vendors.reduce(function(total, vendor) {
         const month1Cost = vendor.month1Cost || 0;
         const month2Cost = vendor.month2Cost || 0;
         const month3Cost = vendor.month3Cost || 0;
@@ -680,14 +572,14 @@ function calculateVendorCostsTotal() {
 
 function calculateToolCostsTotal() {
     const tools = AppState.getResources('toolCosts');
-    return tools.reduce((total, tool) => {
+    return tools.reduce(function(total, tool) {
         return total + (tool.users * tool.monthlyCost * tool.duration);
     }, 0);
 }
 
 function calculateMiscCostsTotal() {
     const miscCosts = AppState.getResources('miscCosts');
-    return miscCosts.reduce((total, misc) => {
+    return miscCosts.reduce(function(total, misc) {
         return total + misc.cost;
     }, 0);
 }
@@ -710,21 +602,21 @@ function updateSummary() {
         const total = subtotal + contingency;
         
         // Update resource plan cards
-        DOMManager.setText('totalProjectCost', `${total.toLocaleString()}`);
-        DOMManager.setText('totalInternalCost', `${internalTotal.toLocaleString()}`);
-        DOMManager.setText('totalExternalCost', `${(vendorTotal + toolTotal + miscTotal).toLocaleString()}`);
+        DOMManager.setText('totalProjectCost', '$' + total.toLocaleString());
+        DOMManager.setText('totalInternalCost', '$' + internalTotal.toLocaleString());
+        DOMManager.setText('totalExternalCost', ' + (vendorTotal + toolTotal + miscTotal).toLocaleString());
         
         // Update contingency display
-        DOMManager.setText('contingencyAmount', `${contingency.toLocaleString()}`);
+        DOMManager.setText('contingencyAmount', ' + contingency.toLocaleString());
         
         // Update summary tab
-        DOMManager.setText('summaryInternalCost', `${internalTotal.toLocaleString()}`);
-        DOMManager.setText('summaryVendorCost', `${vendorTotal.toLocaleString()}`);
-        DOMManager.setText('summaryToolCost', `${toolTotal.toLocaleString()}`);
-        DOMManager.setText('summaryMiscCost', `${miscTotal.toLocaleString()}`);
-        DOMManager.setText('summarySubtotal', `${subtotal.toLocaleString()}`);
-        DOMManager.setText('summaryContingency', `${contingency.toLocaleString()}`);
-        DOMManager.setText('summaryTotal', `${total.toLocaleString()}`);
+        DOMManager.setText('summaryInternalCost', ' + internalTotal.toLocaleString());
+        DOMManager.setText('summaryVendorCost', ' + vendorTotal.toLocaleString());
+        DOMManager.setText('summaryToolCost', ' + toolTotal.toLocaleString());
+        DOMManager.setText('summaryMiscCost', ' + miscTotal.toLocaleString());
+        DOMManager.setText('summarySubtotal', ' + subtotal.toLocaleString());
+        DOMManager.setText('summaryContingency', ' + contingency.toLocaleString());
+        DOMManager.setText('summaryTotal', ' + total.toLocaleString());
 
         // Update project info in summary if elements exist
         updateSummaryProjectInfo();
@@ -747,7 +639,7 @@ function updateSummaryProjectInfo() {
             summaryProjectDescription: projectInfo.projectDescription || 'Not specified'
         };
         
-        Object.keys(projectInfoElements).forEach(id => {
+        Object.keys(projectInfoElements).forEach(function(id) {
             const element = document.getElementById(id);
             if (element) {
                 element.textContent = projectInfoElements[id];
@@ -762,7 +654,7 @@ function updateSummaryProjectInfo() {
             const diffTime = Math.abs(end - start);
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             const diffMonths = Math.round(diffDays / 30.44);
-            summaryDurationEl.textContent = `${diffDays} days (≈${diffMonths} months)`;
+            summaryDurationEl.textContent = diffDays + ' days (≈' + diffMonths + ' months)';
         } else if (summaryDurationEl) {
             summaryDurationEl.textContent = 'Not specified';
         }
@@ -775,7 +667,7 @@ function updateSummaryProjectInfo() {
             summaryRiskCount: AppState.getResources('risks').length
         };
         
-        Object.keys(resourceCountsElements).forEach(id => {
+        Object.keys(resourceCountsElements).forEach(function(id) {
             const element = document.getElementById(id);
             if (element) {
                 element.textContent = resourceCountsElements[id];
@@ -815,11 +707,11 @@ function loadProject() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
-    input.onchange = (e) => {
+    input.onchange = function(e) {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
                     AppState.setProjectData(data);
@@ -847,7 +739,7 @@ function newProject() {
             
             // Clear form fields
             const formFields = ['projectName', 'startDate', 'endDate', 'projectManager', 'projectDescription'];
-            formFields.forEach(fieldName => {
+            formFields.forEach(function(fieldName) {
                 DOMManager.setValue(fieldName, '');
             });
             DOMManager.setValue('contingencyPercentage', '10');
@@ -878,7 +770,7 @@ function exportToExcel() {
         const url = URL.createObjectURL(blob);
         link.setAttribute('href', url);
         const projectInfo = AppState.getProjectInfo();
-        link.setAttribute('download', `ICT_Cost_Estimate_${projectInfo.projectName || 'Project'}.csv`);
+        link.setAttribute('download', 'ICT_Cost_Estimate_' + (projectInfo.projectName || 'Project') + '.csv');
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
@@ -898,29 +790,29 @@ function generateCSVExport() {
     
     // Project Info
     csv += 'PROJECT INFORMATION\n';
-    csv += `Project Name,"${projectInfo.projectName}"\n`;
-    csv += `Start Date,"${projectInfo.startDate}"\n`;
-    csv += `End Date,"${projectInfo.endDate}"\n`;
-    csv += `Project Manager,"${projectInfo.projectManager}"\n`;
-    csv += `Description,"${projectInfo.projectDescription}"\n\n`;
+    csv += 'Project Name,"' + projectInfo.projectName + '"\n';
+    csv += 'Start Date,"' + projectInfo.startDate + '"\n';
+    csv += 'End Date,"' + projectInfo.endDate + '"\n';
+    csv += 'Project Manager,"' + projectInfo.projectManager + '"\n';
+    csv += 'Description,"' + projectInfo.projectDescription + '"\n\n';
     
     // Rate Cards
     csv += 'RATE CARDS\n';
     csv += 'Role,Category,Daily Rate\n';
-    AppState.getResources('rateCards').forEach(rate => {
-        csv += `"${rate.role}","${rate.category}",${rate.rate}\n`;
+    AppState.getResources('rateCards').forEach(function(rate) {
+        csv += '"' + rate.role + '","' + rate.category + '",' + rate.rate + '\n';
     });
     
     // Internal Resources
     csv += '\nINTERNAL RESOURCES\n';
-    csv += `Role,Rate Card,Daily Rate,${months[0]} Days,${months[1]} Days,${months[2]} Days,${months[3]} Days,Total Cost\n`;
-    AppState.getResources('internalResources').forEach(resource => {
+    csv += 'Role,Rate Card,Daily Rate,' + months[0] + ' Days,' + months[1] + ' Days,' + months[2] + ' Days,' + months[3] + ' Days,Total Cost\n';
+    AppState.getResources('internalResources').forEach(function(resource) {
         const month1Days = resource.month1Days || 0;
         const month2Days = resource.month2Days || 0;
         const month3Days = resource.month3Days || 0;
         const month4Days = resource.month4Days || 0;
         const totalCost = (month1Days + month2Days + month3Days + month4Days) * resource.dailyRate;
-        csv += `"${resource.role}","${resource.rateCard}",${resource.dailyRate},${month1Days},${month2Days},${month3Days},${month4Days},${totalCost}\n`;
+        csv += '"' + resource.role + '","' + resource.rateCard + '",' + resource.dailyRate + ',' + month1Days + ',' + month2Days + ',' + month3Days + ',' + month4Days + ',' + totalCost + '\n';
     });
     
     // Summary
@@ -933,13 +825,13 @@ function generateCSVExport() {
     const contingency = subtotal * (AppState.getContingencyPercentage() / 100);
     const total = subtotal + contingency;
     
-    csv += `Internal Resources,${internalTotal}\n`;
-    csv += `Vendor Costs,${vendorTotal}\n`;
-    csv += `Tool Costs,${toolTotal}\n`;
-    csv += `Miscellaneous,${miscTotal}\n`;
-    csv += `Subtotal,${subtotal}\n`;
-    csv += `Contingency (${AppState.getContingencyPercentage()}%),${contingency}\n`;
-    csv += `Total Project Cost,${total}\n`;
+    csv += 'Internal Resources,' + internalTotal + '\n';
+    csv += 'Vendor Costs,' + vendorTotal + '\n';
+    csv += 'Tool Costs,' + toolTotal + '\n';
+    csv += 'Miscellaneous,' + miscTotal + '\n';
+    csv += 'Subtotal,' + subtotal + '\n';
+    csv += 'Contingency (' + AppState.getContingencyPercentage() + '%),' + contingency + '\n';
+    csv += 'Total Project Cost,' + total + '\n';
     
     return csv;
 }
@@ -957,7 +849,7 @@ function populateFormFields() {
         contingencyPercentage: contingency
     };
     
-    Object.keys(formFields).forEach(fieldName => {
+    Object.keys(formFields).forEach(function(fieldName) {
         DOMManager.setValue(fieldName, formFields[fieldName]);
     });
 }
@@ -971,31 +863,21 @@ function printReport() {
         const printWindow = window.open('', '_blank');
         const printContent = generatePrintContent();
         
-        printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>ICT Project Cost Estimate - ${AppState.getProjectInfo().projectName || 'Project'}</title>
-                <style>
-                    body { font-family: Arial, sans-serif; margin: 20px; }
-                    h1, h2, h3 { color: #2c3e50; }
-                    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                    th { background-color: #f2f2f2; }
-                    .summary-section { background-color: #f8f9fa; padding: 15px; margin: 20px 0; }
-                    .total-cost { font-size: 1.2em; font-weight: bold; color: #28a745; }
-                    @media print { .no-print { display: none; } }
-                </style>
-            </head>
-            <body>
-                ${printContent}
-                <div class="no-print" style="margin-top: 20px;">
-                    <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer;">Print</button>
-                    <button onclick="window.close()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; cursor: pointer; margin-left: 10px;">Close</button>
-                </div>
-            </body>
-            </html>
-        `);
+        printWindow.document.write('<!DOCTYPE html><html><head>' +
+            '<title>ICT Project Cost Estimate - ' + (AppState.getProjectInfo().projectName || 'Project') + '</title>' +
+            '<style>body { font-family: Arial, sans-serif; margin: 20px; }' +
+            'h1, h2, h3 { color: #2c3e50; }' +
+            'table { width: 100%; border-collapse: collapse; margin: 20px 0; }' +
+            'th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }' +
+            'th { background-color: #f2f2f2; }' +
+            '.summary-section { background-color: #f8f9fa; padding: 15px; margin: 20px 0; }' +
+            '.total-cost { font-size: 1.2em; font-weight: bold; color: #28a745; }' +
+            '@media print { .no-print { display: none; } }</style>' +
+            '</head><body>' + printContent +
+            '<div class="no-print" style="margin-top: 20px;">' +
+            '<button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer;">Print</button>' +
+            '<button onclick="window.close()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; cursor: pointer; margin-left: 10px;">Close</button>' +
+            '</div></body></html>');
         
         printWindow.document.close();
         printWindow.focus();
@@ -1009,17 +891,15 @@ function generatePrintContent() {
     const months = calculateProjectMonths();
     const projectInfo = AppState.getProjectInfo();
     
-    let content = `
-        <h1>ICT Project Cost Estimate</h1>
-        <div class="summary-section">
-            <h2>Project Information</h2>
-            <p><strong>Project Name:</strong> ${projectInfo.projectName || 'Not specified'}</p>
-            <p><strong>Start Date:</strong> ${projectInfo.startDate || 'Not specified'}</p>
-            <p><strong>End Date:</strong> ${projectInfo.endDate || 'Not specified'}</p>
-            <p><strong>Project Manager:</strong> ${projectInfo.projectManager || 'Not specified'}</p>
-            <p><strong>Description:</strong> ${projectInfo.projectDescription || 'Not specified'}</p>
-        </div>
-    `;
+    let content = '<h1>ICT Project Cost Estimate</h1>' +
+        '<div class="summary-section">' +
+        '<h2>Project Information</h2>' +
+        '<p><strong>Project Name:</strong> ' + (projectInfo.projectName || 'Not specified') + '</p>' +
+        '<p><strong>Start Date:</strong> ' + (projectInfo.startDate || 'Not specified') + '</p>' +
+        '<p><strong>End Date:</strong> ' + (projectInfo.endDate || 'Not specified') + '</p>' +
+        '<p><strong>Project Manager:</strong> ' + (projectInfo.projectManager || 'Not specified') + '</p>' +
+        '<p><strong>Description:</strong> ' + (projectInfo.projectDescription || 'Not specified') + '</p>' +
+        '</div>';
 
     // Summary
     const internalTotal = calculateInternalResourcesTotal();
@@ -1030,20 +910,17 @@ function generatePrintContent() {
     const contingency = subtotal * (AppState.getContingencyPercentage() / 100);
     const total = subtotal + contingency;
 
-    content += `
-        <div class="summary-section">
-            <h2>Project Summary</h2>
-            <table>
-                <tr><td>Internal Resources</td><td>${internalTotal.toLocaleString()}</td></tr>
-                <tr><td>Vendor Costs</td><td>${vendorTotal.toLocaleString()}</td></tr>
-                <tr><td>Tool Costs</td><td>${toolTotal.toLocaleString()}</td></tr>
-                <tr><td>Miscellaneous</td><td>${miscTotal.toLocaleString()}</td></tr>
-                <tr><td><strong>Subtotal</strong></td><td><strong>${subtotal.toLocaleString()}</strong></td></tr>
-                <tr><td>Contingency (${AppState.getContingencyPercentage()}%)</td><td>${contingency.toLocaleString()}</td></tr>
-                <tr><td class="total-cost">Total Project Cost</td><td class="total-cost">${total.toLocaleString()}</td></tr>
-            </table>
-        </div>
-    `;
+    content += '<div class="summary-section">' +
+        '<h2>Project Summary</h2>' +
+        '<table>' +
+        '<tr><td>Internal Resources</td><td> + internalTotal.toLocaleString() + '</td></tr>' +
+        '<tr><td>Vendor Costs</td><td> + vendorTotal.toLocaleString() + '</td></tr>' +
+        '<tr><td>Tool Costs</td><td> + toolTotal.toLocaleString() + '</td></tr>' +
+        '<tr><td>Miscellaneous</td><td> + miscTotal.toLocaleString() + '</td></tr>' +
+        '<tr><td><strong>Subtotal</strong></td><td><strong> + subtotal.toLocaleString() + '</strong></td></tr>' +
+        '<tr><td>Contingency (' + AppState.getContingencyPercentage() + '%)</td><td> + contingency.toLocaleString() + '</td></tr>' +
+        '<tr><td class="total-cost">Total Project Cost</td><td class="total-cost"> + total.toLocaleString() + '</td></tr>' +
+        '</table></div>';
 
     return content;
 }
@@ -1058,41 +935,13 @@ window.printReport = printReport;
 window.newProject = newProject;
 window.saveProject = saveProject;
 window.loadProject = loadProject;
-window.exportToExcel = exportToExcel;="deleteItem('internalResources', ${resource.id})">Delete</button>
-            </td>
-        `;
-        tbody.appendChild(row);
-    });
-}
-
-function renderVendorCostsTable() {
-    const tbody = DOMManager.get('vendorCostsTable');
-    if (!tbody) return;
-    
-    tbody.innerHTML = '';
-    
-    const vendors = AppState.getResources('vendorCosts');
-    if (vendors.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No vendor costs added yet</td></tr>';
-        return;
-    }
-    
-    vendors.forEach(vendor => {
-        const month1Cost = vendor.month1Cost || 0;
-        const month2Cost = vendor.month2Cost || 0;
-        const month3Cost = vendor.month3Cost || 0;
-        const month4Cost = vendor.month4Cost || 0;
-        
-        const totalCost = month1Cost + month2Cost + month3Cost + month4Cost;
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${vendor.vendor}</td>
-            <td>${vendor.description}</td>
-            <td>${vendor.category}</td>
-            <td>$${month1Cost.toLocaleString()}</td>
-            <td>$${month2Cost.toLocaleString()}</td>
-            <td>$${month3Cost.toLocaleString()}</td>
-            <td>$${month4Cost.toLocaleString()}</td>
-            <td>$${totalCost.toLocaleString()}</td>
-            <td>
-                <button class="btn btn-danger btn-small" onclick
+window.exportToExcel = exportToExcel;
+window.openModal = openModal;
+window.handleModalSubmit = handleModalSubmit;
+window.updateSummary = updateSummary;
+window.updateMonthHeaders = updateMonthHeaders;
+window.renderAllTables = renderAllTables;
+window.renderForecastTable = renderForecastTable;
+window.renderUnifiedRateCardsTable = renderUnifiedRateCardsTable;
+window.renderInternalRatesTable = renderInternalRatesTable;
+window.renderExternalRatesTable = renderExternalRatesTable;
