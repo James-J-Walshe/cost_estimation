@@ -244,9 +244,9 @@ function renderAllTables() {
         renderToolCostsTable();
         renderMiscCostsTable();
         renderRisksTable();
-        renderInternalRatesTable(); // Keep for backward compatibility
-        renderExternalRatesTable(); // Keep for backward compatibility  
-        renderUnifiedRateCardsTable(); // Add unified rate cards table
+        renderInternalRatesTable();
+        renderExternalRatesTable();
+        renderUnifiedRateCardsTable();
         renderForecastTable();
     } catch (error) {
         console.error('Error rendering tables:', error);
@@ -455,25 +455,12 @@ function renderRisksTable() {
 
 function renderInternalRatesTable() {
     const tbody = document.getElementById('internalRatesTable');
-    console.log('renderInternalRatesTable - tbody element:', tbody);
-    
-    if (!tbody) {
-        console.log('Internal rates table not found, trying alternative selectors');
-        // Try alternative selectors if the standard one doesn't work
-        const altTbody = document.querySelector('#rate-cards tbody') || 
-                         document.querySelector('.rate-cards-container tbody') ||
-                         document.querySelector('[id*="internal"] tbody');
-        if (altTbody) {
-            console.log('Found alternative tbody:', altTbody);
-        }
-        return;
-    }
+    if (!tbody) return;
     
     tbody.innerHTML = '';
     
     // Show internal rates from unified rateCards
     const internalRates = projectData.rateCards.filter(rate => rate.category === 'Internal');
-    console.log('Internal rates to render:', internalRates);
     
     if (internalRates.length === 0) {
         tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No internal rates added yet</td></tr>';
@@ -491,23 +478,16 @@ function renderInternalRatesTable() {
         `;
         tbody.appendChild(row);
     });
-    console.log('Internal rates table rendered successfully');
 }
 
 function renderExternalRatesTable() {
     const tbody = document.getElementById('externalRatesTable');
-    console.log('renderExternalRatesTable - tbody element:', tbody);
-    
-    if (!tbody) {
-        console.log('External rates table not found, trying alternative selectors');
-        return;
-    }
+    if (!tbody) return;
     
     tbody.innerHTML = '';
     
     // Show external rates from unified rateCards
     const externalRates = projectData.rateCards.filter(rate => rate.category === 'External');
-    console.log('External rates to render:', externalRates);
     
     if (externalRates.length === 0) {
         tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No external rates added yet</td></tr>';
@@ -525,7 +505,6 @@ function renderExternalRatesTable() {
         `;
         tbody.appendChild(row);
     });
-    console.log('External rates table rendered successfully');
 }
 
 function renderForecastTable() {
@@ -534,13 +513,9 @@ function renderForecastTable() {
     
     tbody.innerHTML = '';
     
-    // Calculate monthly totals
-    const months = calculateProjectMonths();
-    
     // Internal Resources
     const internalMonthly = [0, 0, 0, 0, 0, 0];
     projectData.internalResources.forEach(resource => {
-        // Handle both old and new format
         internalMonthly[0] += (resource.month1Days || resource.q1Days || 0) * resource.dailyRate;
         internalMonthly[1] += (resource.month2Days || resource.q2Days || 0) * resource.dailyRate;
         internalMonthly[2] += (resource.month3Days || resource.q3Days || 0) * resource.dailyRate;
@@ -550,7 +525,6 @@ function renderForecastTable() {
     // Vendor Costs
     const vendorMonthly = [0, 0, 0, 0, 0, 0];
     projectData.vendorCosts.forEach(vendor => {
-        // Handle both old and new format
         vendorMonthly[0] += vendor.month1Cost || vendor.q1Cost || 0;
         vendorMonthly[1] += vendor.month2Cost || vendor.q2Cost || 0;
         vendorMonthly[2] += vendor.month3Cost || vendor.q3Cost || 0;
@@ -664,7 +638,6 @@ function updateSummary() {
 
 function calculateInternalResourcesTotal() {
     return projectData.internalResources.reduce((total, resource) => {
-        // Handle both old format (q1Days) and new format (month1Days)
         const month1Days = resource.month1Days || resource.q1Days || 0;
         const month2Days = resource.month2Days || resource.q2Days || 0;
         const month3Days = resource.month3Days || resource.q3Days || 0;
@@ -676,7 +649,6 @@ function calculateInternalResourcesTotal() {
 
 function calculateVendorCostsTotal() {
     return projectData.vendorCosts.reduce((total, vendor) => {
-        // Handle both old format (q1Cost) and new format (month1Cost)
         const month1Cost = vendor.month1Cost || vendor.q1Cost || 0;
         const month2Cost = vendor.month2Cost || vendor.q2Cost || 0;
         const month3Cost = vendor.month3Cost || vendor.q3Cost || 0;
@@ -701,7 +673,6 @@ function calculateMiscCostsTotal() {
 // Data Management
 function loadDefaultData() {
     try {
-        // Only try to load from localStorage if it's available
         if (typeof(Storage) !== "undefined" && localStorage) {
             const savedData = localStorage.getItem('ictProjectData');
             if (savedData) {
