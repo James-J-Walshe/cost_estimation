@@ -92,6 +92,9 @@ document.addEventListener('DOMContentLoaded', function() {
             windowProjectData: window.projectData?.vendorCosts?.length
         });
         
+        // Re-render tables now that global data is available
+        renderAllTables();
+        
         // Update month headers using DOM manager
         window.domManager.updateMonthHeaders();
         
