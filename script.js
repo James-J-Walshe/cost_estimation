@@ -41,106 +41,54 @@ let projectData = {
     contingencyPercentage: 10
 };
 
-// Make projectData globally available
-window.projectData = projectData;
-
 // Initialize Application
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('Starting application initialization...');
+    
     try {
-        console.log('Starting application initialization...');
-        
-        // Check if DOM manager is available
-        if (!window.domManager) {
-            console.error('DOM Manager not found! Make sure dom-manager.js is loaded first.');
-            alert('DOM Manager not loaded. Please check that dom-manager.js is included before script.js');
-            return;
-        }
-        
-        console.log('DOM Manager found, initializing...');
-        
-        // Initialize DOM manager
-        if (window.domManager.initializeDOMElements()) {
-            console.log('DOM elements initialized successfully');
-            window.domManager.initializeTabs();
-            console.log('Tabs initialized');
-            window.domManager.initializeEventListeners();
-            console.log('Event listeners initialized');
+        // Check if DOM Manager is available
+        if (typeof window.DOMManager !== 'undefined') {
+            console.log('DOM Manager found, initializing...');
+            window.DOMManager.initialize();
         } else {
-            console.error('Failed to initialize DOM elements');
+            console.error('DOM Manager not found! Make sure dom_manager.js is loaded.');
             return;
         }
         
+        console.log('DOM elements initialized successfully');
+        
+        // Initialize tabs (handled by DOM Manager now)
+        console.log('Tabs initialized');
+        
+        // Initialize event listeners (handled by DOM Manager now)
+        console.log('Event listeners initialized');
+        
+        // Load data and render tables
         console.log('Loading data and rendering tables...');
         
-        // Use data manager to load saved data
-        window.dataManager.loadDefaultData();
+        // Check if Data Manager is available
+        if (typeof window.DataManager !== 'undefined') {
+            window.DataManager.loadDefaultData();
+        } else {
+            console.error('Data Manager not found! Make sure data_manager.js is loaded.');
+            return;
+        }
         
-        // Debug: Check data after loading
-        console.log('After loadDefaultData:', {
-            vendorCosts: projectData.vendorCosts.length,
-            toolCosts: projectData.toolCosts.length,
-            windowProjectData: window.projectData?.vendorCosts?.length
-        });
+        // Check if Table Renderer is available
+        if (typeof window.TableRenderer !== 'undefined') {
+            window.TableRenderer.renderAllTables();
+        } else {
+            console.error('Table Renderer not found! Make sure table_renderer.js is loaded.');
+            return;
+        }
         
-        renderAllTables();
         updateSummary();
-        
-        // Ensure global projectData is properly set after all initialization
-        window.projectData = projectData;
-        
-        console.log('Final data check:', {
-            vendorCosts: projectData.vendorCosts.length,
-            toolCosts: projectData.toolCosts.length,
-            windowProjectData: window.projectData?.vendorCosts?.length
-        });
-        
-        // Re-render tables after a brief delay to ensure DOM is ready
-        setTimeout(() => {
-            console.log('Re-rendering tables with loaded data...');
-            renderAllTables();
-        }, 100);
-        
-        // Update month headers using DOM manager
-        window.domManager.updateMonthHeaders();
-        
-        // Manually attach settings button listener with robust retry
-        setTimeout(() => {
-            function attachSettingsListener(attempt = 1) {
-                const settingsBtn = document.getElementById('settingsBtn');
-                console.log(`Settings attachment attempt ${attempt}:`, settingsBtn);
-                
-                if (settingsBtn && !settingsBtn.hasAttribute('data-settings-attached')) {
-                    // Clear any existing listeners by cloning
-                    const newBtn = settingsBtn.cloneNode(true);
-                    settingsBtn.parentNode.replaceChild(newBtn, settingsBtn);
-                    
-                    // Add our listener
-                    newBtn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        e.stopImmediatePropagation();
-                        console.log('Settings button clicked (robust attachment)');
-                        window.domManager.openSettings();
-                    });
-                    
-                    newBtn.setAttribute('data-settings-attached', 'true');
-                    console.log('Settings button event listener attached successfully');
-                    return true;
-                } else if (attempt < 10) {
-                    setTimeout(() => attachSettingsListener(attempt + 1), 200);
-                    return false;
-                } else {
-                    console.warn('Settings button not found after 10 attempts');
-                    return false;
-                }
-            }
-            
-            attachSettingsListener();
-        }, 100);
+        updateMonthHeaders();
         
         console.log('Application initialized successfully');
     } catch (error) {
         console.error('Error initializing application:', error);
-        alert('Error initializing application: ' + error.message + '. Please check the console for details.');
+        alert('Error initializing application. Please check the console for details.');
     }
 });
 
@@ -168,15 +116,215 @@ function calculateProjectMonths() {
     return months;
 }
 
-// Modal form submission handler
+// Update all month headers
+function updateMonthHeaders() {
+    const months = calculateProjectMonths();
+    
+    // Update forecast table headers (6 months shown)
+    for (let i = 1; i <= 6; i++) {
+        const header = document.getElementById(`month${i}Header`);
+        if (header && months[i-1]) {
+            header.textContent = months[i-1];
+        }
+    }
+    
+    // Update internal resources headers (4 months shown)
+    for (let i = 1; i <= 4; i++) {
+        const header = document.getElementById(`month${i}DaysHeader`);
+        if (header && months[i-1]) {
+            header.textContent = `${months[i-1]} Days`;
+        }
+    }
+    
+    // Update vendor costs headers (4 months shown)
+    for (let i = 1; i <= 4; i++) {
+        const header = document.getElementById(`month${i}CostHeader`);
+        if (header && months[i-1]) {
+            header.textContent = `${months[i-1]} Cost`;
+        }
+    }
+}
+
+// Modal Management
+function openModal(title, type) {
+    try {
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalFields = document.getElementById('modalFields');
+        const modalForm = document.getElementById('modalForm');
+        
+        if (!modal || !modalTitle || !modalFields || !modalForm) {
+            console.error('Modal elements not found');
+            return;
+        }
+        
+        modalTitle.textContent = title;
+        modalFields.innerHTML = getModalFields(type);
+        modal.style.display = 'block';
+        modalForm.setAttribute('data-type', type);
+    } catch (error) {
+        console.error('Error opening modal:', error);
+    }
+}
+
+function getModalFields(type) {
+    const months = calculateProjectMonths();
+    
+    const fields = {
+        internalResource: `
+            <div class="form-group">
+                <label>Role:</label>
+                <select name="role" class="form-control" required>
+                    ${projectData.rateCards.map(rate => `<option value="${rate.role}" data-category="${rate.category}">${rate.role} (${rate.category})</option>`).join('')}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>${months[0] || 'Month 1'} Days:</label>
+                <input type="number" name="month1Days" class="form-control" min="0" step="0.5" value="0">
+            </div>
+            <div class="form-group">
+                <label>${months[1] || 'Month 2'} Days:</label>
+                <input type="number" name="month2Days" class="form-control" min="0" step="0.5" value="0">
+            </div>
+            <div class="form-group">
+                <label>${months[2] || 'Month 3'} Days:</label>
+                <input type="number" name="month3Days" class="form-control" min="0" step="0.5" value="0">
+            </div>
+            <div class="form-group">
+                <label>${months[3] || 'Month 4'} Days:</label>
+                <input type="number" name="month4Days" class="form-control" min="0" step="0.5" value="0">
+            </div>
+        `,
+        vendorCost: `
+            <div class="form-group">
+                <label>Vendor:</label>
+                <input type="text" name="vendor" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Description:</label>
+                <input type="text" name="description" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Category:</label>
+                <select name="category" class="form-control" required>
+                    <option value="Implementation">Implementation</option>
+                    <option value="Consulting">Consulting</option>
+                    <option value="Training">Training</option>
+                    <option value="Support">Support</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>${months[0] || 'Month 1'} Cost:</label>
+                <input type="number" name="month1Cost" class="form-control" min="0" step="0.01" value="0">
+            </div>
+            <div class="form-group">
+                <label>${months[1] || 'Month 2'} Cost:</label>
+                <input type="number" name="month2Cost" class="form-control" min="0" step="0.01" value="0">
+            </div>
+            <div class="form-group">
+                <label>${months[2] || 'Month 3'} Cost:</label>
+                <input type="number" name="month3Cost" class="form-control" min="0" step="0.01" value="0">
+            </div>
+            <div class="form-group">
+                <label>${months[3] || 'Month 4'} Cost:</label>
+                <input type="number" name="month4Cost" class="form-control" min="0" step="0.01" value="0">
+            </div>
+        `,
+        toolCost: `
+            <div class="form-group">
+                <label>Tool/Software:</label>
+                <input type="text" name="tool" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>License Type:</label>
+                <select name="licenseType" class="form-control" required>
+                    <option value="Per User">Per User</option>
+                    <option value="Per Device">Per Device</option>
+                    <option value="Enterprise">Enterprise</option>
+                    <option value="One-time">One-time</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Users/Licenses:</label>
+                <input type="number" name="users" class="form-control" min="1" required>
+            </div>
+            <div class="form-group">
+                <label>Monthly Cost:</label>
+                <input type="number" name="monthlyCost" class="form-control" min="0" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label>Duration (Months):</label>
+                <input type="number" name="duration" class="form-control" min="1" required>
+            </div>
+        `,
+        miscCost: `
+            <div class="form-group">
+                <label>Item:</label>
+                <input type="text" name="item" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Description:</label>
+                <input type="text" name="description" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Category:</label>
+                <select name="category" class="form-control" required>
+                    <option value="Travel">Travel</option>
+                    <option value="Equipment">Equipment</option>
+                    <option value="Training">Training</option>
+                    <option value="Documentation">Documentation</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Cost:</label>
+                <input type="number" name="cost" class="form-control" min="0" step="0.01" required>
+            </div>
+        `,
+        risk: `
+            <div class="form-group">
+                <label>Risk Description:</label>
+                <textarea name="description" class="form-control" required></textarea>
+            </div>
+            <div class="form-group">
+                <label>Probability (1-5):</label>
+                <input type="number" name="probability" class="form-control" min="1" max="5" required>
+            </div>
+            <div class="form-group">
+                <label>Impact (1-5):</label>
+                <input type="number" name="impact" class="form-control" min="1" max="5" required>
+            </div>
+            <div class="form-group">
+                <label>Mitigation Cost:</label>
+                <input type="number" name="mitigationCost" class="form-control" min="0" step="0.01" value="0">
+            </div>
+        `,
+        rateCard: `
+            <div class="form-group">
+                <label>Role:</label>
+                <input type="text" name="role" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label>Category:</label>
+                <select name="category" class="form-control" required>
+                    <option value="Internal">Internal</option>
+                    <option value="External">External</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Daily Rate:</label>
+                <input type="number" name="rate" class="form-control" min="0" step="0.01" required>
+            </div>
+        `
+    };
+    
+    return fields[type] || '';
+}
+
 function handleModalSubmit() {
     try {
         const modalForm = document.getElementById('modalForm');
-        if (!modalForm) {
-            console.error('Modal form not found');
-            return;
-        }
-
         const formData = new FormData(modalForm);
         const type = modalForm.getAttribute('data-type');
         const data = {};
@@ -203,7 +351,9 @@ function handleModalSubmit() {
                     month3Days: parseFloat(data.month3Days) || 0,
                     month4Days: parseFloat(data.month4Days) || 0
                 });
-                renderInternalResourcesTable();
+                if (window.TableRenderer) {
+                    window.TableRenderer.renderInternalResourcesTable();
+                }
                 break;
             case 'vendorCost':
                 projectData.vendorCosts.push({
@@ -216,9 +366,9 @@ function handleModalSubmit() {
                     month3Cost: parseFloat(data.month3Cost) || 0,
                     month4Cost: parseFloat(data.month4Cost) || 0
                 });
-                // Update global reference
-                window.projectData = projectData;
-                renderVendorCostsTable();
+                if (window.TableRenderer) {
+                    window.TableRenderer.renderVendorCostsTable();
+                }
                 break;
             case 'toolCost':
                 projectData.toolCosts.push({
@@ -229,9 +379,9 @@ function handleModalSubmit() {
                     monthlyCost: parseFloat(data.monthlyCost),
                     duration: parseInt(data.duration)
                 });
-                // Update global reference
-                window.projectData = projectData;
-                renderToolCostsTable();
+                if (window.TableRenderer) {
+                    window.TableRenderer.renderToolCostsTable();
+                }
                 break;
             case 'miscCost':
                 projectData.miscCosts.push({
@@ -241,9 +391,9 @@ function handleModalSubmit() {
                     category: data.category,
                     cost: parseFloat(data.cost)
                 });
-                // Update global reference
-                window.projectData = projectData;
-                renderMiscCostsTable();
+                if (window.TableRenderer) {
+                    window.TableRenderer.renderMiscCostsTable();
+                }
                 break;
             case 'risk':
                 projectData.risks.push({
@@ -253,9 +403,9 @@ function handleModalSubmit() {
                     impact: parseInt(data.impact),
                     mitigationCost: parseFloat(data.mitigationCost) || 0
                 });
-                // Update global reference
-                window.projectData = projectData;
-                renderRisksTable();
+                if (window.TableRenderer) {
+                    window.TableRenderer.renderRisksTable();
+                }
                 break;
             case 'rateCard':
                 console.log('Adding rate card:', data);
@@ -283,23 +433,16 @@ function handleModalSubmit() {
                 }
                 
                 console.log('Updated rateCards array:', projectData.rateCards);
-                console.log('Updated internalRates array:', projectData.internalRates);
-                console.log('Updated externalRates array:', projectData.externalRates);
                 
                 // Render the unified rate cards table
-                console.log('About to render unified rate cards table...');
-                renderUnifiedRateCardsTable();
+                if (window.TableRenderer) {
+                    window.TableRenderer.renderUnifiedRateCardsTable();
+                }
                 break;
         }
         
         updateSummary();
-        
-        // Close modal using DOM manager
-        const modal = document.getElementById('modal');
-        if (modal) {
-            modal.style.display = 'none';
-        }
-        
+        document.getElementById('modal').style.display = 'none';
         console.log('Modal submit completed successfully');
     } catch (error) {
         console.error('Error handling modal submit:', error);
@@ -327,7 +470,10 @@ function deleteItem(arrayName, id) {
         } else {
             projectData[arrayName] = projectData[arrayName].filter(item => item.id !== id);
         }
-        renderAllTables();
+        
+        if (window.TableRenderer) {
+            window.TableRenderer.renderAllTables();
+        }
         updateSummary();
     }
 }
@@ -375,8 +521,8 @@ function updateSummary() {
                 element.textContent = `${summaryElements[id].toLocaleString()}`;
             }
         });
-
-        // Update summary project info
+        
+        // Update project info in summary
         updateSummaryProjectInfo();
     } catch (error) {
         console.error('Error updating summary:', error);
@@ -385,6 +531,7 @@ function updateSummary() {
 
 function calculateInternalResourcesTotal() {
     return projectData.internalResources.reduce((total, resource) => {
+        // Handle both old format (q1Days) and new format (month1Days)
         const month1Days = resource.month1Days || resource.q1Days || 0;
         const month2Days = resource.month2Days || resource.q2Days || 0;
         const month3Days = resource.month3Days || resource.q3Days || 0;
@@ -396,6 +543,7 @@ function calculateInternalResourcesTotal() {
 
 function calculateVendorCostsTotal() {
     return projectData.vendorCosts.reduce((total, vendor) => {
+        // Handle both old format (q1Cost) and new format (month1Cost)
         const month1Cost = vendor.month1Cost || vendor.q1Cost || 0;
         const month2Cost = vendor.month2Cost || vendor.q2Cost || 0;
         const month3Cost = vendor.month3Cost || vendor.q3Cost || 0;
@@ -420,8 +568,6 @@ function calculateMiscCostsTotal() {
 // Function to update project info in summary tab
 function updateSummaryProjectInfo() {
     try {
-        console.log('Updating summary project info...');
-        
         // Update project info in summary tab
         const projectInfoElements = {
             summaryProjectName: projectData.projectInfo.projectName || 'Not specified',
@@ -471,5 +617,13 @@ function updateSummaryProjectInfo() {
     }
 }
 
-// Global function for delete buttons
+// Expose necessary functions globally
+window.openModal = openModal;
+window.handleModalSubmit = handleModalSubmit;
 window.deleteItem = deleteItem;
+window.updateSummary = updateSummary;
+window.updateMonthHeaders = updateMonthHeaders;
+window.calculateProjectMonths = calculateProjectMonths;
+
+// Make projectData available globally for modules
+window.projectData = projectData;
