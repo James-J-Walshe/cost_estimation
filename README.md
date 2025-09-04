@@ -4,12 +4,16 @@ A comprehensive web-based tool for creating detailed cost estimates for ICT (Inf
 
 ## 🚀 Live Demo
 
-**GitHub Pages URL:** [YOUR_GITHUB_PAGES_URL_HERE]
+**GitHub Pages URL:** (https://james-j-walshe.github.io/cost_estimation/)
 
 **Raw File URLs:**
 - HTML: `https://raw.githubusercontent.com/James-J-Walshe/cost_estimation/main/index.html`
 - CSS: `https://raw.githubusercontent.com/James-J-Walshe/cost_estimation/main/style.css`
 - JavaScript: `https://raw.githubusercontent.com/James-J-Walshe/cost_estimation/main/script.js`
+-    js
+-    data_manager: https://raw.githubusercontent.com/James-J-Walshe/cost_estimation/refs/heads/main/js/data_manager.js
+-    dom_manager:
+-    table_renderer:
 
 ## 📋 Features
 
