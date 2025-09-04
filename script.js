@@ -83,6 +83,15 @@ document.addEventListener('DOMContentLoaded', function() {
         renderAllTables();
         updateSummary();
         
+        // Ensure global projectData is properly set after all initialization
+        window.projectData = projectData;
+        
+        console.log('Final data check:', {
+            vendorCosts: projectData.vendorCosts.length,
+            toolCosts: projectData.toolCosts.length,
+            windowProjectData: window.projectData?.vendorCosts?.length
+        });
+        
         // Update month headers using DOM manager
         window.domManager.updateMonthHeaders();
         
