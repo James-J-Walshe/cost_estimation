@@ -41,6 +41,9 @@ let projectData = {
     contingencyPercentage: 10
 };
 
+// Make projectData globally available
+window.projectData = projectData;
+
 // Initialize Application
 document.addEventListener('DOMContentLoaded', function() {
     try {
