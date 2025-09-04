@@ -75,6 +75,20 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update month headers using DOM manager
         window.domManager.updateMonthHeaders();
         
+        // Manually attach settings button listener (backup method)
+        setTimeout(() => {
+            const settingsBtn = document.getElementById('settingsBtn');
+            if (settingsBtn && !settingsBtn.hasAttribute('data-settings-attached')) {
+                settingsBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Settings button clicked (manual attachment)');
+                    window.domManager.openSettings();
+                });
+                settingsBtn.setAttribute('data-settings-attached', 'true');
+                console.log('Settings button event listener attached successfully');
+            }
+        }, 100);
+        
         console.log('Application initialized successfully');
     } catch (error) {
         console.error('Error initializing application:', error);
