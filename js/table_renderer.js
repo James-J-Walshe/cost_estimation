@@ -36,13 +36,15 @@ class TableRenderer {
         
         tbody.innerHTML = '';
         
-        if (!window.projectData || window.projectData.rateCards.length === 0) {
+        // Access global projectData variable
+        const projectData = window.projectData || {};
+        if (!projectData.rateCards || projectData.rateCards.length === 0) {
             tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No rate cards added yet</td></tr>';
             return;
         }
         
         // Sort by category then by role
-        const sortedRates = [...window.projectData.rateCards].sort((a, b) => {
+        const sortedRates = [...projectData.rateCards].sort((a, b) => {
             if (a.category !== b.category) {
                 return a.category.localeCompare(b.category);
             }
@@ -74,12 +76,13 @@ class TableRenderer {
         
         tbody.innerHTML = '';
         
-        if (!window.projectData || window.projectData.internalResources.length === 0) {
+        const projectData = window.projectData || {};
+        if (!projectData.internalResources || projectData.internalResources.length === 0) {
             tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No internal resources added yet</td></tr>';
             return;
         }
         
-        window.projectData.internalResources.forEach(resource => {
+        projectData.internalResources.forEach(resource => {
             // Handle both old format (q1Days) and new format (month1Days)
             const month1Days = resource.month1Days || resource.q1Days || 0;
             const month2Days = resource.month2Days || resource.q2Days || 0;
@@ -91,12 +94,12 @@ class TableRenderer {
             row.innerHTML = `
                 <td>${resource.role}</td>
                 <td>${resource.rateCard}</td>
-                <td>$${resource.dailyRate.toLocaleString()}</td>
+                <td>${resource.dailyRate.toLocaleString()}</td>
                 <td>${month1Days}</td>
                 <td>${month2Days}</td>
                 <td>${month3Days}</td>
                 <td>${month4Days}</td>
-                <td>$${totalCost.toLocaleString()}</td>
+                <td>${totalCost.toLocaleString()}</td>
                 <td>
                     <button class="btn btn-danger btn-small" onclick="deleteItem('internalResources', ${resource.id})">Delete</button>
                 </td>
@@ -112,12 +115,13 @@ class TableRenderer {
         
         tbody.innerHTML = '';
         
-        if (!window.projectData || window.projectData.vendorCosts.length === 0) {
+        const projectData = window.projectData || {};
+        if (!projectData.vendorCosts || projectData.vendorCosts.length === 0) {
             tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No vendor costs added yet</td></tr>';
             return;
         }
         
-        window.projectData.vendorCosts.forEach(vendor => {
+        projectData.vendorCosts.forEach(vendor => {
             // Handle both old format (q1Cost) and new format (month1Cost)
             const month1Cost = vendor.month1Cost || vendor.q1Cost || 0;
             const month2Cost = vendor.month2Cost || vendor.q2Cost || 0;
@@ -130,11 +134,11 @@ class TableRenderer {
                 <td>${vendor.vendor}</td>
                 <td>${vendor.description}</td>
                 <td>${vendor.category}</td>
-                <td>$${month1Cost.toLocaleString()}</td>
-                <td>$${month2Cost.toLocaleString()}</td>
-                <td>$${month3Cost.toLocaleString()}</td>
-                <td>$${month4Cost.toLocaleString()}</td>
-                <td>$${totalCost.toLocaleString()}</td>
+                <td>${month1Cost.toLocaleString()}</td>
+                <td>${month2Cost.toLocaleString()}</td>
+                <td>${month3Cost.toLocaleString()}</td>
+                <td>${month4Cost.toLocaleString()}</td>
+                <td>${totalCost.toLocaleString()}</td>
                 <td>
                     <button class="btn btn-danger btn-small" onclick="deleteItem('vendorCosts', ${vendor.id})">Delete</button>
                 </td>
@@ -150,21 +154,22 @@ class TableRenderer {
         
         tbody.innerHTML = '';
         
-        if (!window.projectData || window.projectData.toolCosts.length === 0) {
+        const projectData = window.projectData || {};
+        if (!projectData.toolCosts || projectData.toolCosts.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No tool costs added yet</td></tr>';
             return;
         }
         
-        window.projectData.toolCosts.forEach(tool => {
+        projectData.toolCosts.forEach(tool => {
             const totalCost = tool.users * tool.monthlyCost * tool.duration;
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${tool.tool}</td>
                 <td>${tool.licenseType}</td>
                 <td>${tool.users}</td>
-                <td>$${tool.monthlyCost.toLocaleString()}</td>
+                <td>${tool.monthlyCost.toLocaleString()}</td>
                 <td>${tool.duration}</td>
-                <td>$${totalCost.toLocaleString()}</td>
+                <td>${totalCost.toLocaleString()}</td>
                 <td>
                     <button class="btn btn-danger btn-small" onclick="deleteItem('toolCosts', ${tool.id})">Delete</button>
                 </td>
@@ -180,18 +185,19 @@ class TableRenderer {
         
         tbody.innerHTML = '';
         
-        if (!window.projectData || window.projectData.miscCosts.length === 0) {
+        const projectData = window.projectData || {};
+        if (!projectData.miscCosts || projectData.miscCosts.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No miscellaneous costs added yet</td></tr>';
             return;
         }
         
-        window.projectData.miscCosts.forEach(misc => {
+        projectData.miscCosts.forEach(misc => {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${misc.item}</td>
                 <td>${misc.description}</td>
                 <td>${misc.category}</td>
-                <td>$${misc.cost.toLocaleString()}</td>
+                <td>${misc.cost.toLocaleString()}</td>
                 <td>
                     <button class="btn btn-danger btn-small" onclick="deleteItem('miscCosts', ${misc.id})">Delete</button>
                 </td>
@@ -207,12 +213,13 @@ class TableRenderer {
         
         tbody.innerHTML = '';
         
-        if (!window.projectData || window.projectData.risks.length === 0) {
+        const projectData = window.projectData || {};
+        if (!projectData.risks || projectData.risks.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No risks added yet</td></tr>';
             return;
         }
         
-        window.projectData.risks.forEach(risk => {
+        projectData.risks.forEach(risk => {
             const riskScore = risk.probability * risk.impact;
             const row = document.createElement('tr');
             row.innerHTML = `
@@ -220,7 +227,7 @@ class TableRenderer {
                 <td>${risk.probability}</td>
                 <td>${risk.impact}</td>
                 <td>${riskScore}</td>
-                <td>$${risk.mitigationCost.toLocaleString()}</td>
+                <td>${risk.mitigationCost.toLocaleString()}</td>
                 <td>
                     <button class="btn btn-danger btn-small" onclick="deleteItem('risks', ${risk.id})">Delete</button>
                 </td>
@@ -236,10 +243,11 @@ class TableRenderer {
         
         tbody.innerHTML = '';
         
-        if (!window.projectData) return;
+        const projectData = window.projectData || {};
+        if (!projectData.rateCards) return;
         
         // Show internal rates from unified rateCards
-        const internalRates = window.projectData.rateCards.filter(rate => rate.category === 'Internal');
+        const internalRates = projectData.rateCards.filter(rate => rate.category === 'Internal');
         
         if (internalRates.length === 0) {
             tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No internal rates added yet</td></tr>';
@@ -266,10 +274,11 @@ class TableRenderer {
         
         tbody.innerHTML = '';
         
-        if (!window.projectData) return;
+        const projectData = window.projectData || {};
+        if (!projectData.rateCards) return;
         
         // Show external rates from unified rateCards
-        const externalRates = window.projectData.rateCards.filter(rate => rate.category === 'External');
+        const externalRates = projectData.rateCards.filter(rate => rate.category === 'External');
         
         if (externalRates.length === 0) {
             tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No external rates added yet</td></tr>';
@@ -292,27 +301,32 @@ class TableRenderer {
     // Forecast table
     renderForecastTable() {
         const tbody = document.getElementById('forecastTable');
-        if (!tbody || !window.projectData) return;
+        const projectData = window.projectData || {};
+        if (!tbody || !projectData) return;
         
         tbody.innerHTML = '';
         
         // Internal Resources
         const internalMonthly = [0, 0, 0, 0, 0, 0];
-        window.projectData.internalResources.forEach(resource => {
-            internalMonthly[0] += (resource.month1Days || resource.q1Days || 0) * resource.dailyRate;
-            internalMonthly[1] += (resource.month2Days || resource.q2Days || 0) * resource.dailyRate;
-            internalMonthly[2] += (resource.month3Days || resource.q3Days || 0) * resource.dailyRate;
-            internalMonthly[3] += (resource.month4Days || resource.q4Days || 0) * resource.dailyRate;
-        });
+        if (projectData.internalResources) {
+            projectData.internalResources.forEach(resource => {
+                internalMonthly[0] += (resource.month1Days || resource.q1Days || 0) * resource.dailyRate;
+                internalMonthly[1] += (resource.month2Days || resource.q2Days || 0) * resource.dailyRate;
+                internalMonthly[2] += (resource.month3Days || resource.q3Days || 0) * resource.dailyRate;
+                internalMonthly[3] += (resource.month4Days || resource.q4Days || 0) * resource.dailyRate;
+            });
+        }
         
         // Vendor Costs
         const vendorMonthly = [0, 0, 0, 0, 0, 0];
-        window.projectData.vendorCosts.forEach(vendor => {
-            vendorMonthly[0] += vendor.month1Cost || vendor.q1Cost || 0;
-            vendorMonthly[1] += vendor.month2Cost || vendor.q2Cost || 0;
-            vendorMonthly[2] += vendor.month3Cost || vendor.q3Cost || 0;
-            vendorMonthly[3] += vendor.month4Cost || vendor.q4Cost || 0;
-        });
+        if (projectData.vendorCosts) {
+            projectData.vendorCosts.forEach(vendor => {
+                vendorMonthly[0] += vendor.month1Cost || vendor.q1Cost || 0;
+                vendorMonthly[1] += vendor.month2Cost || vendor.q2Cost || 0;
+                vendorMonthly[2] += vendor.month3Cost || vendor.q3Cost || 0;
+                vendorMonthly[3] += vendor.month4Cost || vendor.q4Cost || 0;
+            });
+        }
         
         // Add rows
         const internalTotal = internalMonthly.reduce((sum, val) => sum + val, 0);
