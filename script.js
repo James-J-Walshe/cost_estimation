@@ -92,8 +92,11 @@ document.addEventListener('DOMContentLoaded', function() {
             windowProjectData: window.projectData?.vendorCosts?.length
         });
         
-        // Re-render tables now that global data is available
-        renderAllTables();
+        // Re-render tables after a brief delay to ensure DOM is ready
+        setTimeout(() => {
+            console.log('Re-rendering tables with loaded data...');
+            renderAllTables();
+        }, 100);
         
         // Update month headers using DOM manager
         window.domManager.updateMonthHeaders();
