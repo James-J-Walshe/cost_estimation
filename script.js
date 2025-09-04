@@ -75,18 +75,38 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update month headers using DOM manager
         window.domManager.updateMonthHeaders();
         
-        // Manually attach settings button listener (backup method)
+        // Manually attach settings button listener with robust retry
         setTimeout(() => {
-            const settingsBtn = document.getElementById('settingsBtn');
-            if (settingsBtn && !settingsBtn.hasAttribute('data-settings-attached')) {
-                settingsBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    console.log('Settings button clicked (manual attachment)');
-                    window.domManager.openSettings();
-                });
-                settingsBtn.setAttribute('data-settings-attached', 'true');
-                console.log('Settings button event listener attached successfully');
+            function attachSettingsListener(attempt = 1) {
+                const settingsBtn = document.getElementById('settingsBtn');
+                console.log(`Settings attachment attempt ${attempt}:`, settingsBtn);
+                
+                if (settingsBtn && !settingsBtn.hasAttribute('data-settings-attached')) {
+                    // Clear any existing listeners by cloning
+                    const newBtn = settingsBtn.cloneNode(true);
+                    settingsBtn.parentNode.replaceChild(newBtn, settingsBtn);
+                    
+                    // Add our listener
+                    newBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        console.log('Settings button clicked (robust attachment)');
+                        window.domManager.openSettings();
+                    });
+                    
+                    newBtn.setAttribute('data-settings-attached', 'true');
+                    console.log('Settings button event listener attached successfully');
+                    return true;
+                } else if (attempt < 10) {
+                    setTimeout(() => attachSettingsListener(attempt + 1), 200);
+                    return false;
+                } else {
+                    console.warn('Settings button not found after 10 attempts');
+                    return false;
+                }
             }
+            
+            attachSettingsListener();
         }, 100);
         
         console.log('Application initialized successfully');
