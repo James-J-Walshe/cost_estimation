@@ -68,7 +68,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Check if Data Manager is available
         if (typeof window.DataManager !== 'undefined') {
-            window.DataManager.loadDefaultData();
+            const dataLoaded = window.DataManager.loadDefaultData();
+            
+            // Log data state after loading
+            console.log('After loadDefaultData:', {
+                vendorCosts: projectData.vendorCosts?.length || 0,
+                toolCosts: projectData.toolCosts?.length || 0,
+                windowProjectData: window.projectData?.vendorCosts?.length || 0
+            });
+            
+            // Ensure we're using the updated data
+            if (window.projectData) {
+                projectData = window.projectData;
+            }
         } else {
             console.error('Data Manager not found! Make sure data_manager.js is loaded.');
             return;
@@ -85,7 +97,23 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSummary();
         updateMonthHeaders();
         
+        // Final data verification
+        console.log('Final data check:', {
+            vendorCosts: projectData.vendorCosts?.length || 0,
+            toolCosts: projectData.toolCosts?.length || 0,
+            windowProjectData: window.projectData?.vendorCosts?.length || 0
+        });
+        
         console.log('Application initialized successfully');
+        
+        // Re-render tables after a short delay to ensure all data is properly loaded
+        setTimeout(() => {
+            console.log('Re-rendering tables with loaded data...');
+            if (window.TableRenderer) {
+                window.TableRenderer.renderAllTables();
+            }
+            updateSummary();
+        }, 100);
     } catch (error) {
         console.error('Error initializing application:', error);
         alert('Error initializing application. Please check the console for details.');
