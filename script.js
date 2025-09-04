@@ -72,6 +72,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('Loading data and rendering tables...');
         loadDefaultData();
+        
+        // Debug: Check data after loading
+        console.log('After loadDefaultData:', {
+            vendorCosts: projectData.vendorCosts.length,
+            toolCosts: projectData.toolCosts.length,
+            windowProjectData: window.projectData?.vendorCosts?.length
+        });
+        
         renderAllTables();
         updateSummary();
         
