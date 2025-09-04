@@ -191,6 +191,8 @@ function handleModalSubmit() {
                     month3Cost: parseFloat(data.month3Cost) || 0,
                     month4Cost: parseFloat(data.month4Cost) || 0
                 });
+                // Update global reference
+                window.projectData = projectData;
                 renderVendorCostsTable();
                 break;
             case 'toolCost':
@@ -202,6 +204,8 @@ function handleModalSubmit() {
                     monthlyCost: parseFloat(data.monthlyCost),
                     duration: parseInt(data.duration)
                 });
+                // Update global reference
+                window.projectData = projectData;
                 renderToolCostsTable();
                 break;
             case 'miscCost':
@@ -212,6 +216,8 @@ function handleModalSubmit() {
                     category: data.category,
                     cost: parseFloat(data.cost)
                 });
+                // Update global reference
+                window.projectData = projectData;
                 renderMiscCostsTable();
                 break;
             case 'risk':
@@ -222,6 +228,8 @@ function handleModalSubmit() {
                     impact: parseInt(data.impact),
                     mitigationCost: parseFloat(data.mitigationCost) || 0
                 });
+                // Update global reference
+                window.projectData = projectData;
                 renderRisksTable();
                 break;
             case 'rateCard':
