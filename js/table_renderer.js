@@ -38,6 +38,8 @@ class TableRenderer {
         
         // Access global projectData variable
         const projectData = window.projectData || {};
+        console.log('ProjectData in renderUnifiedRateCardsTable:', projectData);
+        
         if (!projectData.rateCards || projectData.rateCards.length === 0) {
             tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No rate cards added yet</td></tr>';
             return;
@@ -58,7 +60,7 @@ class TableRenderer {
             row.innerHTML = `
                 <td>${rate.role}</td>
                 <td><span class="category-badge category-${rate.category.toLowerCase()}">${rate.category}</span></td>
-                <td>${rate.rate.toLocaleString()}</td>
+                <td>$${rate.rate.toLocaleString()}</td>
                 <td>
                     <button class="btn btn-danger btn-small" onclick="deleteItem('rateCards', ${rate.id || `'${rate.role}'`})">Delete</button>
                 </td>
@@ -77,6 +79,11 @@ class TableRenderer {
         tbody.innerHTML = '';
         
         const projectData = window.projectData || {};
+        console.log('ProjectData in renderInternalResourcesTable:', {
+            exists: !!projectData,
+            internalResources: projectData.internalResources?.length || 0
+        });
+        
         if (!projectData.internalResources || projectData.internalResources.length === 0) {
             tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No internal resources added yet</td></tr>';
             return;
@@ -94,18 +101,20 @@ class TableRenderer {
             row.innerHTML = `
                 <td>${resource.role}</td>
                 <td>${resource.rateCard}</td>
-                <td>${resource.dailyRate.toLocaleString()}</td>
+                <td>$${resource.dailyRate.toLocaleString()}</td>
                 <td>${month1Days}</td>
                 <td>${month2Days}</td>
                 <td>${month3Days}</td>
                 <td>${month4Days}</td>
-                <td>${totalCost.toLocaleString()}</td>
+                <td>$${totalCost.toLocaleString()}</td>
                 <td>
                     <button class="btn btn-danger btn-small" onclick="deleteItem('internalResources', ${resource.id})">Delete</button>
                 </td>
             `;
             tbody.appendChild(row);
         });
+        
+        console.log(`Rendered ${projectData.internalResources.length} internal resources`);
     }
 
     // Vendor costs table
@@ -116,6 +125,11 @@ class TableRenderer {
         tbody.innerHTML = '';
         
         const projectData = window.projectData || {};
+        console.log('ProjectData in renderVendorCostsTable:', {
+            exists: !!projectData,
+            vendorCosts: projectData.vendorCosts?.length || 0
+        });
+        
         if (!projectData.vendorCosts || projectData.vendorCosts.length === 0) {
             tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No vendor costs added yet</td></tr>';
             return;
@@ -134,17 +148,19 @@ class TableRenderer {
                 <td>${vendor.vendor}</td>
                 <td>${vendor.description}</td>
                 <td>${vendor.category}</td>
-                <td>${month1Cost.toLocaleString()}</td>
-                <td>${month2Cost.toLocaleString()}</td>
-                <td>${month3Cost.toLocaleString()}</td>
-                <td>${month4Cost.toLocaleString()}</td>
-                <td>${totalCost.toLocaleString()}</td>
+                <td>$${month1Cost.toLocaleString()}</td>
+                <td>$${month2Cost.toLocaleString()}</td>
+                <td>$${month3Cost.toLocaleString()}</td>
+                <td>$${month4Cost.toLocaleString()}</td>
+                <td>$${totalCost.toLocaleString()}</td>
                 <td>
                     <button class="btn btn-danger btn-small" onclick="deleteItem('vendorCosts', ${vendor.id})">Delete</button>
                 </td>
             `;
             tbody.appendChild(row);
         });
+        
+        console.log(`Rendered ${projectData.vendorCosts.length} vendor costs`);
     }
 
     // Tool costs table
@@ -155,6 +171,11 @@ class TableRenderer {
         tbody.innerHTML = '';
         
         const projectData = window.projectData || {};
+        console.log('ProjectData in renderToolCostsTable:', {
+            exists: !!projectData,
+            toolCosts: projectData.toolCosts?.length || 0
+        });
+        
         if (!projectData.toolCosts || projectData.toolCosts.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No tool costs added yet</td></tr>';
             return;
@@ -167,15 +188,17 @@ class TableRenderer {
                 <td>${tool.tool}</td>
                 <td>${tool.licenseType}</td>
                 <td>${tool.users}</td>
-                <td>${tool.monthlyCost.toLocaleString()}</td>
+                <td>$${tool.monthlyCost.toLocaleString()}</td>
                 <td>${tool.duration}</td>
-                <td>${totalCost.toLocaleString()}</td>
+                <td>$${totalCost.toLocaleString()}</td>
                 <td>
                     <button class="btn btn-danger btn-small" onclick="deleteItem('toolCosts', ${tool.id})">Delete</button>
                 </td>
             `;
             tbody.appendChild(row);
         });
+        
+        console.log(`Rendered ${projectData.toolCosts.length} tool costs`);
     }
 
     // Miscellaneous costs table
@@ -186,6 +209,11 @@ class TableRenderer {
         tbody.innerHTML = '';
         
         const projectData = window.projectData || {};
+        console.log('ProjectData in renderMiscCostsTable:', {
+            exists: !!projectData,
+            miscCosts: projectData.miscCosts?.length || 0
+        });
+        
         if (!projectData.miscCosts || projectData.miscCosts.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No miscellaneous costs added yet</td></tr>';
             return;
@@ -197,13 +225,15 @@ class TableRenderer {
                 <td>${misc.item}</td>
                 <td>${misc.description}</td>
                 <td>${misc.category}</td>
-                <td>${misc.cost.toLocaleString()}</td>
+                <td>$${misc.cost.toLocaleString()}</td>
                 <td>
                     <button class="btn btn-danger btn-small" onclick="deleteItem('miscCosts', ${misc.id})">Delete</button>
                 </td>
             `;
             tbody.appendChild(row);
         });
+        
+        console.log(`Rendered ${projectData.miscCosts.length} miscellaneous costs`);
     }
 
     // Risks table
@@ -214,6 +244,11 @@ class TableRenderer {
         tbody.innerHTML = '';
         
         const projectData = window.projectData || {};
+        console.log('ProjectData in renderRisksTable:', {
+            exists: !!projectData,
+            risks: projectData.risks?.length || 0
+        });
+        
         if (!projectData.risks || projectData.risks.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No risks added yet</td></tr>';
             return;
@@ -227,13 +262,15 @@ class TableRenderer {
                 <td>${risk.probability}</td>
                 <td>${risk.impact}</td>
                 <td>${riskScore}</td>
-                <td>${risk.mitigationCost.toLocaleString()}</td>
+                <td>$${risk.mitigationCost.toLocaleString()}</td>
                 <td>
                     <button class="btn btn-danger btn-small" onclick="deleteItem('risks', ${risk.id})">Delete</button>
                 </td>
             `;
             tbody.appendChild(row);
         });
+        
+        console.log(`Rendered ${projectData.risks.length} risks`);
     }
 
     // Internal rates table (backward compatibility)
@@ -258,7 +295,7 @@ class TableRenderer {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${rate.role}</td>
-                <td>${rate.rate.toLocaleString()}</td>
+                <td>$${rate.rate.toLocaleString()}</td>
                 <td>
                     <button class="btn btn-danger btn-small" onclick="deleteItem('rateCards', ${rate.id || `'${rate.role}'`})">Delete</button>
                 </td>
@@ -289,7 +326,7 @@ class TableRenderer {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${rate.role}</td>
-                <td>${rate.rate.toLocaleString()}</td>
+                <td>$${rate.rate.toLocaleString()}</td>
                 <td>
                     <button class="btn btn-danger btn-small" onclick="deleteItem('rateCards', ${rate.id || `'${rate.role}'`})">Delete</button>
                 </td>
@@ -335,23 +372,23 @@ class TableRenderer {
         tbody.innerHTML = `
             <tr>
                 <td><strong>Internal Resources</strong></td>
-                <td>${internalMonthly[0].toLocaleString()}</td>
-                <td>${internalMonthly[1].toLocaleString()}</td>
-                <td>${internalMonthly[2].toLocaleString()}</td>
-                <td>${internalMonthly[3].toLocaleString()}</td>
-                <td>${internalMonthly[4].toLocaleString()}</td>
-                <td>${internalMonthly[5].toLocaleString()}</td>
-                <td><strong>${internalTotal.toLocaleString()}</strong></td>
+                <td>$${internalMonthly[0].toLocaleString()}</td>
+                <td>$${internalMonthly[1].toLocaleString()}</td>
+                <td>$${internalMonthly[2].toLocaleString()}</td>
+                <td>$${internalMonthly[3].toLocaleString()}</td>
+                <td>$${internalMonthly[4].toLocaleString()}</td>
+                <td>$${internalMonthly[5].toLocaleString()}</td>
+                <td><strong>$${internalTotal.toLocaleString()}</strong></td>
             </tr>
             <tr>
                 <td><strong>Vendor Costs</strong></td>
-                <td>${vendorMonthly[0].toLocaleString()}</td>
-                <td>${vendorMonthly[1].toLocaleString()}</td>
-                <td>${vendorMonthly[2].toLocaleString()}</td>
-                <td>${vendorMonthly[3].toLocaleString()}</td>
-                <td>${vendorMonthly[4].toLocaleString()}</td>
-                <td>${vendorMonthly[5].toLocaleString()}</td>
-                <td><strong>${vendorTotal.toLocaleString()}</strong></td>
+                <td>$${vendorMonthly[0].toLocaleString()}</td>
+                <td>$${vendorMonthly[1].toLocaleString()}</td>
+                <td>$${vendorMonthly[2].toLocaleString()}</td>
+                <td>$${vendorMonthly[3].toLocaleString()}</td>
+                <td>$${vendorMonthly[4].toLocaleString()}</td>
+                <td>$${vendorMonthly[5].toLocaleString()}</td>
+                <td><strong>$${vendorTotal.toLocaleString()}</strong></td>
             </tr>
         `;
     }
@@ -361,7 +398,7 @@ class TableRenderer {
 const tableRenderer = new TableRenderer();
 
 // Make it globally available
-window.tableRenderer = tableRenderer;
+window.TableRenderer = tableRenderer;
 
 // Export individual functions for backward compatibility
 window.renderAllTables = () => tableRenderer.renderAllTables();
