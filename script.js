@@ -49,10 +49,24 @@ document.addEventListener('DOMContentLoaded', function() {
         // Check if DOM Manager is available and initialize
         if (typeof window.DOMManager !== 'undefined') {
             console.log('DOM Manager found, initializing...');
-            window.DOMManager.initialize();
+            if (typeof window.DOMManager.initialize === 'function') {
+                window.DOMManager.initialize();
+            } else {
+                console.log('DOM Manager found but no initialize method, checking available methods:', Object.keys(window.DOMManager));
+                initializeBasicFunctionality();
+            }
         } else if (typeof window.domManager !== 'undefined') {
             console.log('DOM Manager (lowercase) found, initializing...');
-            window.domManager.initialize();
+            console.log('Available methods on domManager:', Object.keys(window.domManager));
+            
+            if (typeof window.domManager.initialize === 'function') {
+                window.domManager.initialize();
+            } else if (typeof window.domManager.init === 'function') {
+                window.domManager.init();
+            } else {
+                console.log('DOM Manager found but no initialize/init method, using basic functionality');
+                initializeBasicFunctionality();
+            }
         } else {
             console.log('DOM Manager not found, initializing basic functionality...');
             initializeBasicFunctionality();
