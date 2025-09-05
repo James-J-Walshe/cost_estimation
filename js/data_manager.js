@@ -17,20 +17,44 @@ class DataManager {
                     // Get current projectData reference
                     const currentProjectData = window.projectData || {};
                     
-                    // Merge with existing data
-                    const mergedData = { ...currentProjectData, ...parsed };
+                    // Log what we're loading
+                    console.log('Data loaded from localStorage:', {
+                        vendorCosts: parsed.vendorCosts?.length || 0,
+                        toolCosts: parsed.toolCosts?.length || 0,
+                        internalResources: parsed.internalResources?.length || 0
+                    });
                     
-                    // Update global reference
-                    window.projectData = mergedData;
+                    // Update the global projectData - merge arrays properly
+                    if (window.projectData) {
+                        // Merge each array individually to preserve data
+                        window.projectData.projectInfo = { ...window.projectData.projectInfo, ...parsed.projectInfo };
+                        window.projectData.internalResources = parsed.internalResources || [];
+                        window.projectData.vendorCosts = parsed.vendorCosts || [];
+                        window.projectData.toolCosts = parsed.toolCosts || [];
+                        window.projectData.miscCosts = parsed.miscCosts || [];
+                        window.projectData.risks = parsed.risks || [];
+                        window.projectData.contingencyPercentage = parsed.contingencyPercentage || 10;
+                        
+                        // Handle rate cards properly
+                        if (parsed.rateCards) {
+                            window.projectData.rateCards = parsed.rateCards;
+                        }
+                        if (parsed.internalRates) {
+                            window.projectData.internalRates = parsed.internalRates;
+                        }
+                        if (parsed.externalRates) {
+                            window.projectData.externalRates = parsed.externalRates;
+                        }
+                    }
                     
                     // Migrate old rate cards to new unified format if needed
-                    if (!mergedData.rateCards && (mergedData.internalRates || mergedData.externalRates)) {
-                        mergedData.rateCards = [];
+                    if (!window.projectData.rateCards && (window.projectData.internalRates || window.projectData.externalRates)) {
+                        window.projectData.rateCards = [];
                         
                         // Migrate internal rates
-                        if (mergedData.internalRates) {
-                            mergedData.internalRates.forEach(rate => {
-                                mergedData.rateCards.push({
+                        if (window.projectData.internalRates) {
+                            window.projectData.internalRates.forEach(rate => {
+                                window.projectData.rateCards.push({
                                     id: rate.id || Date.now() + Math.random(),
                                     role: rate.role,
                                     rate: rate.rate,
@@ -40,9 +64,9 @@ class DataManager {
                         }
                         
                         // Migrate external rates
-                        if (mergedData.externalRates) {
-                            mergedData.externalRates.forEach(rate => {
-                                mergedData.rateCards.push({
+                        if (window.projectData.externalRates) {
+                            window.projectData.externalRates.forEach(rate => {
+                                window.projectData.rateCards.push({
                                     id: rate.id || Date.now() + Math.random(),
                                     role: rate.role,
                                     rate: rate.rate,
@@ -50,32 +74,35 @@ class DataManager {
                                 });
                             });
                         }
-                        
-                        // Update global reference after migration
-                        window.projectData = mergedData;
                     }
                     
                     // Populate form fields
-                    this.populateFormFields(mergedData);
+                    this.populateFormFields();
                     
-                    console.log('Data loaded from localStorage:', {
-                        vendorCosts: mergedData.vendorCosts?.length || 0,
-                        toolCosts: mergedData.toolCosts?.length || 0,
-                        internalResources: mergedData.internalResources?.length || 0
+                    // Log final state after loading
+                    console.log('Final data state after loading:', {
+                        vendorCosts: window.projectData.vendorCosts?.length || 0,
+                        toolCosts: window.projectData.toolCosts?.length || 0,
+                        internalResources: window.projectData.internalResources?.length || 0,
+                        projectData: window.projectData
                     });
                     
-                    return mergedData;
+                    console.log('Data loaded and populated successfully');
+                    return true;
                 }
             }
-            return window.projectData || {};
+            
+            console.log('No saved data found or localStorage not available');
+            return false;
         } catch (e) {
             console.error('Error loading saved data:', e);
-            return window.projectData || {};
+            return false;
         }
     }
 
     // Populate form fields with project data
-    populateFormFields(projectData) {
+    populateFormFields() {
+        const projectData = window.projectData || {};
         const formFields = {
             projectName: projectData.projectInfo?.projectName || '',
             startDate: projectData.projectInfo?.startDate || '',
@@ -104,21 +131,15 @@ class DataManager {
 
             if (typeof(Storage) !== "undefined" && localStorage) {
                 localStorage.setItem('ictProjectData', JSON.stringify(projectData));
-                if (window.domManager) {
-                    window.domManager.showAlert('Project saved to browser storage successfully!', 'success');
-                }
+                this.showAlert('Project saved to browser storage successfully!', 'success');
                 return true;
             } else {
-                if (window.domManager) {
-                    window.domManager.showAlert('Local storage not available. Cannot save project.', 'error');
-                }
+                this.showAlert('Local storage not available. Cannot save project.', 'error');
                 return false;
             }
         } catch (e) {
             console.error('Error saving project:', e);
-            if (window.domManager) {
-                window.domManager.showAlert('Error saving project: ' + e.message, 'error');
-            }
+            this.showAlert('Error saving project: ' + e.message, 'error');
             return false;
         }
     }
@@ -146,15 +167,11 @@ class DataManager {
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
             
-            if (window.domManager) {
-                window.domManager.showAlert('Project file downloaded successfully!', 'success');
-            }
+            this.showAlert('Project file downloaded successfully!', 'success');
             return true;
         } catch (error) {
             console.error('Error downloading project:', error);
-            if (window.domManager) {
-                window.domManager.showAlert('Error downloading project file: ' + error.message, 'error');
-            }
+            this.showAlert('Error downloading project file: ' + error.message, 'error');
             return false;
         }
     }
@@ -208,7 +225,7 @@ class DataManager {
                 window.projectData = newProjectData;
                 
                 // Clear form fields
-                this.populateFormFields(newProjectData);
+                this.populateFormFields();
                 
                 // Clear localStorage
                 if (typeof(Storage) !== "undefined" && localStorage) {
@@ -216,22 +233,18 @@ class DataManager {
                 }
                 
                 // Re-render all tables and summaries
-                if (window.renderAllTables) window.renderAllTables();
+                if (window.TableRenderer) window.TableRenderer.renderAllTables();
                 if (window.updateSummary) window.updateSummary();
-                if (window.domManager) {
-                    window.domManager.updateMonthHeaders();
-                    window.domManager.switchTab('project-info');
-                    window.domManager.showAlert('New project started successfully! Please enter your project information.', 'success');
-                }
+                if (window.updateMonthHeaders) window.updateMonthHeaders();
+                
+                this.showAlert('New project started successfully! Please enter your project information.', 'success');
                 
                 console.log('New project created');
                 return true;
                 
             } catch (error) {
                 console.error('Error creating new project:', error);
-                if (window.domManager) {
-                    window.domManager.showAlert('Error creating new project: ' + error.message, 'error');
-                }
+                this.showAlert('Error creating new project: ' + error.message, 'error');
                 return false;
             }
         }
@@ -246,34 +259,61 @@ class DataManager {
         input.onchange = (e) => {
             const file = e.target.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const data = JSON.parse(e.target.result);
-                        const currentProjectData = window.projectData || {};
-                        const mergedData = { ...currentProjectData, ...data };
-                        
-                        window.projectData = mergedData;
-                        
-                        // Reload and re-render
-                        this.loadDefaultData();
-                        if (window.renderAllTables) window.renderAllTables();
-                        if (window.updateSummary) window.updateSummary();
-                        if (window.domManager) {
-                            window.domManager.updateMonthHeaders();
-                            window.domManager.showAlert('Project loaded successfully!', 'success');
-                        }
-                    } catch (err) {
-                        console.error('Error loading project:', err);
-                        if (window.domManager) {
-                            window.domManager.showAlert('Error loading project file: ' + err.message, 'error');
-                        }
-                    }
-                };
-                reader.readAsText(file);
+                this.loadProjectFromFile(file);
             }
         };
         input.click();
+    }
+
+    // Load project from file object (new method)
+    loadProjectFromFile(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                
+                // Update the global projectData
+                if (window.projectData) {
+                    // Merge each array individually to preserve data
+                    window.projectData.projectInfo = { ...window.projectData.projectInfo, ...data.projectInfo };
+                    window.projectData.internalResources = data.internalResources || [];
+                    window.projectData.vendorCosts = data.vendorCosts || [];
+                    window.projectData.toolCosts = data.toolCosts || [];
+                    window.projectData.miscCosts = data.miscCosts || [];
+                    window.projectData.risks = data.risks || [];
+                    window.projectData.contingencyPercentage = data.contingencyPercentage || 10;
+                    
+                    // Handle rate cards properly
+                    if (data.rateCards) {
+                        window.projectData.rateCards = data.rateCards;
+                    }
+                    if (data.internalRates) {
+                        window.projectData.internalRates = data.internalRates;
+                    }
+                    if (data.externalRates) {
+                        window.projectData.externalRates = data.externalRates;
+                    }
+                }
+                
+                this.populateFormFields();
+                
+                if (window.TableRenderer) {
+                    window.TableRenderer.renderAllTables();
+                }
+                if (window.updateSummary) {
+                    window.updateSummary();
+                }
+                if (window.updateMonthHeaders) {
+                    window.updateMonthHeaders();
+                }
+                
+                this.showAlert('Project loaded successfully!', 'success');
+            } catch (err) {
+                console.error('Error loading project:', err);
+                this.showAlert('Error loading project file: ' + err.message, 'error');
+            }
+        };
+        reader.readAsText(file);
     }
 
     // Export project to Excel/CSV
@@ -294,15 +334,11 @@ class DataManager {
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
             
-            if (window.domManager) {
-                window.domManager.showAlert('Export completed successfully!', 'success');
-            }
+            this.showAlert('Export completed successfully!', 'success');
             return true;
         } catch (error) {
             console.error('Error exporting:', error);
-            if (window.domManager) {
-                window.domManager.showAlert('Error exporting project: ' + error.message, 'error');
-            }
+            this.showAlert('Error exporting project: ' + error.message, 'error');
             return false;
         }
     }
@@ -409,13 +445,43 @@ class DataManager {
         
         return csv;
     }
+
+    // Show alert message
+    showAlert(message, type) {
+        try {
+            // Create alert element
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            // Insert at top of content
+            const content = document.querySelector('.content');
+            if (content) {
+                content.insertBefore(alert, content.firstChild);
+                
+                // Remove after 5 seconds
+                setTimeout(() => {
+                    if (alert.parentNode) {
+                        alert.remove();
+                    }
+                }, 5000);
+            } else {
+                // Fallback to console if content area not found
+                console.log(`${type.toUpperCase()}: ${message}`);
+            }
+        } catch (error) {
+            console.error('Error showing alert:', error);
+            console.log(`${type.toUpperCase()}: ${message}`);
+        }
+    }
 }
 
 // Create and export data manager instance
 const dataManager = new DataManager();
 
-// Make it globally available
+// Make it globally available with both casing for compatibility
 window.dataManager = dataManager;
+window.DataManager = dataManager;
 
 // Export functions for backward compatibility
 window.loadDefaultData = () => dataManager.loadDefaultData();
