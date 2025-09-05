@@ -12,7 +12,7 @@ A comprehensive web-based tool for creating detailed cost estimates for ICT (Inf
 - JavaScript: `https://raw.githubusercontent.com/James-J-Walshe/cost_estimation/main/script.js`
 -    js
 -    data_manager: `https://raw.githubusercontent.com/James-J-Walshe/cost_estimation/refs/heads/main/js/data_manager.js`
--    dom_manager: ` `
+-    dom_manager: `https://raw.githubusercontent.com/James-J-Walshe/cost_estimation/refs/heads/main/js/dom_manager.js`
 -    table_renderer: ` `
 
 ## 📋 Features
