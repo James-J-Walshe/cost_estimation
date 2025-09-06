@@ -211,6 +211,9 @@ function initializeBasicEventListeners() {
         }
     });
     
+    // Settings button functionality
+    initializeSettingsButton();
+    
     // Modal listeners
     const modal = document.getElementById('modal');
     const closeModal = document.querySelector('.close');
@@ -265,6 +268,138 @@ function initializeBasicEventListeners() {
             });
         }
     });
+}
+
+// Settings functionality
+function initializeSettingsButton() {
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsBtnMobile = document.getElementById('settingsBtnMobile');
+    const backToMain = document.getElementById('backToMain');
+    const mainApp = document.getElementById('mainApp');
+    const settingsApp = document.getElementById('settingsApp');
+    
+    // Desktop settings button
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => {
+            console.log('Settings button clicked');
+            showSettingsView();
+        });
+        console.log('Settings button listener added');
+    }
+    
+    // Mobile settings button
+    if (settingsBtnMobile) {
+        settingsBtnMobile.addEventListener('click', () => {
+            console.log('Mobile settings button clicked');
+            showSettingsView();
+            // Close mobile menu
+            const mobileDropdown = document.getElementById('mobileDropdown');
+            if (mobileDropdown) {
+                mobileDropdown.style.display = 'none';
+            }
+        });
+        console.log('Mobile settings button listener added');
+    }
+    
+    // Back to main button
+    if (backToMain) {
+        backToMain.addEventListener('click', () => {
+            console.log('Back to main button clicked');
+            showMainView();
+        });
+        console.log('Back to main button listener added');
+    }
+    
+    // Initialize settings navigation
+    initializeSettingsNavigation();
+    
+    // Initialize mobile hamburger menu
+    initializeMobileMenu();
+}
+
+function showSettingsView() {
+    const mainApp = document.getElementById('mainApp');
+    const settingsApp = document.getElementById('settingsApp');
+    
+    if (mainApp && settingsApp) {
+        mainApp.style.display = 'none';
+        settingsApp.style.display = 'block';
+        console.log('Switched to settings view');
+        
+        // Re-render tables in settings if needed
+        if (window.TableRenderer) {
+            setTimeout(() => {
+                window.TableRenderer.renderUnifiedRateCardsTable();
+            }, 100);
+        }
+    }
+}
+
+function showMainView() {
+    const mainApp = document.getElementById('mainApp');
+    const settingsApp = document.getElementById('settingsApp');
+    
+    if (mainApp && settingsApp) {
+        mainApp.style.display = 'block';
+        settingsApp.style.display = 'none';
+        console.log('Switched to main view');
+        
+        // Re-render all tables when returning to main view
+        if (window.TableRenderer) {
+            setTimeout(() => {
+                window.TableRenderer.renderAllTables();
+                updateSummary();
+            }, 100);
+        }
+    }
+}
+
+function initializeSettingsNavigation() {
+    const settingsNavButtons = document.querySelectorAll('.settings-nav-btn');
+    const settingsTabContents = document.querySelectorAll('.settings-tab-content');
+    
+    settingsNavButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetTab = button.getAttribute('data-settings-tab');
+            
+            // Update active nav button
+            settingsNavButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            // Update active tab content
+            settingsTabContents.forEach(content => content.classList.remove('active'));
+            const targetContent = document.getElementById(`settings-${targetTab}`);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+            
+            console.log(`Switched to settings tab: ${targetTab}`);
+        });
+    });
+    
+    console.log('Settings navigation initialized');
+}
+
+function initializeMobileMenu() {
+    const hamburgerBtn = document.getElementById('hamburgerBtn');
+    const mobileDropdown = document.getElementById('mobileDropdown');
+    
+    if (hamburgerBtn && mobileDropdown) {
+        hamburgerBtn.addEventListener('click', () => {
+            const isVisible = mobileDropdown.style.display === 'block';
+            mobileDropdown.style.display = isVisible ? 'none' : 'block';
+            console.log('Mobile menu toggled');
+        });
+        
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!hamburgerBtn.contains(e.target) && !mobileDropdown.contains(e.target)) {
+                mobileDropdown.style.display = 'none';
+            }
+        });
+        
+        console.log('Mobile menu initialized');
+    }
 }
 
 // Fallback functions for when modules aren't available
