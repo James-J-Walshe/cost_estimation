@@ -326,6 +326,9 @@ function showSettingsView() {
         settingsApp.style.display = 'block';
         console.log('Switched to settings view');
         
+        // Add visual enhancements to the back button
+        enhanceBackButton();
+        
         // Re-render tables in settings if needed
         if (window.TableRenderer) {
             setTimeout(() => {
@@ -333,6 +336,86 @@ function showSettingsView() {
             }, 100);
         }
     }
+}
+
+function enhanceBackButton() {
+    const backToMain = document.getElementById('backToMain');
+    if (backToMain) {
+        // Add hover effects and better visual styling
+        backToMain.style.cursor = 'pointer';
+        backToMain.style.transition = 'all 0.2s ease';
+        backToMain.style.borderRadius = '6px';
+        backToMain.style.padding = '8px 16px';
+        backToMain.style.backgroundColor = '#f8f9fa';
+        backToMain.style.border = '1px solid #dee2e6';
+        backToMain.style.display = 'flex';
+        backToMain.style.alignItems = 'center';
+        backToMain.style.gap = '8px';
+        backToMain.style.fontSize = '14px';
+        backToMain.style.fontWeight = '500';
+        backToMain.style.color = '#495057';
+        
+        // Add hover effect
+        backToMain.addEventListener('mouseenter', () => {
+            backToMain.style.backgroundColor = '#e9ecef';
+            backToMain.style.borderColor = '#adb5bd';
+            backToMain.style.transform = 'translateY(-1px)';
+            backToMain.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+        });
+        
+        backToMain.addEventListener('mouseleave', () => {
+            backToMain.style.backgroundColor = '#f8f9fa';
+            backToMain.style.borderColor = '#dee2e6';
+            backToMain.style.transform = 'translateY(0)';
+            backToMain.style.boxShadow = 'none';
+        });
+        
+        backToMain.addEventListener('mousedown', () => {
+            backToMain.style.transform = 'translateY(0)';
+            backToMain.style.backgroundColor = '#dee2e6';
+        });
+        
+        backToMain.addEventListener('mouseup', () => {
+            backToMain.style.backgroundColor = '#e9ecef';
+        });
+        
+        console.log('Back button visual enhancements applied');
+    }
+    
+    // Also enhance any other clickable areas that might need visual cues
+    enhanceClickableAreas();
+}
+
+function enhanceClickableAreas() {
+    // Add visual enhancements to settings navigation buttons
+    const settingsNavButtons = document.querySelectorAll('.settings-nav-btn');
+    settingsNavButtons.forEach(button => {
+        button.style.cursor = 'pointer';
+        button.style.transition = 'all 0.2s ease';
+        
+        // Add subtle hover effects if they don't already exist
+        button.addEventListener('mouseenter', () => {
+            if (!button.classList.contains('active')) {
+                button.style.backgroundColor = 'rgba(0, 123, 255, 0.1)';
+            }
+        });
+        
+        button.addEventListener('mouseleave', () => {
+            if (!button.classList.contains('active')) {
+                button.style.backgroundColor = '';
+            }
+        });
+    });
+    
+    // Enhance any other potentially unclear clickable areas
+    const allButtons = document.querySelectorAll('button:not([style*="cursor"])');
+    allButtons.forEach(button => {
+        if (!button.style.cursor) {
+            button.style.cursor = 'pointer';
+        }
+    });
+    
+    console.log('Additional clickable areas enhanced');
 }
 
 function showMainView() {
