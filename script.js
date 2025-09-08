@@ -41,595 +41,38 @@ let projectData = {
     contingencyPercentage: 10
 };
 
+// DOM Elements
+let tabButtons, tabContents, modal, modalContent, modalTitle, modalForm, modalFields, closeModal, cancelModal;
+
 // Initialize Application
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Starting application initialization...');
-    
     try {
-        // Check if DOM Manager is available and initialize
-        if (typeof window.DOMManager !== 'undefined') {
-            console.log('DOM Manager found, initializing...');
-            if (typeof window.DOMManager.initialize === 'function') {
-                window.DOMManager.initialize();
-            } else {
-                console.log('DOM Manager found but no initialize method, checking available methods:', Object.keys(window.DOMManager));
-                initializeBasicFunctionality();
-            }
-        } else if (typeof window.domManager !== 'undefined') {
-            console.log('DOM Manager (lowercase) found, initializing...');
-            console.log('Available methods on domManager:', Object.keys(window.domManager));
-            
-            if (typeof window.domManager.initialize === 'function') {
-                window.domManager.initialize();
-            } else if (typeof window.domManager.init === 'function') {
-                window.domManager.init();
-            } else {
-                console.log('DOM Manager found but no initialize/init method, using basic functionality');
-                initializeBasicFunctionality();
-            }
-        } else {
-            console.log('DOM Manager not found, initializing basic functionality...');
-            initializeBasicFunctionality();
-        }
+        // Initialize DOM elements
+        tabButtons = document.querySelectorAll('.tab-btn');
+        tabContents = document.querySelectorAll('.tab-content');
+        modal = document.getElementById('modal');
+        modalContent = document.querySelector('.modal-content');
+        modalTitle = document.getElementById('modalTitle');
+        modalForm = document.getElementById('modalForm');
+        modalFields = document.getElementById('modalFields');
+        closeModal = document.querySelector('.close');
+        cancelModal = document.getElementById('cancelModal');
+
+        console.log('DOM elements initialized');
         
-        console.log('DOM elements initialized successfully');
-        console.log('Tabs initialized');
-        console.log('Event listeners initialized');
-        
-        // Load data and render tables
-        console.log('Loading data and rendering tables...');
-        
-        // Check if Data Manager is available
-        if (typeof window.DataManager !== 'undefined') {
-            const dataLoaded = window.DataManager.loadDefaultData();
-            console.log('Data Manager found and data loaded');
-            
-            // Ensure we're using the updated data
-            if (window.projectData) {
-                projectData = window.projectData;
-            }
-        } else if (typeof window.dataManager !== 'undefined') {
-            const dataLoaded = window.dataManager.loadDefaultData();
-            console.log('Data Manager (lowercase) found and data loaded');
-            
-            // Ensure we're using the updated data
-            if (window.projectData) {
-                projectData = window.projectData;
-            }
-        } else {
-            console.warn('Data Manager not found - using basic data loading');
-            loadDefaultDataBasic();
-        }
-        
-        // Check if Table Renderer is available
-        if (typeof window.TableRenderer !== 'undefined') {
-            window.TableRenderer.renderAllTables();
-            console.log('Table Renderer found and tables rendered');
-        } else if (typeof window.tableRenderer !== 'undefined') {
-            window.tableRenderer.renderAllTables();
-            console.log('Table Renderer (lowercase) found and tables rendered');
-        } else {
-            console.warn('Table Renderer not found - tables may not render properly');
-        }
-        
-        // Update summary and month headers
+        initializeTabs();
+        initializeEventListeners();
+        loadDefaultData();
+        renderAllTables();
         updateSummary();
         updateMonthHeaders();
         
         console.log('Application initialized successfully');
-        
-        // Re-render tables after a short delay to ensure all data is properly loaded
-        setTimeout(() => {
-            console.log('Re-rendering tables with loaded data...');
-            if (window.TableRenderer) {
-                window.TableRenderer.renderAllTables();
-            } else if (window.tableRenderer) {
-                window.tableRenderer.renderAllTables();
-            }
-            updateSummary();
-        }, 100);
-        
     } catch (error) {
         console.error('Error initializing application:', error);
         alert('Error initializing application. Please check the console for details.');
     }
 });
-
-// Basic functionality fallback
-function initializeBasicFunctionality() {
-    console.log('Initializing basic functionality...');
-    
-    // Initialize tab functionality
-    const tabButtons = document.querySelectorAll('.tab-btn');
-    const tabContents = document.querySelectorAll('.tab-content');
-    
-    if (tabButtons && tabContents) {
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                const targetTab = button.getAttribute('data-tab');
-                
-                // Update active tab button
-                tabButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-                
-                // Update active tab content
-                tabContents.forEach(content => content.classList.remove('active'));
-                const targetContent = document.getElementById(targetTab);
-                if (targetContent) {
-                    targetContent.classList.add('active');
-                }
-                
-                // Refresh data for specific tabs
-                if (targetTab === 'summary') {
-                    updateSummary();
-                }
-            });
-        });
-        console.log('Tab functionality initialized');
-    }
-    
-    // Initialize button event listeners
-    initializeBasicEventListeners();
-}
-
-function initializeBasicEventListeners() {
-    const addButtons = [
-        { id: 'addInternalResource', type: 'internalResource', title: 'Add Internal Resource' },
-        { id: 'addVendorCost', type: 'vendorCost', title: 'Add Vendor Cost' },
-        { id: 'addToolCost', type: 'toolCost', title: 'Add Tool Cost' },
-        { id: 'addMiscCost', type: 'miscCost', title: 'Add Miscellaneous Cost' },
-        { id: 'addRisk', type: 'risk', title: 'Add Risk' },
-        { id: 'addInternalRate', type: 'rateCard', title: 'Add Rate Card' },
-        { id: 'addExternalRate', type: 'rateCard', title: 'Add Rate Card' },
-        { id: 'addRate', type: 'rateCard', title: 'Add Rate Card' }
-    ];
-
-    addButtons.forEach(btn => {
-        const element = document.getElementById(btn.id);
-        if (element) {
-            element.addEventListener('click', () => {
-                openModal(btn.title, btn.type);
-            });
-            console.log(`Event listener added to ${btn.id}`);
-        }
-    });
-    
-    // Action buttons
-    const actionButtons = [
-        { id: 'saveBtn', action: () => saveProjectFallback() },
-        { id: 'loadBtn', action: () => loadProjectFallback() },
-        { id: 'exportBtn', action: () => exportToExcelFallback() },
-        { id: 'newProjectBtn', action: () => newProjectFallback() },
-        { id: 'downloadBtn', action: () => downloadProjectFallback() }
-    ];
-    
-    actionButtons.forEach(({ id, action }) => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.addEventListener('click', action);
-            console.log(`Event listener added to ${id}`);
-        }
-    });
-    
-    // Settings button functionality
-    initializeSettingsButton();
-    
-    // Modal listeners
-    const modal = document.getElementById('modal');
-    const closeModal = document.querySelector('.close');
-    const cancelModal = document.getElementById('cancelModal');
-    const modalForm = document.getElementById('modalForm');
-    
-    if (closeModal) {
-        closeModal.addEventListener('click', () => {
-            modal.style.display = 'none';
-        });
-    }
-    
-    if (cancelModal) {
-        cancelModal.addEventListener('click', () => {
-            modal.style.display = 'none';
-        });
-    }
-    
-    window.addEventListener('click', (e) => {
-        if (e.target === modal) {
-            modal.style.display = 'none';
-        }
-    });
-    
-    if (modalForm) {
-        modalForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            handleModalSubmit();
-        });
-    }
-    
-    // Project info form listeners
-    const projectFields = [
-        'projectName', 'startDate', 'endDate', 
-        'projectManager', 'projectDescription', 'contingencyPercentage'
-    ];
-
-    projectFields.forEach(fieldId => {
-        const field = document.getElementById(fieldId);
-        if (field) {
-            field.addEventListener('input', (e) => {
-                if (fieldId === 'contingencyPercentage') {
-                    projectData.contingencyPercentage = parseFloat(e.target.value) || 0;
-                } else {
-                    projectData.projectInfo[fieldId] = e.target.value;
-                }
-                
-                updateSummary();
-                if ((fieldId === 'startDate' || fieldId === 'endDate')) {
-                    updateMonthHeaders();
-                }
-            });
-        }
-    });
-}
-
-// Settings functionality
-function initializeSettingsButton() {
-    const settingsBtn = document.getElementById('settingsBtn');
-    const settingsBtnMobile = document.getElementById('settingsBtnMobile');
-    const backToMain = document.getElementById('backToMain');
-    const mainApp = document.getElementById('mainApp');
-    const settingsApp = document.getElementById('settingsApp');
-    
-    // Desktop settings button
-    if (settingsBtn) {
-        settingsBtn.addEventListener('click', () => {
-            console.log('Settings button clicked');
-            showSettingsView();
-        });
-        console.log('Settings button listener added');
-    }
-    
-    // Mobile settings button
-    if (settingsBtnMobile) {
-        settingsBtnMobile.addEventListener('click', () => {
-            console.log('Mobile settings button clicked');
-            showSettingsView();
-            // Close mobile menu
-            const mobileDropdown = document.getElementById('mobileDropdown');
-            if (mobileDropdown) {
-                mobileDropdown.style.display = 'none';
-            }
-        });
-        console.log('Mobile settings button listener added');
-    }
-    
-    // Back to main button
-    if (backToMain) {
-        backToMain.addEventListener('click', () => {
-            console.log('Back to main button clicked');
-            showMainView();
-        });
-        console.log('Back to main button listener added');
-    }
-    
-    // Initialize settings navigation
-    initializeSettingsNavigation();
-    
-    // Initialize mobile hamburger menu
-    initializeMobileMenu();
-}
-
-function showSettingsView() {
-    const mainApp = document.getElementById('mainApp');
-    const settingsApp = document.getElementById('settingsApp');
-    
-    if (mainApp && settingsApp) {
-        mainApp.style.display = 'none';
-        settingsApp.style.display = 'block';
-        console.log('Switched to settings view');
-        
-        // Add visual enhancements to the back button
-        enhanceBackButton();
-        
-        // Re-render tables in settings if needed
-        if (window.TableRenderer) {
-            setTimeout(() => {
-                window.TableRenderer.renderUnifiedRateCardsTable();
-            }, 100);
-        }
-    }
-}
-
-function enhanceBackButton() {
-    const backToMain = document.getElementById('backToMain');
-    const settingsHeader = document.querySelector('.settings-header');
-    
-    if (backToMain && settingsHeader) {
-        // Transform the back button into an X close button
-        backToMain.innerHTML = '×'; // Use × symbol for close
-        
-        // Position it on the right side of the settings header
-        settingsHeader.style.position = 'relative';
-        settingsHeader.style.display = 'flex';
-        settingsHeader.style.justifyContent = 'space-between';
-        settingsHeader.style.alignItems = 'center';
-        
-        // Style the X button
-        backToMain.style.position = 'absolute';
-        backToMain.style.right = '20px';
-        backToMain.style.top = '50%';
-        backToMain.style.transform = 'translateY(-50%)';
-        backToMain.style.width = '32px';
-        backToMain.style.height = '32px';
-        backToMain.style.borderRadius = '50%';
-        backToMain.style.border = '1px solid #dee2e6';
-        backToMain.style.backgroundColor = '#f8f9fa';
-        backToMain.style.color = '#6c757d';
-        backToMain.style.fontSize = '20px';
-        backToMain.style.fontWeight = 'bold';
-        backToMain.style.display = 'flex';
-        backToMain.style.alignItems = 'center';
-        backToMain.style.justifyContent = 'center';
-        backToMain.style.cursor = 'pointer';
-        backToMain.style.transition = 'all 0.2s ease';
-        backToMain.style.padding = '0';
-        backToMain.style.lineHeight = '1';
-        backToMain.style.zIndex = '10';
-        
-        // Add hover effects for the X button
-        backToMain.addEventListener('mouseenter', () => {
-            backToMain.style.backgroundColor = '#e9ecef';
-            backToMain.style.borderColor = '#adb5bd';
-            backToMain.style.color = '#495057';
-            backToMain.style.transform = 'translateY(-50%) scale(1.1)';
-            backToMain.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
-        });
-        
-        backToMain.addEventListener('mouseleave', () => {
-            backToMain.style.backgroundColor = '#f8f9fa';
-            backToMain.style.borderColor = '#dee2e6';
-            backToMain.style.color = '#6c757d';
-            backToMain.style.transform = 'translateY(-50%) scale(1)';
-            backToMain.style.boxShadow = 'none';
-        });
-        
-        backToMain.addEventListener('mousedown', () => {
-            backToMain.style.transform = 'translateY(-50%) scale(0.95)';
-            backToMain.style.backgroundColor = '#dee2e6';
-        });
-        
-        backToMain.addEventListener('mouseup', () => {
-            backToMain.style.transform = 'translateY(-50%) scale(1.1)';
-            backToMain.style.backgroundColor = '#e9ecef';
-        });
-        
-        // Add title for accessibility
-        backToMain.title = 'Close Settings';
-        backToMain.setAttribute('aria-label', 'Close Settings');
-        
-        console.log('Back button transformed to X close button');
-    } else {
-        console.log('Settings header or back button not found');
-    }
-    
-    // Also enhance any other clickable areas that might need visual cues
-    enhanceClickableAreas();
-}
-
-function enhanceClickableAreas() {
-    // Add visual enhancements to settings navigation buttons
-    const settingsNavButtons = document.querySelectorAll('.settings-nav-btn');
-    settingsNavButtons.forEach(button => {
-        button.style.cursor = 'pointer';
-        button.style.transition = 'all 0.2s ease';
-        
-        // Add subtle hover effects if they don't already exist
-        button.addEventListener('mouseenter', () => {
-            if (!button.classList.contains('active')) {
-                button.style.backgroundColor = 'rgba(0, 123, 255, 0.1)';
-            }
-        });
-        
-        button.addEventListener('mouseleave', () => {
-            if (!button.classList.contains('active')) {
-                button.style.backgroundColor = '';
-            }
-        });
-    });
-    
-    // Enhance any other potentially unclear clickable areas
-    const allButtons = document.querySelectorAll('button:not([style*="cursor"])');
-    allButtons.forEach(button => {
-        if (!button.style.cursor) {
-            button.style.cursor = 'pointer';
-        }
-    });
-    
-    console.log('Additional clickable areas enhanced');
-}
-
-function showMainView() {
-    const mainApp = document.getElementById('mainApp');
-    const settingsApp = document.getElementById('settingsApp');
-    
-    if (mainApp && settingsApp) {
-        mainApp.style.display = 'block';
-        settingsApp.style.display = 'none';
-        console.log('Switched to main view');
-        
-        // Re-render all tables when returning to main view
-        if (window.TableRenderer) {
-            setTimeout(() => {
-                window.TableRenderer.renderAllTables();
-                updateSummary();
-            }, 100);
-        }
-    }
-}
-
-function initializeSettingsNavigation() {
-    const settingsNavButtons = document.querySelectorAll('.settings-nav-btn');
-    const settingsTabContents = document.querySelectorAll('.settings-tab-content');
-    
-    settingsNavButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const targetTab = button.getAttribute('data-settings-tab');
-            
-            // Update active nav button
-            settingsNavButtons.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            
-            // Update active tab content
-            settingsTabContents.forEach(content => content.classList.remove('active'));
-            const targetContent = document.getElementById(`settings-${targetTab}`);
-            if (targetContent) {
-                targetContent.classList.add('active');
-            }
-            
-            console.log(`Switched to settings tab: ${targetTab}`);
-        });
-    });
-    
-    console.log('Settings navigation initialized');
-}
-
-function initializeMobileMenu() {
-    const hamburgerBtn = document.getElementById('hamburgerBtn');
-    const mobileDropdown = document.getElementById('mobileDropdown');
-    
-    if (hamburgerBtn && mobileDropdown) {
-        hamburgerBtn.addEventListener('click', () => {
-            const isVisible = mobileDropdown.style.display === 'block';
-            mobileDropdown.style.display = isVisible ? 'none' : 'block';
-            console.log('Mobile menu toggled');
-        });
-        
-        // Close mobile menu when clicking outside
-        document.addEventListener('click', (e) => {
-            if (!hamburgerBtn.contains(e.target) && !mobileDropdown.contains(e.target)) {
-                mobileDropdown.style.display = 'none';
-            }
-        });
-        
-        console.log('Mobile menu initialized');
-    }
-}
-
-// Fallback functions for when modules aren't available
-function saveProjectFallback() {
-    if (window.DataManager) {
-        window.DataManager.saveProject();
-    } else if (window.dataManager) {
-        window.dataManager.saveProject();
-    } else {
-        // Basic localStorage save
-        try {
-            localStorage.setItem('ictProjectData', JSON.stringify(projectData));
-            console.log('Project saved using fallback method');
-        } catch (e) {
-            console.error('Error saving project:', e);
-        }
-    }
-}
-
-function loadProjectFallback() {
-    if (window.DataManager) {
-        window.DataManager.loadProject();
-    } else if (window.dataManager) {
-        window.dataManager.loadProject();
-    } else {
-        // Basic file input
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json';
-        input.onchange = (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const data = JSON.parse(e.target.result);
-                        projectData = { ...projectData, ...data };
-                        updateSummary();
-                        if (window.TableRenderer) {
-                            window.TableRenderer.renderAllTables();
-                        }
-                        console.log('Project loaded using fallback method');
-                    } catch (err) {
-                        console.error('Error loading project:', err);
-                    }
-                };
-                reader.readAsText(file);
-            }
-        };
-        input.click();
-    }
-}
-
-function exportToExcelFallback() {
-    if (window.DataManager) {
-        window.DataManager.exportToExcel();
-    } else if (window.dataManager) {
-        window.dataManager.exportToExcel();
-    } else {
-        console.log('Export functionality requires Data Manager module');
-    }
-}
-
-function newProjectFallback() {
-    if (window.DataManager) {
-        window.DataManager.newProject();
-    } else if (window.dataManager) {
-        window.dataManager.newProject();
-    } else {
-        if (confirm('Start a new project? This will clear all current data.')) {
-            // Reset to initial state
-            projectData = {
-                projectInfo: { projectName: '', startDate: '', endDate: '', projectManager: '', projectDescription: '' },
-                internalResources: [], vendorCosts: [], toolCosts: [], miscCosts: [], risks: [],
-                rateCards: projectData.rateCards, // Keep default rate cards
-                internalRates: projectData.internalRates,
-                externalRates: projectData.externalRates,
-                contingencyPercentage: 10
-            };
-            updateSummary();
-            if (window.TableRenderer) {
-                window.TableRenderer.renderAllTables();
-            }
-            console.log('New project created using fallback method');
-        }
-    }
-}
-
-function downloadProjectFallback() {
-    if (window.DataManager) {
-        window.DataManager.downloadProject();
-    } else if (window.dataManager) {
-        window.dataManager.downloadProject();
-    } else {
-        // Basic download
-        const dataStr = JSON.stringify(projectData, null, 2);
-        const blob = new Blob([dataStr], { type: 'application/json' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `ICT_Project_${projectData.projectInfo.projectName || 'Untitled'}.json`;
-        link.click();
-        console.log('Project downloaded using fallback method');
-    }
-}
-
-function loadDefaultDataBasic() {
-    try {
-        if (typeof(Storage) !== "undefined" && localStorage) {
-            const savedData = localStorage.getItem('ictProjectData');
-            if (savedData) {
-                const parsed = JSON.parse(savedData);
-                projectData = { ...projectData, ...parsed };
-                console.log('Data loaded using basic method');
-            }
-        }
-    } catch (e) {
-        console.error('Error loading saved data:', e);
-    }
-}
 
 // Calculate months based on start date
 function calculateProjectMonths() {
@@ -684,14 +127,194 @@ function updateMonthHeaders() {
     }
 }
 
+// Tab Navigation
+function initializeTabs() {
+    if (!tabButtons) {
+        console.error('Tab buttons not found');
+        return;
+    }
+    
+    tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const targetTab = button.getAttribute('data-tab');
+            switchTab(targetTab);
+        });
+    });
+}
+
+function switchTab(targetTab) {
+    try {
+        // Update active tab button
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        const targetButton = document.querySelector(`[data-tab="${targetTab}"]`);
+        if (targetButton) {
+            targetButton.classList.add('active');
+        }
+        
+        // Update active tab content
+        tabContents.forEach(content => content.classList.remove('active'));
+        const targetContent = document.getElementById(targetTab);
+        if (targetContent) {
+            targetContent.classList.add('active');
+        }
+        
+        // Refresh data for specific tabs
+        if (targetTab === 'summary') {
+            updateSummary();
+        }
+    } catch (error) {
+        console.error('Error switching tabs:', error);
+    }
+}
+
+// Event Listeners
+function initializeEventListeners() {
+    try {
+        // Project Info Form
+        const projectNameEl = document.getElementById('projectName');
+        const startDateEl = document.getElementById('startDate');
+        const endDateEl = document.getElementById('endDate');
+        const projectManagerEl = document.getElementById('projectManager');
+        const projectDescriptionEl = document.getElementById('projectDescription');
+        const contingencyPercentageEl = document.getElementById('contingencyPercentage');
+
+        if (projectNameEl) {
+            projectNameEl.addEventListener('input', (e) => {
+                projectData.projectInfo.projectName = e.target.value;
+                updateSummary(); // Trigger summary update
+            });
+        }
+        
+        if (startDateEl) {
+            startDateEl.addEventListener('input', (e) => {
+                projectData.projectInfo.startDate = e.target.value;
+                updateMonthHeaders();
+                updateSummary(); // Trigger summary update
+            });
+        }
+        
+        if (endDateEl) {
+            endDateEl.addEventListener('input', (e) => {
+                projectData.projectInfo.endDate = e.target.value;
+                updateMonthHeaders();
+                updateSummary(); // Trigger summary update
+            });
+        }
+        
+        if (projectManagerEl) {
+            projectManagerEl.addEventListener('input', (e) => {
+                projectData.projectInfo.projectManager = e.target.value;
+                updateSummary(); // Trigger summary update
+            });
+        }
+        
+        if (projectDescriptionEl) {
+            projectDescriptionEl.addEventListener('input', (e) => {
+                projectData.projectInfo.projectDescription = e.target.value;
+                updateSummary(); // Trigger summary update
+            });
+        }
+
+        // Contingency percentage
+        if (contingencyPercentageEl) {
+            contingencyPercentageEl.addEventListener('input', (e) => {
+                projectData.contingencyPercentage = parseFloat(e.target.value) || 0;
+                updateSummary();
+            });
+        }
+
+        // Add buttons
+        const addButtons = [
+            { id: 'addInternalResource', type: 'internalResource', title: 'Add Internal Resource' },
+            { id: 'addVendorCost', type: 'vendorCost', title: 'Add Vendor Cost' },
+            { id: 'addToolCost', type: 'toolCost', title: 'Add Tool Cost' },
+            { id: 'addMiscCost', type: 'miscCost', title: 'Add Miscellaneous Cost' },
+            { id: 'addRisk', type: 'risk', title: 'Add Risk' },
+            { id: 'addInternalRate', type: 'rateCard', title: 'Add Rate Card' },
+            { id: 'addExternalRate', type: 'rateCard', title: 'Add Rate Card' },
+            { id: 'addRate', type: 'rateCard', title: 'Add Rate Card' }
+        ];
+
+        addButtons.forEach(btn => {
+            const element = document.getElementById(btn.id);
+            if (element) {
+                element.addEventListener('click', () => {
+                    openModal(btn.title, btn.type);
+                });
+            }
+        });
+
+        // Modal events
+        if (closeModal) {
+            closeModal.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+        }
+        
+        if (cancelModal) {
+            cancelModal.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+        }
+        
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Save/Load buttons - Updated to include download and new project functionality
+        const saveBtn = document.getElementById('saveBtn');
+        const loadBtn = document.getElementById('loadBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const newProjectBtn = document.getElementById('newProjectBtn');
+        
+        if (saveBtn) saveBtn.addEventListener('click', saveProject);
+        if (loadBtn) loadBtn.addEventListener('click', loadProject);
+        if (exportBtn) exportBtn.addEventListener('click', exportToExcel);
+        if (newProjectBtn) newProjectBtn.addEventListener('click', newProject);
+        
+        // Add download project functionality if button exists
+        const downloadBtn = document.getElementById('downloadBtn');
+        if (downloadBtn) {
+            downloadBtn.addEventListener('click', downloadProject);
+        } else {
+            // If no download button exists, modify the save button to also download
+            console.log('No download button found, save button will also download file');
+        }
+
+        // Modal form submission
+        if (modalForm) {
+            modalForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                console.log('Form submit event triggered');
+                handleModalSubmit();
+            });
+        }
+        
+        // Also add click listener to the modal save button as backup
+        const modalSaveBtn = document.querySelector('.modal-actions .btn-primary');
+        if (modalSaveBtn) {
+            modalSaveBtn.addEventListener('click', (e) => {
+                if (e.target.type === 'submit') {
+                    // Let the form submit handler take care of it
+                    return;
+                }
+                e.preventDefault();
+                console.log('Modal save button clicked');
+                handleModalSubmit();
+            });
+        }
+        
+        console.log('Event listeners initialized');
+    } catch (error) {
+        console.error('Error initializing event listeners:', error);
+    }
+}
+
 // Modal Management
 function openModal(title, type) {
     try {
-        const modal = document.getElementById('modal');
-        const modalTitle = document.getElementById('modalTitle');
-        const modalFields = document.getElementById('modalFields');
-        const modalForm = document.getElementById('modalForm');
-        
         if (!modal || !modalTitle || !modalFields || !modalForm) {
             console.error('Modal elements not found');
             return;
@@ -863,7 +486,6 @@ function getModalFields(type) {
 
 function handleModalSubmit() {
     try {
-        const modalForm = document.getElementById('modalForm');
         const formData = new FormData(modalForm);
         const type = modalForm.getAttribute('data-type');
         const data = {};
@@ -890,6 +512,7 @@ function handleModalSubmit() {
                     month3Days: parseFloat(data.month3Days) || 0,
                     month4Days: parseFloat(data.month4Days) || 0
                 });
+                renderInternalResourcesTable();
                 break;
             case 'vendorCost':
                 projectData.vendorCosts.push({
@@ -902,6 +525,7 @@ function handleModalSubmit() {
                     month3Cost: parseFloat(data.month3Cost) || 0,
                     month4Cost: parseFloat(data.month4Cost) || 0
                 });
+                renderVendorCostsTable();
                 break;
             case 'toolCost':
                 projectData.toolCosts.push({
@@ -912,6 +536,7 @@ function handleModalSubmit() {
                     monthlyCost: parseFloat(data.monthlyCost),
                     duration: parseInt(data.duration)
                 });
+                renderToolCostsTable();
                 break;
             case 'miscCost':
                 projectData.miscCosts.push({
@@ -921,6 +546,7 @@ function handleModalSubmit() {
                     category: data.category,
                     cost: parseFloat(data.cost)
                 });
+                renderMiscCostsTable();
                 break;
             case 'risk':
                 projectData.risks.push({
@@ -930,6 +556,7 @@ function handleModalSubmit() {
                     impact: parseInt(data.impact),
                     mitigationCost: parseFloat(data.mitigationCost) || 0
                 });
+                renderRisksTable();
                 break;
             case 'rateCard':
                 console.log('Adding rate card:', data);
@@ -955,22 +582,267 @@ function handleModalSubmit() {
                         rate: parseFloat(data.rate)
                     });
                 }
+                
+                console.log('Updated rateCards array:', projectData.rateCards);
+                console.log('Updated internalRates array:', projectData.internalRates);
+                console.log('Updated externalRates array:', projectData.externalRates);
+                
+                // Render the unified rate cards table
+                console.log('About to render unified rate cards table...');
+                renderUnifiedRateCardsTable();
                 break;
         }
         
-        // Re-render tables
-        if (window.TableRenderer) {
-            window.TableRenderer.renderAllTables();
-        } else if (window.tableRenderer) {
-            window.tableRenderer.renderAllTables();
-        }
-        
         updateSummary();
-        document.getElementById('modal').style.display = 'none';
+        modal.style.display = 'none';
         console.log('Modal submit completed successfully');
     } catch (error) {
         console.error('Error handling modal submit:', error);
     }
+}
+
+// Table Rendering Functions
+function renderAllTables() {
+    try {
+        renderInternalResourcesTable();
+        renderVendorCostsTable();
+        renderToolCostsTable();
+        renderMiscCostsTable();
+        renderRisksTable();
+        renderInternalRatesTable(); // Keep for backward compatibility
+        renderExternalRatesTable(); // Keep for backward compatibility  
+        renderUnifiedRateCardsTable(); // Add unified rate cards table
+        renderForecastTable();
+    } catch (error) {
+        console.error('Error rendering tables:', error);
+    }
+}
+
+// Unified rate cards table rendering
+function renderUnifiedRateCardsTable() {
+    const tbody = document.getElementById('rateCardsTable');
+    console.log('renderUnifiedRateCardsTable - tbody element:', tbody);
+    
+    if (!tbody) {
+        console.log('rateCardsTable not found');
+        return;
+    }
+    
+    tbody.innerHTML = '';
+    
+    if (projectData.rateCards.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No rate cards added yet</td></tr>';
+        return;
+    }
+    
+    // Sort by category then by role
+    const sortedRates = [...projectData.rateCards].sort((a, b) => {
+        if (a.category !== b.category) {
+            return a.category.localeCompare(b.category);
+        }
+        return a.role.localeCompare(b.role);
+    });
+    
+    console.log('Rates to render:', sortedRates);
+    
+    sortedRates.forEach(rate => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${rate.role}</td>
+            <td><span class="category-badge category-${rate.category.toLowerCase()}">${rate.category}</span></td>
+            <td>${rate.rate.toLocaleString()}</td>
+            <td>
+                <button class="btn btn-danger btn-small" onclick="deleteItem('toolCosts', ${tool.id})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function renderMiscCostsTable() {
+    const tbody = document.getElementById('miscCostsTable');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    if (projectData.miscCosts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No miscellaneous costs added yet</td></tr>';
+        return;
+    }
+    
+    projectData.miscCosts.forEach(misc => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${misc.item}</td>
+            <td>${misc.description}</td>
+            <td>${misc.category}</td>
+            <td>${misc.cost.toLocaleString()}</td>
+            <td>
+                <button class="btn btn-danger btn-small" onclick="deleteItem('miscCosts', ${misc.id})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function renderRisksTable() {
+    const tbody = document.getElementById('risksTable');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    if (projectData.risks.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No risks added yet</td></tr>';
+        return;
+    }
+    
+    projectData.risks.forEach(risk => {
+        const riskScore = risk.probability * risk.impact;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${risk.description}</td>
+            <td>${risk.probability}</td>
+            <td>${risk.impact}</td>
+            <td>${riskScore}</td>
+            <td>${risk.mitigationCost.toLocaleString()}</td>
+            <td>
+                <button class="btn btn-danger btn-small" onclick="deleteItem('risks', ${risk.id})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function renderInternalRatesTable() {
+    const tbody = document.getElementById('internalRatesTable');
+    console.log('renderInternalRatesTable - tbody element:', tbody);
+    
+    if (!tbody) {
+        console.log('Internal rates table not found, trying alternative selectors');
+        // Try alternative selectors if the standard one doesn't work
+        const altTbody = document.querySelector('#rate-cards tbody') || 
+                         document.querySelector('.rate-cards-container tbody') ||
+                         document.querySelector('[id*="internal"] tbody');
+        if (altTbody) {
+            console.log('Found alternative tbody:', altTbody);
+        }
+        return;
+    }
+    
+    tbody.innerHTML = '';
+    
+    // Show internal rates from unified rateCards
+    const internalRates = projectData.rateCards.filter(rate => rate.category === 'Internal');
+    console.log('Internal rates to render:', internalRates);
+    
+    if (internalRates.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No internal rates added yet</td></tr>';
+        return;
+    }
+    
+    internalRates.forEach(rate => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${rate.role}</td>
+            <td>${rate.rate.toLocaleString()}</td>
+            <td>
+                <button class="btn btn-danger btn-small" onclick="deleteItem('rateCards', ${rate.id || `'${rate.role}'`})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    console.log('Internal rates table rendered successfully');
+}
+
+function renderExternalRatesTable() {
+    const tbody = document.getElementById('externalRatesTable');
+    console.log('renderExternalRatesTable - tbody element:', tbody);
+    
+    if (!tbody) {
+        console.log('External rates table not found, trying alternative selectors');
+        return;
+    }
+    
+    tbody.innerHTML = '';
+    
+    // Show external rates from unified rateCards
+    const externalRates = projectData.rateCards.filter(rate => rate.category === 'External');
+    console.log('External rates to render:', externalRates);
+    
+    if (externalRates.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No external rates added yet</td></tr>';
+        return;
+    }
+    
+    externalRates.forEach(rate => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${rate.role}</td>
+            <td>${rate.rate.toLocaleString()}</td>
+            <td>
+                <button class="btn btn-danger btn-small" onclick="deleteItem('rateCards', ${rate.id || `'${rate.role}'`})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    console.log('External rates table rendered successfully');
+}
+
+function renderForecastTable() {
+    const tbody = document.getElementById('forecastTable');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    // Calculate monthly totals
+    const months = calculateProjectMonths();
+    
+    // Internal Resources
+    const internalMonthly = [0, 0, 0, 0, 0, 0];
+    projectData.internalResources.forEach(resource => {
+        // Handle both old and new format
+        internalMonthly[0] += (resource.month1Days || resource.q1Days || 0) * resource.dailyRate;
+        internalMonthly[1] += (resource.month2Days || resource.q2Days || 0) * resource.dailyRate;
+        internalMonthly[2] += (resource.month3Days || resource.q3Days || 0) * resource.dailyRate;
+        internalMonthly[3] += (resource.month4Days || resource.q4Days || 0) * resource.dailyRate;
+    });
+    
+    // Vendor Costs
+    const vendorMonthly = [0, 0, 0, 0, 0, 0];
+    projectData.vendorCosts.forEach(vendor => {
+        // Handle both old and new format
+        vendorMonthly[0] += vendor.month1Cost || vendor.q1Cost || 0;
+        vendorMonthly[1] += vendor.month2Cost || vendor.q2Cost || 0;
+        vendorMonthly[2] += vendor.month3Cost || vendor.q3Cost || 0;
+        vendorMonthly[3] += vendor.month4Cost || vendor.q4Cost || 0;
+    });
+    
+    // Add rows
+    const internalTotal = internalMonthly.reduce((sum, val) => sum + val, 0);
+    const vendorTotal = vendorMonthly.reduce((sum, val) => sum + val, 0);
+    
+    tbody.innerHTML = `
+        <tr>
+            <td><strong>Internal Resources</strong></td>
+            <td>${internalMonthly[0].toLocaleString()}</td>
+            <td>${internalMonthly[1].toLocaleString()}</td>
+            <td>${internalMonthly[2].toLocaleString()}</td>
+            <td>${internalMonthly[3].toLocaleString()}</td>
+            <td>${internalMonthly[4].toLocaleString()}</td>
+            <td>${internalMonthly[5].toLocaleString()}</td>
+            <td><strong>${internalTotal.toLocaleString()}</strong></td>
+        </tr>
+        <tr>
+            <td><strong>Vendor Costs</strong></td>
+            <td>${vendorMonthly[0].toLocaleString()}</td>
+            <td>${vendorMonthly[1].toLocaleString()}</td>
+            <td>${vendorMonthly[2].toLocaleString()}</td>
+            <td>${vendorMonthly[3].toLocaleString()}</td>
+            <td>${vendorMonthly[4].toLocaleString()}</td>
+            <td>${vendorMonthly[5].toLocaleString()}</td>
+            <td><strong>${vendorTotal.toLocaleString()}</strong></td>
+        </tr>
+    `;
 }
 
 // Delete Item Function
@@ -994,15 +866,104 @@ function deleteItem(arrayName, id) {
         } else {
             projectData[arrayName] = projectData[arrayName].filter(item => item.id !== id);
         }
+        renderAllTables();
+        updateSummary();
+    }
+}
+
+// DATA UPDATE FUNCTION FOR EDIT FUNCTIONALITY
+// This function handles updating items when they are edited inline
+function updateItemById(itemId, newData, itemType) {
+    try {
+        console.log('Updating item:', itemId, newData, itemType);
         
-        // Re-render tables
-        if (window.TableRenderer) {
-            window.TableRenderer.renderAllTables();
-        } else if (window.tableRenderer) {
-            window.tableRenderer.renderAllTables();
+        switch (itemType) {
+            case 'internal-resource':
+                const resourceIndex = projectData.internalResources.findIndex(r => r.id === itemId);
+                if (resourceIndex !== -1) {
+                    // Update the resource with new data
+                    Object.assign(projectData.internalResources[resourceIndex], newData);
+                    
+                    // Update rate if role changed
+                    const rate = projectData.rateCards.find(r => r.role === newData.role);
+                    if (rate) {
+                        projectData.internalResources[resourceIndex].dailyRate = rate.rate;
+                        projectData.internalResources[resourceIndex].rateCard = rate.category;
+                    }
+                }
+                break;
+                
+            case 'vendor-cost':
+                const vendorIndex = projectData.vendorCosts.findIndex(v => v.id === itemId);
+                if (vendorIndex !== -1) {
+                    Object.assign(projectData.vendorCosts[vendorIndex], newData);
+                }
+                break;
+                
+            case 'tool-cost':
+                const toolIndex = projectData.toolCosts.findIndex(t => t.id === itemId);
+                if (toolIndex !== -1) {
+                    Object.assign(projectData.toolCosts[toolIndex], newData);
+                }
+                break;
+                
+            case 'misc-cost':
+                const miscIndex = projectData.miscCosts.findIndex(m => m.id === itemId);
+                if (miscIndex !== -1) {
+                    Object.assign(projectData.miscCosts[miscIndex], newData);
+                }
+                break;
+                
+            case 'risk':
+                const riskIndex = projectData.risks.findIndex(r => r.id === itemId);
+                if (riskIndex !== -1) {
+                    Object.assign(projectData.risks[riskIndex], newData);
+                }
+                break;
+                
+            case 'rate-card':
+                const rateIndex = projectData.rateCards.findIndex(r => 
+                    (r.id && r.id === itemId) || r.role === itemId
+                );
+                if (rateIndex !== -1) {
+                    Object.assign(projectData.rateCards[rateIndex], newData);
+                    
+                    // Also update old arrays for backward compatibility
+                    if (newData.category === 'Internal') {
+                        const internalIndex = projectData.internalRates?.findIndex(r => 
+                            (r.id && r.id === itemId) || r.role === itemId
+                        );
+                        if (internalIndex !== -1 && projectData.internalRates) {
+                            Object.assign(projectData.internalRates[internalIndex], {
+                                role: newData.role,
+                                rate: newData.rate
+                            });
+                        }
+                    } else if (newData.category === 'External') {
+                        const externalIndex = projectData.externalRates?.findIndex(r => 
+                            (r.id && r.id === itemId) || r.role === itemId
+                        );
+                        if (externalIndex !== -1 && projectData.externalRates) {
+                            Object.assign(projectData.externalRates[externalIndex], {
+                                role: newData.role,
+                                rate: newData.rate
+                            });
+                        }
+                    }
+                }
+                break;
         }
         
-        updateSummary();
+        // Save to localStorage if available
+        if (typeof(Storage) !== "undefined" && localStorage) {
+            localStorage.setItem('ictProjectData', JSON.stringify(projectData));
+        }
+        
+        console.log('Item updated successfully');
+        
+    } catch (error) {
+        console.error('Error updating item:', error);
+        showAlert('Error updating item: ' + error.message, 'error');
     }
 }
 
@@ -1093,9 +1054,355 @@ function calculateMiscCostsTotal() {
     }, 0);
 }
 
+// Data Management
+function loadDefaultData() {
+    try {
+        // Only try to load from localStorage if it's available
+        if (typeof(Storage) !== "undefined" && localStorage) {
+            const savedData = localStorage.getItem('ictProjectData');
+            if (savedData) {
+                const parsed = JSON.parse(savedData);
+                projectData = { ...projectData, ...parsed };
+                
+                // Migrate old rate cards to new unified format if needed
+                if (!projectData.rateCards && (projectData.internalRates || projectData.externalRates)) {
+                    projectData.rateCards = [];
+                    
+                    // Migrate internal rates
+                    if (projectData.internalRates) {
+                        projectData.internalRates.forEach(rate => {
+                            projectData.rateCards.push({
+                                id: rate.id || Date.now() + Math.random(),
+                                role: rate.role,
+                                rate: rate.rate,
+                                category: 'Internal'
+                            });
+                        });
+                    }
+                    
+                    // Migrate external rates
+                    if (projectData.externalRates) {
+                        projectData.externalRates.forEach(rate => {
+                            projectData.rateCards.push({
+                                id: rate.id || Date.now() + Math.random(),
+                                role: rate.role,
+                                rate: rate.rate,
+                                category: 'External'
+                            });
+                        });
+                    }
+                }
+                
+                // Populate form fields
+                const formFields = {
+                    projectName: projectData.projectInfo.projectName || '',
+                    startDate: projectData.projectInfo.startDate || '',
+                    endDate: projectData.projectInfo.endDate || '',
+                    projectManager: projectData.projectInfo.projectManager || '',
+                    projectDescription: projectData.projectInfo.projectDescription || '',
+                    contingencyPercentage: projectData.contingencyPercentage || 10
+                };
+                
+                Object.keys(formFields).forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.value = formFields[id];
+                    }
+                });
+            }
+        }
+    } catch (e) {
+        console.error('Error loading saved data:', e);
+    }
+}
+
+function saveProject() {
+    try {
+        if (typeof(Storage) !== "undefined" && localStorage) {
+            localStorage.setItem('ictProjectData', JSON.stringify(projectData));
+            showAlert('Project saved to browser storage successfully!', 'success');
+        } else {
+            showAlert('Local storage not available. Cannot save project.', 'error');
+        }
+    } catch (e) {
+        console.error('Error saving project:', e);
+        showAlert('Error saving project: ' + e.message, 'error');
+    }
+}
+
+function downloadProject() {
+    try {
+        const dataStr = JSON.stringify(projectData, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `ICT_Project_${projectData.projectInfo.projectName || 'Untitled'}.json`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showAlert('Project file downloaded successfully!', 'success');
+    } catch (error) {
+        console.error('Error downloading project:', error);
+        showAlert('Error downloading project file: ' + error.message, 'error');
+    }
+}
+
+function newProject() {
+    if (confirm('Are you sure you want to start a new project? This will clear all current data. Make sure to save or download your current project first.')) {
+        try {
+            // Reset project data to initial state
+            projectData = {
+                projectInfo: {
+                    projectName: '',
+                    startDate: '',
+                    endDate: '',
+                    projectManager: '',
+                    projectDescription: ''
+                },
+                internalResources: [],
+                vendorCosts: [],
+                toolCosts: [],
+                miscCosts: [],
+                risks: [],
+                rateCards: [
+                    { role: 'Project Manager', rate: 800, category: 'Internal' },
+                    { role: 'Business Analyst', rate: 650, category: 'Internal' },
+                    { role: 'Technical Lead', rate: 750, category: 'Internal' },
+                    { role: 'Developer', rate: 600, category: 'Internal' },
+                    { role: 'Tester', rate: 550, category: 'Internal' },
+                    { role: 'Senior Consultant', rate: 1200, category: 'External' },
+                    { role: 'Technical Architect', rate: 1500, category: 'External' },
+                    { role: 'Implementation Specialist', rate: 900, category: 'External' },
+                    { role: 'Support Specialist', rate: 700, category: 'External' }
+                ],
+                internalRates: [
+                    { role: 'Project Manager', rate: 800 },
+                    { role: 'Business Analyst', rate: 650 },
+                    { role: 'Technical Lead', rate: 750 },
+                    { role: 'Developer', rate: 600 },
+                    { role: 'Tester', rate: 550 }
+                ],
+                externalRates: [
+                    { role: 'Senior Consultant', rate: 1200 },
+                    { role: 'Technical Architect', rate: 1500 },
+                    { role: 'Implementation Specialist', rate: 900 },
+                    { role: 'Support Specialist', rate: 700 }
+                ],
+                contingencyPercentage: 10
+            };
+            
+            // Clear form fields
+            const formFields = {
+                projectName: '',
+                startDate: '',
+                endDate: '',
+                projectManager: '',
+                projectDescription: '',
+                contingencyPercentage: 10
+            };
+            
+            Object.keys(formFields).forEach(id => {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.value = formFields[id];
+                }
+            });
+            
+            // Clear localStorage
+            if (typeof(Storage) !== "undefined" && localStorage) {
+                localStorage.removeItem('ictProjectData');
+            }
+            
+            // Re-render all tables and summaries
+            renderAllTables();
+            updateSummary();
+            updateMonthHeaders();
+            
+            // Switch to project info tab
+            switchTab('project-info');
+            
+            showAlert('New project started successfully! Please enter your project information.', 'success');
+            console.log('New project created');
+            
+        } catch (error) {
+            console.error('Error creating new project:', error);
+            showAlert('Error creating new project: ' + error.message, 'error');
+        }
+    }
+}
+
+function loadProject() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    projectData = { ...projectData, ...data };
+                    loadDefaultData();
+                    renderAllTables();
+                    updateSummary();
+                    updateMonthHeaders();
+                    showAlert('Project loaded successfully!', 'success');
+                } catch (err) {
+                    console.error('Error loading project:', err);
+                    showAlert('Error loading project file: ' + err.message, 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+    };
+    input.click();
+}
+
+function exportToExcel() {
+    try {
+        // Create a simple CSV export since we can't use external libraries
+        const csvContent = generateCSVExport();
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `ICT_Cost_Estimate_${projectData.projectInfo.projectName || 'Project'}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showAlert('Export completed successfully!', 'success');
+    } catch (error) {
+        console.error('Error exporting:', error);
+        showAlert('Error exporting project: ' + error.message, 'error');
+    }
+}
+
+function generateCSVExport() {
+    const months = calculateProjectMonths();
+    let csv = 'ICT Project Cost Estimate Export\n\n';
+    
+    // Project Info
+    csv += 'PROJECT INFORMATION\n';
+    csv += `Project Name,"${projectData.projectInfo.projectName}"\n`;
+    csv += `Start Date,"${projectData.projectInfo.startDate}"\n`;
+    csv += `End Date,"${projectData.projectInfo.endDate}"\n`;
+    csv += `Project Manager,"${projectData.projectInfo.projectManager}"\n`;
+    csv += `Description,"${projectData.projectInfo.projectDescription}"\n\n`;
+    
+    // Rate Cards
+    csv += 'RATE CARDS\n';
+    csv += 'Role,Category,Daily Rate\n';
+    projectData.rateCards.forEach(rate => {
+        csv += `"${rate.role}","${rate.category}",${rate.rate}\n`;
+    });
+    
+    // Internal Resources
+    csv += '\nINTERNAL RESOURCES\n';
+    csv += `Role,Rate Card,Daily Rate,${months[0]} Days,${months[1]} Days,${months[2]} Days,${months[3]} Days,Total Cost\n`;
+    projectData.internalResources.forEach(resource => {
+        const month1Days = resource.month1Days || resource.q1Days || 0;
+        const month2Days = resource.month2Days || resource.q2Days || 0;
+        const month3Days = resource.month3Days || resource.q3Days || 0;
+        const month4Days = resource.month4Days || resource.q4Days || 0;
+        const totalCost = (month1Days + month2Days + month3Days + month4Days) * resource.dailyRate;
+        csv += `"${resource.role}","${resource.rateCard}",${resource.dailyRate},${month1Days},${month2Days},${month3Days},${month4Days},${totalCost}\n`;
+    });
+    
+    // Vendor Costs
+    csv += '\nVENDOR COSTS\n';
+    csv += `Vendor,Description,Category,${months[0]} Cost,${months[1]} Cost,${months[2]} Cost,${months[3]} Cost,Total Cost\n`;
+    projectData.vendorCosts.forEach(vendor => {
+        const month1Cost = vendor.month1Cost || vendor.q1Cost || 0;
+        const month2Cost = vendor.month2Cost || vendor.q2Cost || 0;
+        const month3Cost = vendor.month3Cost || vendor.q3Cost || 0;
+        const month4Cost = vendor.month4Cost || vendor.q4Cost || 0;
+        const totalCost = month1Cost + month2Cost + month3Cost + month4Cost;
+        csv += `"${vendor.vendor}","${vendor.description}","${vendor.category}",${month1Cost},${month2Cost},${month3Cost},${month4Cost},${totalCost}\n`;
+    });
+    
+    // Tool Costs
+    csv += '\nTOOL COSTS\n';
+    csv += 'Tool/Software,License Type,Users/Licenses,Monthly Cost,Duration (Months),Total Cost\n';
+    projectData.toolCosts.forEach(tool => {
+        const totalCost = tool.users * tool.monthlyCost * tool.duration;
+        csv += `"${tool.tool}","${tool.licenseType}",${tool.users},${tool.monthlyCost},${tool.duration},${totalCost}\n`;
+    });
+    
+    // Miscellaneous Costs
+    csv += '\nMISCELLANEOUS COSTS\n';
+    csv += 'Item,Description,Category,Cost\n';
+    projectData.miscCosts.forEach(misc => {
+        csv += `"${misc.item}","${misc.description}","${misc.category}",${misc.cost}\n`;
+    });
+    
+    // Risks
+    csv += '\nRISKS\n';
+    csv += 'Description,Probability,Impact,Risk Score,Mitigation Cost\n';
+    projectData.risks.forEach(risk => {
+        const riskScore = risk.probability * risk.impact;
+        csv += `"${risk.description}",${risk.probability},${risk.impact},${riskScore},${risk.mitigationCost}\n`;
+    });
+    
+    // Summary
+    csv += '\nPROJECT SUMMARY\n';
+    const internalTotal = calculateInternalResourcesTotal();
+    const vendorTotal = calculateVendorCostsTotal();
+    const toolTotal = calculateToolCostsTotal();
+    const miscTotal = calculateMiscCostsTotal();
+    const subtotal = internalTotal + vendorTotal + toolTotal + miscTotal;
+    const contingency = subtotal * (projectData.contingencyPercentage / 100);
+    const total = subtotal + contingency;
+    
+    csv += `Internal Resources,${internalTotal}\n`;
+    csv += `Vendor Costs,${vendorTotal}\n`;
+    csv += `Tool Costs,${toolTotal}\n`;
+    csv += `Miscellaneous,${miscTotal}\n`;
+    csv += `Subtotal,${subtotal}\n`;
+    csv += `Contingency (${projectData.contingencyPercentage}%),${contingency}\n`;
+    csv += `Total Project Cost,${total}\n`;
+    
+    return csv;
+}
+
+function showAlert(message, type) {
+    try {
+        // Create alert element
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type}`;
+        alert.textContent = message;
+        
+        // Insert at top of content
+        const content = document.querySelector('.content');
+        if (content) {
+            content.insertBefore(alert, content.firstChild);
+            
+            // Remove after 5 seconds
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        } else {
+            // Fallback to console if content area not found
+            console.log(`${type.toUpperCase()}: ${message}`);
+        }
+    } catch (error) {
+        console.error('Error showing alert:', error);
+        console.log(`${type.toUpperCase()}: ${message}`);
+    }
+}
+
 // Function to update project info in summary tab
 function updateSummaryProjectInfo() {
     try {
+        console.log('Updating summary project info...');
+        
         // Update project info in summary tab
         const projectInfoElements = {
             summaryProjectName: projectData.projectInfo.projectName || 'Not specified',
@@ -1145,19 +1452,127 @@ function updateSummaryProjectInfo() {
     }
 }
 
-// Expose necessary functions globally
-window.openModal = openModal;
-window.handleModalSubmit = handleModalSubmit;
+// Global function exports for backward compatibility and external access
 window.deleteItem = deleteItem;
+window.updateItemById = updateItemById;
 window.updateSummary = updateSummary;
 window.updateMonthHeaders = updateMonthHeaders;
 window.calculateProjectMonths = calculateProjectMonths;
-
-// Calculation functions for modules
-window.calculateInternalResourcesTotal = calculateInternalResourcesTotal;
-window.calculateVendorCostsTotal = calculateVendorCostsTotal;
-window.calculateToolCostsTotal = calculateToolCostsTotal;
-window.calculateMiscCostsTotal = calculateMiscCostsTotal;
-
-// Make projectData available globally for modules
 window.projectData = projectData;
+
+// Export functions that may be needed by other modules
+window.renderAllTables = renderAllTables;
+window.renderInternalResourcesTable = renderInternalResourcesTable;
+window.renderVendorCostsTable = renderVendorCostsTable;
+window.renderToolCostsTable = renderToolCostsTable;
+window.renderMiscCostsTable = renderMiscCostsTable;
+window.renderRisksTable = renderRisksTable;
+window.renderUnifiedRateCardsTable = renderUnifiedRateCardsTable;
+window.renderInternalRatesTable = renderInternalRatesTable;
+window.renderExternalRatesTable = renderExternalRatesTable;
+window.renderForecastTable = renderForecastTable; btn-danger btn-small" onclick="deleteItem('rateCards', ${rate.id || `'${rate.role}'`})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+    
+    console.log('Unified rate cards table rendered successfully');
+}
+
+function renderInternalResourcesTable() {
+    const tbody = document.getElementById('internalResourcesTable');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    if (projectData.internalResources.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No internal resources added yet</td></tr>';
+        return;
+    }
+    
+    projectData.internalResources.forEach(resource => {
+        // Handle both old format (q1Days) and new format (month1Days)
+        const month1Days = resource.month1Days || resource.q1Days || 0;
+        const month2Days = resource.month2Days || resource.q2Days || 0;
+        const month3Days = resource.month3Days || resource.q3Days || 0;
+        const month4Days = resource.month4Days || resource.q4Days || 0;
+        
+        const totalCost = (month1Days + month2Days + month3Days + month4Days) * resource.dailyRate;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${resource.role}</td>
+            <td>${resource.rateCard}</td>
+            <td>$${resource.dailyRate.toLocaleString()}</td>
+            <td>${month1Days}</td>
+            <td>${month2Days}</td>
+            <td>${month3Days}</td>
+            <td>${month4Days}</td>
+            <td>$${totalCost.toLocaleString()}</td>
+            <td>
+                <button class="btn btn-danger btn-small" onclick="deleteItem('internalResources', ${resource.id})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function renderVendorCostsTable() {
+    const tbody = document.getElementById('vendorCostsTable');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    if (projectData.vendorCosts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No vendor costs added yet</td></tr>';
+        return;
+    }
+    
+    projectData.vendorCosts.forEach(vendor => {
+        // Handle both old format (q1Cost) and new format (month1Cost)
+        const month1Cost = vendor.month1Cost || vendor.q1Cost || 0;
+        const month2Cost = vendor.month2Cost || vendor.q2Cost || 0;
+        const month3Cost = vendor.month3Cost || vendor.q3Cost || 0;
+        const month4Cost = vendor.month4Cost || vendor.q4Cost || 0;
+        
+        const totalCost = month1Cost + month2Cost + month3Cost + month4Cost;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${vendor.vendor}</td>
+            <td>${vendor.description}</td>
+            <td>${vendor.category}</td>
+            <td>$${month1Cost.toLocaleString()}</td>
+            <td>$${month2Cost.toLocaleString()}</td>
+            <td>$${month3Cost.toLocaleString()}</td>
+            <td>$${month4Cost.toLocaleString()}</td>
+            <td>$${totalCost.toLocaleString()}</td>
+            <td>
+                <button class="btn btn-danger btn-small" onclick="deleteItem('vendorCosts', ${vendor.id})">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function renderToolCostsTable() {
+    const tbody = document.getElementById('toolCostsTable');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    if (projectData.toolCosts.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No tool costs added yet</td></tr>';
+        return;
+    }
+    
+    projectData.toolCosts.forEach(tool => {
+        const totalCost = tool.users * tool.monthlyCost * tool.duration;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${tool.tool}</td>
+            <td>${tool.licenseType}</td>
+            <td>${tool.users}</td>
+            <td>$${tool.monthlyCost.toLocaleString()}</td>
+            <td>${tool.duration}</td>
+            <td>$${totalCost.toLocaleString()}</td>
+            <td>
+                <button class="btn
