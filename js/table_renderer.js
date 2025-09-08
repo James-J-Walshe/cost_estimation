@@ -1,9 +1,39 @@
 // Table Renderer Module
-// Handles all table rendering functionality
+// Handles all table rendering functionality with edit capabilities
 
 class TableRenderer {
     constructor() {
         console.log('Table Renderer initialized');
+    }
+
+    // Helper function to create action buttons with edit functionality
+    createActionButtons(itemId, itemType) {
+        const editButton = window.editManager ? 
+            window.editManager.createEditButton(itemId, itemType) : '';
+        
+        return `
+            <div class="action-buttons">
+                ${editButton}
+                <button class="btn btn-danger btn-small delete-btn icon-btn" onclick="deleteItem('${this.getArrayName(itemType)}', ${typeof itemId === 'string' ? `'${itemId}'` : itemId})" title="Delete">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"></path>
+                    </svg>
+                </button>
+            </div>
+        `;
+    }
+
+    // Helper function to get array name from item type
+    getArrayName(itemType) {
+        const mapping = {
+            'internal-resource': 'internalResources',
+            'vendor-cost': 'vendorCosts',
+            'tool-cost': 'toolCosts',
+            'misc-cost': 'miscCosts',
+            'risk': 'risks',
+            'rate-card': 'rateCards'
+        };
+        return mapping[itemType] || itemType;
     }
 
     // Render all tables
@@ -38,8 +68,6 @@ class TableRenderer {
         
         // Access global projectData variable
         const projectData = window.projectData || {};
-        console.log('ProjectData in renderUnifiedRateCardsTable:', projectData);
-        
         if (!projectData.rateCards || projectData.rateCards.length === 0) {
             tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No rate cards added yet</td></tr>';
             return;
@@ -61,9 +89,7 @@ class TableRenderer {
                 <td>${rate.role}</td>
                 <td><span class="category-badge category-${rate.category.toLowerCase()}">${rate.category}</span></td>
                 <td>$${rate.rate.toLocaleString()}</td>
-                <td>
-                    <button class="btn btn-danger btn-small" onclick="deleteItem('rateCards', ${rate.id || `'${rate.role}'`})">Delete</button>
-                </td>
+                <td>${this.createActionButtons(rate.id || rate.role, 'rate-card')}</td>
             `;
             tbody.appendChild(row);
         });
@@ -79,11 +105,6 @@ class TableRenderer {
         tbody.innerHTML = '';
         
         const projectData = window.projectData || {};
-        console.log('ProjectData in renderInternalResourcesTable:', {
-            exists: !!projectData,
-            internalResources: projectData.internalResources?.length || 0
-        });
-        
         if (!projectData.internalResources || projectData.internalResources.length === 0) {
             tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No internal resources added yet</td></tr>';
             return;
@@ -96,25 +117,23 @@ class TableRenderer {
             const month3Days = resource.month3Days || resource.q3Days || 0;
             const month4Days = resource.month4Days || resource.q4Days || 0;
             
-            const totalCost = (month1Days + month2Days + month3Days + month4Days) * resource.dailyRate;
+            const totalDays = month1Days + month2Days + month3Days + month4Days;
+            const totalCost = totalDays * resource.dailyRate;
+            
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${resource.role}</td>
-                <td>${resource.rateCard}</td>
+                <td>${resource.rateCard || 'Internal'}</td>
                 <td>$${resource.dailyRate.toLocaleString()}</td>
                 <td>${month1Days}</td>
                 <td>${month2Days}</td>
                 <td>${month3Days}</td>
                 <td>${month4Days}</td>
                 <td>$${totalCost.toLocaleString()}</td>
-                <td>
-                    <button class="btn btn-danger btn-small" onclick="deleteItem('internalResources', ${resource.id})">Delete</button>
-                </td>
+                <td>${this.createActionButtons(resource.id, 'internal-resource')}</td>
             `;
             tbody.appendChild(row);
         });
-        
-        console.log(`Rendered ${projectData.internalResources.length} internal resources`);
     }
 
     // Vendor costs table
@@ -125,11 +144,6 @@ class TableRenderer {
         tbody.innerHTML = '';
         
         const projectData = window.projectData || {};
-        console.log('ProjectData in renderVendorCostsTable:', {
-            exists: !!projectData,
-            vendorCosts: projectData.vendorCosts?.length || 0
-        });
-        
         if (!projectData.vendorCosts || projectData.vendorCosts.length === 0) {
             tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No vendor costs added yet</td></tr>';
             return;
@@ -143,24 +157,21 @@ class TableRenderer {
             const month4Cost = vendor.month4Cost || vendor.q4Cost || 0;
             
             const totalCost = month1Cost + month2Cost + month3Cost + month4Cost;
+            
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${vendor.vendor}</td>
-                <td>${vendor.description}</td>
                 <td>${vendor.category}</td>
+                <td>${vendor.description}</td>
                 <td>$${month1Cost.toLocaleString()}</td>
                 <td>$${month2Cost.toLocaleString()}</td>
                 <td>$${month3Cost.toLocaleString()}</td>
                 <td>$${month4Cost.toLocaleString()}</td>
                 <td>$${totalCost.toLocaleString()}</td>
-                <td>
-                    <button class="btn btn-danger btn-small" onclick="deleteItem('vendorCosts', ${vendor.id})">Delete</button>
-                </td>
+                <td>${this.createActionButtons(vendor.id, 'vendor-cost')}</td>
             `;
             tbody.appendChild(row);
         });
-        
-        console.log(`Rendered ${projectData.vendorCosts.length} vendor costs`);
     }
 
     // Tool costs table
@@ -171,11 +182,6 @@ class TableRenderer {
         tbody.innerHTML = '';
         
         const projectData = window.projectData || {};
-        console.log('ProjectData in renderToolCostsTable:', {
-            exists: !!projectData,
-            toolCosts: projectData.toolCosts?.length || 0
-        });
-        
         if (!projectData.toolCosts || projectData.toolCosts.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No tool costs added yet</td></tr>';
             return;
@@ -183,22 +189,19 @@ class TableRenderer {
         
         projectData.toolCosts.forEach(tool => {
             const totalCost = tool.users * tool.monthlyCost * tool.duration;
+            
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${tool.tool}</td>
                 <td>${tool.licenseType}</td>
-                <td>${tool.users}</td>
                 <td>$${tool.monthlyCost.toLocaleString()}</td>
+                <td>${tool.users}</td>
                 <td>${tool.duration}</td>
                 <td>$${totalCost.toLocaleString()}</td>
-                <td>
-                    <button class="btn btn-danger btn-small" onclick="deleteItem('toolCosts', ${tool.id})">Delete</button>
-                </td>
+                <td>${this.createActionButtons(tool.id, 'tool-cost')}</td>
             `;
             tbody.appendChild(row);
         });
-        
-        console.log(`Rendered ${projectData.toolCosts.length} tool costs`);
     }
 
     // Miscellaneous costs table
@@ -209,11 +212,6 @@ class TableRenderer {
         tbody.innerHTML = '';
         
         const projectData = window.projectData || {};
-        console.log('ProjectData in renderMiscCostsTable:', {
-            exists: !!projectData,
-            miscCosts: projectData.miscCosts?.length || 0
-        });
-        
         if (!projectData.miscCosts || projectData.miscCosts.length === 0) {
             tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No miscellaneous costs added yet</td></tr>';
             return;
@@ -222,18 +220,14 @@ class TableRenderer {
         projectData.miscCosts.forEach(misc => {
             const row = document.createElement('tr');
             row.innerHTML = `
+                <td>${misc.category}</td>
                 <td>${misc.item}</td>
                 <td>${misc.description}</td>
-                <td>${misc.category}</td>
                 <td>$${misc.cost.toLocaleString()}</td>
-                <td>
-                    <button class="btn btn-danger btn-small" onclick="deleteItem('miscCosts', ${misc.id})">Delete</button>
-                </td>
+                <td>${this.createActionButtons(misc.id, 'misc-cost')}</td>
             `;
             tbody.appendChild(row);
         });
-        
-        console.log(`Rendered ${projectData.miscCosts.length} miscellaneous costs`);
     }
 
     // Risks table
@@ -244,11 +238,6 @@ class TableRenderer {
         tbody.innerHTML = '';
         
         const projectData = window.projectData || {};
-        console.log('ProjectData in renderRisksTable:', {
-            exists: !!projectData,
-            risks: projectData.risks?.length || 0
-        });
-        
         if (!projectData.risks || projectData.risks.length === 0) {
             tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No risks added yet</td></tr>';
             return;
@@ -262,15 +251,11 @@ class TableRenderer {
                 <td>${risk.probability}</td>
                 <td>${risk.impact}</td>
                 <td>${riskScore}</td>
-                <td>$${risk.mitigationCost.toLocaleString()}</td>
-                <td>
-                    <button class="btn btn-danger btn-small" onclick="deleteItem('risks', ${risk.id})">Delete</button>
-                </td>
+                <td>$${(risk.mitigationCost || 0).toLocaleString()}</td>
+                <td>${this.createActionButtons(risk.id, 'risk')}</td>
             `;
             tbody.appendChild(row);
         });
-        
-        console.log(`Rendered ${projectData.risks.length} risks`);
     }
 
     // Internal rates table (backward compatibility)
@@ -296,9 +281,7 @@ class TableRenderer {
             row.innerHTML = `
                 <td>${rate.role}</td>
                 <td>$${rate.rate.toLocaleString()}</td>
-                <td>
-                    <button class="btn btn-danger btn-small" onclick="deleteItem('rateCards', ${rate.id || `'${rate.role}'`})">Delete</button>
-                </td>
+                <td>${this.createActionButtons(rate.id || rate.role, 'rate-card')}</td>
             `;
             tbody.appendChild(row);
         });
@@ -327,9 +310,7 @@ class TableRenderer {
             row.innerHTML = `
                 <td>${rate.role}</td>
                 <td>$${rate.rate.toLocaleString()}</td>
-                <td>
-                    <button class="btn btn-danger btn-small" onclick="deleteItem('rateCards', ${rate.id || `'${rate.role}'`})">Delete</button>
-                </td>
+                <td>${this.createActionButtons(rate.id || rate.role, 'rate-card')}</td>
             `;
             tbody.appendChild(row);
         });
@@ -394,11 +375,99 @@ class TableRenderer {
     }
 }
 
+// Data update integration for edit functionality
+function updateItemById(itemId, newData, itemType) {
+    const projectData = window.projectData || {};
+    
+    switch (itemType) {
+        case 'internal-resource':
+            const resourceIndex = projectData.internalResources.findIndex(r => r.id === itemId);
+            if (resourceIndex !== -1) {
+                // Update the resource with new data
+                Object.assign(projectData.internalResources[resourceIndex], newData);
+                
+                // Update rate if role changed
+                const rate = projectData.rateCards.find(r => r.role === newData.role);
+                if (rate) {
+                    projectData.internalResources[resourceIndex].dailyRate = rate.rate;
+                    projectData.internalResources[resourceIndex].rateCard = rate.category;
+                }
+            }
+            break;
+            
+        case 'vendor-cost':
+            const vendorIndex = projectData.vendorCosts.findIndex(v => v.id === itemId);
+            if (vendorIndex !== -1) {
+                Object.assign(projectData.vendorCosts[vendorIndex], newData);
+            }
+            break;
+            
+        case 'tool-cost':
+            const toolIndex = projectData.toolCosts.findIndex(t => t.id === itemId);
+            if (toolIndex !== -1) {
+                Object.assign(projectData.toolCosts[toolIndex], newData);
+            }
+            break;
+            
+        case 'misc-cost':
+            const miscIndex = projectData.miscCosts.findIndex(m => m.id === itemId);
+            if (miscIndex !== -1) {
+                Object.assign(projectData.miscCosts[miscIndex], newData);
+            }
+            break;
+            
+        case 'risk':
+            const riskIndex = projectData.risks.findIndex(r => r.id === itemId);
+            if (riskIndex !== -1) {
+                Object.assign(projectData.risks[riskIndex], newData);
+            }
+            break;
+            
+        case 'rate-card':
+            const rateIndex = projectData.rateCards.findIndex(r => 
+                (r.id && r.id === itemId) || r.role === itemId
+            );
+            if (rateIndex !== -1) {
+                Object.assign(projectData.rateCards[rateIndex], newData);
+                
+                // Also update old arrays for backward compatibility
+                if (newData.category === 'Internal') {
+                    const internalIndex = projectData.internalRates?.findIndex(r => 
+                        (r.id && r.id === itemId) || r.role === itemId
+                    );
+                    if (internalIndex !== -1 && projectData.internalRates) {
+                        Object.assign(projectData.internalRates[internalIndex], {
+                            role: newData.role,
+                            rate: newData.rate
+                        });
+                    }
+                } else if (newData.category === 'External') {
+                    const externalIndex = projectData.externalRates?.findIndex(r => 
+                        (r.id && r.id === itemId) || r.role === itemId
+                    );
+                    if (externalIndex !== -1 && projectData.externalRates) {
+                        Object.assign(projectData.externalRates[externalIndex], {
+                            role: newData.role,
+                            rate: newData.rate
+                        });
+                    }
+                }
+            }
+            break;
+    }
+    
+    // Save to localStorage if available
+    if (window.DataManager && window.DataManager.saveToLocalStorage) {
+        window.DataManager.saveToLocalStorage();
+    }
+}
+
 // Create and export table renderer instance
 const tableRenderer = new TableRenderer();
 
 // Make it globally available
-window.TableRenderer = tableRenderer;
+window.tableRenderer = tableRenderer;
+window.TableRenderer = tableRenderer; // For backward compatibility with your existing code
 
 // Export individual functions for backward compatibility
 window.renderAllTables = () => tableRenderer.renderAllTables();
@@ -412,4 +481,7 @@ window.renderInternalRatesTable = () => tableRenderer.renderInternalRatesTable()
 window.renderExternalRatesTable = () => tableRenderer.renderExternalRatesTable();
 window.renderForecastTable = () => tableRenderer.renderForecastTable();
 
-console.log('Table Renderer module loaded');
+// Export the update function for edit functionality
+window.updateItemById = updateItemById;
+
+console.log('Table Renderer module loaded with edit functionality');
