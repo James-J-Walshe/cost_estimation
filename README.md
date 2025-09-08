@@ -9,11 +9,10 @@ A comprehensive web-based tool for creating detailed cost estimates for ICT (Inf
 **Raw File URLs:**
 - HTML: `https://raw.githubusercontent.com/James-J-Walshe/cost_estimation/main/index.html`
 - CSS: `https://raw.githubusercontent.com/James-J-Walshe/cost_estimation/main/style.css`
-- JavaScript: `https://raw.githubusercontent.com/James-J-Walshe/cost_estimation/main/script.js`
--    js
--    data_manager: `https://raw.githubusercontent.com/James-J-Walshe/cost_estimation/refs/heads/main/js/data_manager.js`
--    dom_manager: `https://raw.githubusercontent.com/James-J-Walshe/cost_estimation/refs/heads/main/js/dom_manager.js`
--    table_renderer: ` `
+- script.js: `https://raw.githubusercontent.com/James-J-Walshe/cost_estimation/main/script.js`
+- data_manager.js: `https://raw.githubusercontent.com/James-J-Walshe/cost_estimation/refs/heads/main/js/data_manager.js`
+- dom_manager.js: `https://raw.githubusercontent.com/James-J-Walshe/cost_estimation/refs/heads/main/js/dom_manager.js`
+- table_renderer.js: ` `
 
 ## 📋 Features
 
@@ -30,7 +29,7 @@ A comprehensive web-based tool for creating detailed cost estimates for ICT (Inf
 
 ### Key Capabilities
 - ✅ **Real-time calculations** - Automatic cost updates as you enter data
-- ✅ **Quarterly forecasting** - Plan costs across multiple quarters
+- ✅ **Monthly forecasting** - Plan costs across multiple months
 - ✅ **Data persistence** - Automatically saves your work locally
 - ✅ **Export functionality** - Export estimates to CSV format
 - ✅ **Import/Export projects** - Save and load projects as JSON files
