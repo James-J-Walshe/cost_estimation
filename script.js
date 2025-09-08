@@ -340,74 +340,46 @@ function showSettingsView() {
 
 function enhanceBackButton() {
     const backToMain = document.getElementById('backToMain');
-    const settingsHeader = document.querySelector('.settings-header');
-    
-    if (backToMain && settingsHeader) {
-        // Transform the back button into an X close button
-        backToMain.innerHTML = '×'; // Use × symbol for close
-        
-        // Position it on the right side of the settings header
-        settingsHeader.style.position = 'relative';
-        settingsHeader.style.display = 'flex';
-        settingsHeader.style.justifyContent = 'space-between';
-        settingsHeader.style.alignItems = 'center';
-        
-        // Style the X button
-        backToMain.style.position = 'absolute';
-        backToMain.style.right = '20px';
-        backToMain.style.top = '50%';
-        backToMain.style.transform = 'translateY(-50%)';
-        backToMain.style.width = '32px';
-        backToMain.style.height = '32px';
-        backToMain.style.borderRadius = '50%';
-        backToMain.style.border = '1px solid #dee2e6';
-        backToMain.style.backgroundColor = '#f8f9fa';
-        backToMain.style.color = '#6c757d';
-        backToMain.style.fontSize = '20px';
-        backToMain.style.fontWeight = 'bold';
-        backToMain.style.display = 'flex';
-        backToMain.style.alignItems = 'center';
-        backToMain.style.justifyContent = 'center';
+    if (backToMain) {
+        // Add hover effects and better visual styling
         backToMain.style.cursor = 'pointer';
         backToMain.style.transition = 'all 0.2s ease';
-        backToMain.style.padding = '0';
-        backToMain.style.lineHeight = '1';
-        backToMain.style.zIndex = '10';
+        backToMain.style.borderRadius = '6px';
+        backToMain.style.padding = '8px 16px';
+        backToMain.style.backgroundColor = '#f8f9fa';
+        backToMain.style.border = '1px solid #dee2e6';
+        backToMain.style.display = 'flex';
+        backToMain.style.alignItems = 'center';
+        backToMain.style.gap = '8px';
+        backToMain.style.fontSize = '14px';
+        backToMain.style.fontWeight = '500';
+        backToMain.style.color = '#495057';
         
-        // Add hover effects for the X button
+        // Add hover effect
         backToMain.addEventListener('mouseenter', () => {
             backToMain.style.backgroundColor = '#e9ecef';
             backToMain.style.borderColor = '#adb5bd';
-            backToMain.style.color = '#495057';
-            backToMain.style.transform = 'translateY(-50%) scale(1.1)';
-            backToMain.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+            backToMain.style.transform = 'translateY(-1px)';
+            backToMain.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
         });
         
         backToMain.addEventListener('mouseleave', () => {
             backToMain.style.backgroundColor = '#f8f9fa';
             backToMain.style.borderColor = '#dee2e6';
-            backToMain.style.color = '#6c757d';
-            backToMain.style.transform = 'translateY(-50%) scale(1)';
+            backToMain.style.transform = 'translateY(0)';
             backToMain.style.boxShadow = 'none';
         });
         
         backToMain.addEventListener('mousedown', () => {
-            backToMain.style.transform = 'translateY(-50%) scale(0.95)';
+            backToMain.style.transform = 'translateY(0)';
             backToMain.style.backgroundColor = '#dee2e6';
         });
         
         backToMain.addEventListener('mouseup', () => {
-            backToMain.style.transform = 'translateY(-50%) scale(1.1)';
             backToMain.style.backgroundColor = '#e9ecef';
         });
         
-        // Add title for accessibility
-        backToMain.title = 'Close Settings';
-        backToMain.setAttribute('aria-label', 'Close Settings');
-        
-        console.log('Back button transformed to X close button');
-    } else {
-        console.log('Settings header or back button not found');
+        console.log('Back button visual enhancements applied');
     }
     
     // Also enhance any other clickable areas that might need visual cues
