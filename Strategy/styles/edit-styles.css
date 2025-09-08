@@ -1,0 +1,247 @@
+/* Edit Functionality Styles */
+
+/* Edit button styling */
+.edit-btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 5px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.edit-btn:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+}
+
+/* Save button styling */
+.save-edit-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 5px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.save-edit-btn:hover {
+    background: #1e7e34;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+}
+
+/* Cancel button styling */
+.cancel-edit-btn {
+    background: #6c757d;
+    color: white;
+    border: none;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 5px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cancel-edit-btn:hover {
+    background: #495057;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
+}
+
+/* Icon button base styles */
+.icon-btn {
+    min-width: 32px;
+    min-height: 32px;
+    padding: 6px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-btn svg {
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+}
+
+/* Edit mode styling */
+.editing {
+    background-color: #fff3cd !important;
+    border: 2px solid #ffc107 !important;
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
+}
+
+.editing td {
+    background-color: transparent !important;
+}
+
+/* Edit input styling */
+.edit-input {
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid #ced4da;
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: inherit;
+    background-color: white;
+    box-sizing: border-box;
+    min-width: 80px;
+}
+
+.edit-input:focus {
+    outline: none;
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Number inputs */
+.edit-input[type="number"] {
+    text-align: right;
+}
+
+/* Select inputs */
+.edit-input select {
+    padding: 4px;
+}
+
+/* Responsive edit inputs */
+@media (max-width: 768px) {
+    .edit-input {
+        font-size: 14px;
+        padding: 6px;
+        min-width: 60px;
+    }
+    
+    .icon-btn {
+        min-width: 28px;
+        min-height: 28px;
+        padding: 4px;
+    }
+    
+    .icon-btn svg {
+        width: 14px;
+        height: 14px;
+    }
+}
+
+/* Edit validation states */
+.edit-input.invalid {
+    border-color: #dc3545;
+    background-color: #fff5f5;
+}
+
+.edit-input.invalid:focus {
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+/* Edit mode animations */
+.editing {
+    animation: highlightEdit 0.3s ease-in-out;
+}
+
+@keyframes highlightEdit {
+    0% {
+        background-color: transparent;
+        border-color: transparent;
+    }
+    50% {
+        background-color: #fff3cd;
+        border-color: #ffc107;
+    }
+    100% {
+        background-color: #fff3cd;
+        border-color: #ffc107;
+    }
+}
+
+/* Action cell spacing */
+.action-buttons {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+}
+
+/* Ensure buttons stay in line */
+td .action-buttons,
+td:last-child {
+    white-space: nowrap;
+}
+
+/* Loading state for save button */
+.save-edit-btn.loading {
+    position: relative;
+    color: transparent;
+}
+
+.save-edit-btn.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    border: 2px solid transparent;
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+/* Accessibility improvements */
+.edit-btn:focus,
+.save-edit-btn:focus,
+.cancel-edit-btn:focus {
+    outline: 2px solid #0066cc;
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .editing {
+        border-width: 3px;
+        border-color: #000;
+    }
+    
+    .edit-input {
+        border-width: 2px;
+        border-color: #000;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .edit-btn,
+    .save-edit-btn,
+    .cancel-edit-btn,
+    .editing {
+        transition: none;
+        animation: none;
+    }
+}
