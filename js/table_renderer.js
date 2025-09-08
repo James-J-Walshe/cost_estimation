@@ -295,9 +295,8 @@ class TableRenderer {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${rate.role}</td>
-                <td>${rate.rate.toLocaleString()}</td>
+                <td>$${rate.rate.toLocaleString()}</td>
                 <td>
-                    <button class="btn btn-secondary btn-small" onclick="editItem('rateCards', ${rate.id || `'${rate.role}'`})" style="margin-right: 8px;">Edit</button>
                     <button class="btn btn-danger btn-small" onclick="deleteItem('rateCards', ${rate.id || `'${rate.role}'`})">Delete</button>
                 </td>
             `;
