@@ -185,15 +185,8 @@
                         <div class="table-container">
                             <table class="data-table">
                                 <thead>
-                                    <tr>
-                                        <th>Category</th>
-                                        <th id="month1Header">Month 1</th>
-                                        <th id="month2Header">Month 2</th>
-                                        <th id="month3Header">Month 3</th>
-                                        <th id="month4Header">Month 4</th>
-                                        <th id="month5Header">Month 5</th>
-                                        <th id="month6Header">Month 6</th>
-                                        <th>Total</th>
+                                    <tr id="forecastTableHeader">
+                                        <!-- Headers will be dynamically generated -->
                                     </tr>
                                 </thead>
                                 <tbody id="forecastTable">
@@ -213,16 +206,8 @@
                     <div class="table-container">
                         <table class="data-table">
                             <thead>
-                                <tr>
-                                    <th>Role</th>
-                                    <th>Rate Card</th>
-                                    <th>Daily Rate</th>
-                                    <th id="month1DaysHeader">Month 1 Days</th>
-                                    <th id="month2DaysHeader">Month 2 Days</th>
-                                    <th id="month3DaysHeader">Month 3 Days</th>
-                                    <th id="month4DaysHeader">Month 4 Days</th>
-                                    <th>Total Cost</th>
-                                    <th>Actions</th>
+                                <tr id="internalResourcesTableHeader">
+                                    <!-- Headers will be dynamically generated -->
                                 </tr>
                             </thead>
                             <tbody id="internalResourcesTable">
@@ -241,16 +226,8 @@
                     <div class="table-container">
                         <table class="data-table">
                             <thead>
-                                <tr>
-                                    <th>Vendor</th>
-                                    <th>Description</th>
-                                    <th>Category</th>
-                                    <th id="month1CostHeader">Month 1 Cost</th>
-                                    <th id="month2CostHeader">Month 2 Cost</th>
-                                    <th id="month3CostHeader">Month 3 Cost</th>
-                                    <th id="month4CostHeader">Month 4 Cost</th>
-                                    <th>Total Cost</th>
-                                    <th>Actions</th>
+                                <tr id="vendorCostsTableHeader">
+                                    <!-- Headers will be dynamically generated -->
                                 </tr>
                             </thead>
                             <tbody id="vendorCostsTable">
@@ -495,17 +472,11 @@
         </div>
     </div>
     
-    <!-- Comment out or remove these lines temporarily -->
-    <!-- 
-    <script src="js/app-state.js"></script>
-    <script src="js/navigation.js"></script>
-    <script src="js/app-init.js"></script> 
-    
-    -->
     <script src="js/dom_manager.js"></script>
     <script src="js/table_renderer.js"></script> 
     <script src="js/data_manager.js"></script>
     <script src="modules/editManager.js"></script>
+    <script src="js/dynamic_form_helper.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
