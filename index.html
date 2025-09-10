@@ -6,6 +6,20 @@
     <title>ICT Project Cost Estimation Tool</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="Styles/edit-styles.css">
+    
+    <!-- Initialize global project data -->
+    <script>
+        // Global variables to ensure proper initialization
+        window.projectData = window.projectData || {
+            projectInfo: {},
+            internalResources: [],
+            vendorCosts: [],
+            toolCosts: [],
+            miscCosts: [],
+            risks: [],
+            rateCards: []
+        };
+    </script>
 </head>
 <body>
     <div class="app-container">
@@ -185,7 +199,7 @@
                         <div class="table-container">
                             <table class="data-table">
                                 <thead>
-                                    <tr>
+                                    <tr id="forecastHeaderRow">
                                         <th>Category</th>
                                         <th id="month1Header">Month 1</th>
                                         <th id="month2Header">Month 2</th>
@@ -213,7 +227,7 @@
                     <div class="table-container">
                         <table class="data-table">
                             <thead>
-                                <tr>
+                                <tr id="internalResourcesHeaderRow">
                                     <th>Role</th>
                                     <th>Rate Card</th>
                                     <th>Daily Rate</th>
@@ -241,7 +255,7 @@
                     <div class="table-container">
                         <table class="data-table">
                             <thead>
-                                <tr>
+                                <tr id="vendorCostsHeaderRow">
                                     <th>Vendor</th>
                                     <th>Description</th>
                                     <th>Category</th>
@@ -382,24 +396,27 @@
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="projectName">Project Name:</label>
-                                <input type="text" id="projectName" class="form-control" placeholder="Enter project name">
+                                <input type="text" id="projectName" class="form-control" placeholder="Enter project name" onchange="handleProjectInfoChange()">
                             </div>
                             <div class="form-group">
                                 <label for="startDate">Start Date:</label>
-                                <input type="date" id="startDate" class="form-control">
+                                <input type="date" id="startDate" class="form-control" onchange="handleProjectDatesChange()">
                             </div>
                             <div class="form-group">
                                 <label for="projectManager">Project Manager:</label>
-                                <input type="text" id="projectManager" class="form-control" placeholder="Enter project manager name">
+                                <input type="text" id="projectManager" class="form-control" placeholder="Enter project manager name" onchange="handleProjectInfoChange()">
                             </div>
                             <div class="form-group">
                                 <label for="endDate">End Date:</label>
-                                <input type="date" id="endDate" class="form-control">
+                                <input type="date" id="endDate" class="form-control" onchange="handleProjectDatesChange()">
                             </div>
                             <div class="form-group full-width">
                                 <label for="projectDescription">Project Description:</label>
-                                <textarea id="projectDescription" class="form-control" rows="4" placeholder="Enter project description"></textarea>
+                                <textarea id="projectDescription" class="form-control" rows="4" placeholder="Enter project description" onchange="handleProjectInfoChange()"></textarea>
                             </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" onclick="saveProjectInfo()" class="btn btn-primary">Save Project Information</button>
                         </div>
                     </div>
 
@@ -487,6 +504,10 @@
                 <div id="modalFields">
                     <!-- Dynamic form fields -->
                 </div>
+                <!-- Dynamic month fields container -->
+                <div id="dynamicMonthFields" class="month-fields-container">
+                    <!-- Month fields will be dynamically generated based on project dates -->
+                </div>
                 <div class="modal-actions">
                     <button type="submit" class="btn btn-primary">Save</button>
                     <button type="button" class="btn btn-secondary" id="cancelModal">Cancel</button>
@@ -495,18 +516,280 @@
         </div>
     </div>
     
-    <!-- Comment out or remove these lines temporarily -->
-    <!-- 
-    <script src="js/app-state.js"></script>
-    <script src="js/navigation.js"></script>
-    <script src="js/app-init.js"></script> 
+    <!-- Dynamic Month Handlers JavaScript -->
+    <script>
+        // Global functions for handling project date changes
+        function handleProjectDatesChange() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            console.log('Project dates changed:', startDate, endDate);
+            
+            if (startDate && endDate) {
+                // Update project data
+                if (!window.projectData.projectInfo) {
+                    window.projectData.projectInfo = {};
+                }
+                window.projectData.projectInfo.startDate = startDate;
+                window.projectData.projectInfo.endDate = endDate;
+                
+                // Update summary display
+                updateProjectSummary();
+                
+                // Trigger dynamic form updates
+                if (window.onProjectDatesUpdated) {
+                    window.onProjectDatesUpdated();
+                }
+                
+                // Auto-save if data manager is available
+                if (window.DataManager && window.DataManager.saveToLocalStorage) {
+                    window.DataManager.saveToLocalStorage();
+                }
+                
+                console.log(`Project dates updated: ${startDate} to ${endDate}`);
+            }
+        }
+
+        // Enhanced modal handling for dynamic month fields
+        function setupModalForItem(itemType, itemData = {}) {
+            console.log('Setting up modal for:', itemType, itemData);
+            
+            // Clear existing dynamic month fields
+            const monthFieldsContainer = document.getElementById('dynamicMonthFields');
+            if (monthFieldsContainer) {
+                monthFieldsContainer.innerHTML = '';
+            }
+            
+            // Setup dynamic month fields if needed
+            if (window.setupDynamicMonthFields && (itemType === 'internal-resource' || itemType === 'vendor-cost')) {
+                window.setupDynamicMonthFields('modalForm', itemType, itemData);
+            }
+        }
+
+        // Enhanced form submission handling
+        function submitModalForm(event, itemType) {
+            event.preventDefault();
+            
+            const form = document.getElementById('modalForm');
+            let formData;
+            
+            // Extract form data including dynamic month fields
+            if (window.extractDynamicFormData) {
+                formData = window.extractDynamicFormData(form, itemType);
+            } else {
+                // Fallback to basic form data extraction
+                const formDataObj = new FormData(form);
+                formData = {};
+                for (let [key, value] of formDataObj.entries()) {
+                    if (key.includes('month') && (key.includes('Days') || key.includes('Cost'))) {
+                        formData[key] = parseFloat(value) || 0;
+                    } else if (key === 'dailyRate' || key.includes('Cost')) {
+                        formData[key] = parseFloat(value) || 0;
+                    } else {
+                        formData[key] = value;
+                    }
+                }
+            }
+            
+            // Add unique ID if creating new item
+            if (!formData.id) {
+                formData.id = Date.now();
+            }
+            
+            console.log('Form data extracted:', formData);
+            return formData;
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, initializing dynamic month handlers');
+            
+            // Load existing project data if available
+            if (window.DataManager && window.DataManager.loadFromLocalStorage) {
+                window.DataManager.loadFromLocalStorage();
+            }
+            
+            // Populate form fields if project info exists
+            if (window.projectData && window.projectData.projectInfo) {
+                const info = window.projectData.projectInfo;
+                
+                const startDateField = document.getElementById('startDate');
+                const endDateField = document.getElementById('endDate');
+                const projectNameField = document.getElementById('projectName');
+                const projectManagerField = document.getElementById('projectManager');
+                const projectDescriptionField = document.getElementById('projectDescription');
+                
+                if (info.startDate && startDateField) startDateField.value = info.startDate;
+                if (info.endDate && endDateField) endDateField.value = info.endDate;
+                if (info.projectName && projectNameField) projectNameField.value = info.projectName;
+                if (info.projectManager && projectManagerField) projectManagerField.value = info.projectManager;
+                if (info.projectDescription && projectDescriptionField) projectDescriptionField.value = info.projectDescription;
+                
+                // Update summary display
+                updateProjectSummary();
+            }
+            
+            // Initialize dynamic forms
+            if (window.dynamicFormHelper) {
+                setTimeout(() => {
+                    window.dynamicFormHelper.initializeDynamicForms();
+                }, 100);
+            }
+            
+            // Render all tables
+            if (window.renderAllTables) {
+                setTimeout(() => {
+                    window.renderAllTables();
+                }, 200);
+            }
+            
+            // Setup enhanced modal event listeners
+            const modal = document.getElementById('modal');
+            const modalForm = document.getElementById('modalForm');
+            
+            if (modalForm) {
+                modalForm.addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    // The actual submission will be handled by existing script.js functions
+                    // This just ensures dynamic month fields are properly processed
+                });
+            }
+            
+            console.log('Dynamic month handlers initialized successfully');
+        });
+
+        // Enhanced window resize handler for responsive month columns
+        window.addEventListener('resize', function() {
+            // Refresh table headers on resize to ensure proper display
+            if (window.tableRenderer && window.tableRenderer.updateTableHeaders) {
+                window.tableRenderer.updateTableHeaders();
+            }
+        });
+
+        // Global function to refresh all dynamic elements when project changes
+        function refreshDynamicElements() {
+            console.log('Refreshing dynamic elements');
+            
+            // Update table headers
+            if (window.tableRenderer && window.tableRenderer.updateTableHeaders) {
+                window.tableRenderer.updateTableHeaders();
+            }
+            
+            // Re-render all tables
+            if (window.renderAllTables) {
+                window.renderAllTables();
+            }
+            
+            // Update summary
+            updateProjectSummary();
+            
+            // Update any open modals
+            const modal = document.getElementById('modal');
+            if (modal && modal.style.display !== 'none') {
+                const modalTitle = document.getElementById('modalTitle');
+                if (modalTitle) {
+                    const currentItemType = modalTitle.textContent.toLowerCase().includes('resource') ? 'internal-resource' : 'vendor-cost';
+                    setupModalForItem(currentItemType);
+                }
+            }
+        }
+
+        // Export functions for use by other scripts
+        window.handleProjectDatesChange = handleProjectDatesChange;
+        window.handleProjectInfoChange = handleProjectInfoChange;
+        window.saveProjectInfo = saveProjectInfo;
+        window.updateProjectSummary = updateProjectSummary;
+        window.setupModalForItem = setupModalForItem;
+        window.submitModalForm = submitModalForm;
+        window.refreshDynamicElements = refreshDynamicElements;
+    </script>
     
-    -->
+    <!-- Load JavaScript modules in correct order -->
     <script src="js/dom_manager.js"></script>
     <script src="js/table_renderer.js"></script> 
     <script src="js/data_manager.js"></script>
     <script src="modules/editManager.js"></script>
     <script src="js/dynamic_form_helper.js"></script>
     <script src="script.js"></script>
+    
+    <!-- Additional initialization script -->
+    <script>
+        // Ensure proper initialization order
+        window.addEventListener('load', function() {
+            console.log('Window loaded, performing final initialization');
+            
+            // Final check to ensure all dynamic elements are properly set up
+            setTimeout(() => {
+                if (window.projectData && window.projectData.projectInfo) {
+                    const { startDate, endDate } = window.projectData.projectInfo;
+                    if (startDate && endDate) {
+                        console.log('Re-triggering dynamic updates for existing project dates');
+                        refreshDynamicElements();
+                    }
+                }
+            }, 500);
+        });
+    </script>
 </body>
-</html>
+</html>function handleProjectInfoChange() {
+            // Update project info in real-time
+            const projectName = document.getElementById('projectName').value;
+            const projectManager = document.getElementById('projectManager').value;
+            const projectDescription = document.getElementById('projectDescription').value;
+            
+            if (!window.projectData.projectInfo) {
+                window.projectData.projectInfo = {};
+            }
+            
+            window.projectData.projectInfo.projectName = projectName;
+            window.projectData.projectInfo.projectManager = projectManager;
+            window.projectData.projectInfo.projectDescription = projectDescription;
+            
+            // Update summary display
+            updateProjectSummary();
+            
+            // Auto-save if data manager is available
+            if (window.DataManager && window.DataManager.saveToLocalStorage) {
+                window.DataManager.saveToLocalStorage();
+            }
+        }
+
+        function saveProjectInfo() {
+            handleProjectInfoChange();
+            handleProjectDatesChange();
+            
+            alert('Project information saved successfully!');
+        }
+
+        function updateProjectSummary() {
+            const projectInfo = window.projectData.projectInfo || {};
+            
+            // Update summary display elements
+            const summaryProjectName = document.getElementById('summaryProjectName');
+            const summaryProjectManager = document.getElementById('summaryProjectManager');
+            const summaryStartDate = document.getElementById('summaryStartDate');
+            const summaryEndDate = document.getElementById('summaryEndDate');
+            const summaryProjectDuration = document.getElementById('summaryProjectDuration');
+            const summaryProjectDescription = document.getElementById('summaryProjectDescription');
+            
+            if (summaryProjectName) summaryProjectName.textContent = projectInfo.projectName || 'Not specified';
+            if (summaryProjectManager) summaryProjectManager.textContent = projectInfo.projectManager || 'Not specified';
+            if (summaryStartDate) summaryStartDate.textContent = projectInfo.startDate || 'Not specified';
+            if (summaryEndDate) summaryEndDate.textContent = projectInfo.endDate || 'Not specified';
+            if (summaryProjectDescription) summaryProjectDescription.textContent = projectInfo.projectDescription || 'Not specified';
+            
+            // Calculate and display duration
+            if (projectInfo.startDate && projectInfo.endDate) {
+                const start = new Date(projectInfo.startDate);
+                const end = new Date(projectInfo.endDate);
+                const diffTime = Math.abs(end - start);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                const months = Math.round(diffDays / 30);
+                
+                if (summaryProjectDuration) {
+                    summaryProjectDuration.textContent = `${diffDays} days (${months} months)`;
+                }
+            }
+        }
+
+        
