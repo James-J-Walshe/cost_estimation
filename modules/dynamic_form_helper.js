@@ -187,6 +187,15 @@ class DynamicFormHelper {
         }
     }
 
+    // Save project info function
+    saveProjectInfo() {
+        this.handleProjectInfoChange();
+        this.handleProjectDatesChange();
+        
+        alert('Project information saved successfully!');
+        console.log('Project info saved:', window.projectData.projectInfo);
+    }
+
     // Generate dynamic month form fields for Internal Resources
     generateInternalResourceMonthFields(resourceData = {}) {
         const monthInfo = this.calculateProjectMonths();
@@ -332,6 +341,24 @@ class DynamicFormHelper {
         }
     }
 
+    // Refresh dynamic elements
+    refreshDynamicElements() {
+        console.log('Refreshing dynamic elements');
+        
+        // Update table headers
+        if (window.tableRenderer && window.tableRenderer.updateTableHeaders) {
+            window.tableRenderer.updateTableHeaders();
+        }
+        
+        // Re-render all tables
+        if (window.renderAllTables) {
+            window.renderAllTables();
+        }
+        
+        // Update summary
+        this.updateProjectSummary();
+    }
+
     // Initialize dynamic forms
     initializeDynamicForms() {
         console.log('Initializing dynamic forms');
@@ -379,7 +406,7 @@ const dynamicFormHelper = new DynamicFormHelper();
 // Make it globally available
 window.dynamicFormHelper = dynamicFormHelper;
 
-// Export utility functions
+// Export utility functions for global access
 window.onProjectDatesUpdated = () => dynamicFormHelper.handleProjectDatesChange();
 window.setupDynamicMonthFields = (formId, itemType, itemData) => {
     dynamicFormHelper.addDynamicMonthFieldsToModal(itemType, itemData);
@@ -387,6 +414,13 @@ window.setupDynamicMonthFields = (formId, itemType, itemData) => {
 window.extractDynamicFormData = (form, itemType) => {
     return dynamicFormHelper.extractFormData(form, itemType);
 };
+
+// Export the missing functions that are referenced in your HTML
+window.handleProjectDatesChange = () => dynamicFormHelper.handleProjectDatesChange();
+window.handleProjectInfoChange = () => dynamicFormHelper.handleProjectInfoChange();
+window.updateProjectSummary = () => dynamicFormHelper.updateProjectSummary();
+window.saveProjectInfo = () => dynamicFormHelper.saveProjectInfo();
+window.refreshDynamicElements = () => dynamicFormHelper.refreshDynamicElements();
 
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
@@ -401,4 +435,4 @@ if (document.readyState === 'loading') {
     }, 100);
 }
 
-console.log('Dynamic Form Helper module loaded');
+console.log('Dynamic Form Helper module loaded with all global functions exported');
