@@ -897,3 +897,223 @@ small {
         font-size: 0.8rem;
     }
 }
+
+/* CSS PATCH for Table Fixes - Add to your existing style.css */
+
+/* Ensure all month cells are properly styled and editable */
+.month-cell.editable-cell {
+    cursor: pointer;
+    background-color: #f8fafc;
+    transition: background-color 0.2s ease;
+    position: relative;
+    text-align: center;
+    padding: 8px 4px;
+    border-right: 1px solid #e2e8f0;
+    min-width: 80px;
+}
+
+.month-cell.editable-cell:hover {
+    background-color: #e2e8f0;
+    border-color: #3b82f6;
+}
+
+/* Visual indicator that cell is editable */
+.month-cell.editable-cell::after {
+    content: '✎';
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    font-size: 10px;
+    color: #9ca3af;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.month-cell.editable-cell:hover::after {
+    opacity: 1;
+}
+
+/* Editing state styles */
+.month-cell.editing {
+    background-color: #fff3cd;
+    border: 2px solid #ffc107;
+    padding: 4px;
+}
+
+.cell-editor {
+    width: 100% !important;
+    padding: 4px !important;
+    border: 2px solid #007bff !important;
+    border-radius: 4px !important;
+    text-align: center !important;
+    font-size: 13px !important;
+    background: white !important;
+}
+
+.cell-editor:focus {
+    outline: none !important;
+    border-color: #0056b3 !important;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25) !important;
+}
+
+/* Edit buttons styling */
+.edit-buttons {
+    display: flex !important;
+    gap: 2px !important;
+    margin-top: 2px !important;
+    justify-content: center !important;
+}
+
+.btn-save,
+.btn-cancel {
+    background: #28a745 !important;
+    color: white !important;
+    border: none !important;
+    padding: 2px 6px !important;
+    border-radius: 3px !important;
+    cursor: pointer !important;
+    font-size: 12px !important;
+    font-weight: bold !important;
+    transition: background-color 0.2s ease !important;
+}
+
+.btn-cancel {
+    background: #dc3545 !important;
+}
+
+.btn-save:hover {
+    background: #218838 !important;
+}
+
+.btn-cancel:hover {
+    background: #c82333 !important;
+}
+
+/* Cost total column styling */
+.cost-total {
+    background-color: #f0fdf4 !important;
+    font-weight: 700 !important;
+    color: #166534 !important;
+    text-align: right !important;
+    padding: 8px 12px !important;
+    border-left: 3px solid #16a34a !important;
+    font-size: 14px !important;
+    white-space: nowrap !important;
+}
+
+/* Action cell styling */
+.action-cell {
+    background-color: #fafafa !important;
+    text-align: center !important;
+    padding: 8px !important;
+    white-space: nowrap !important;
+    width: 120px !important;
+    min-width: 120px !important;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 1200px) {
+    .month-cell.editable-cell {
+        min-width: 70px;
+        padding: 6px 2px;
+        font-size: 12px;
+    }
+    
+    .cost-total {
+        font-size: 12px;
+        padding: 6px 8px;
+    }
+    
+    .action-cell {
+        width: 100px;
+        min-width: 100px;
+        padding: 6px;
+    }
+}
+
+@media (max-width: 768px) {
+    .month-cell.editable-cell {
+        min-width: 60px;
+        padding: 4px 1px;
+        font-size: 11px;
+    }
+    
+    .month-cell.editable-cell::after {
+        display: none; /* Hide edit indicator on mobile */
+    }
+    
+    .cost-total {
+        font-size: 11px;
+        padding: 4px 6px;
+    }
+    
+    .action-cell {
+        width: 80px;
+        min-width: 80px;
+        padding: 4px;
+    }
+    
+    .cell-editor {
+        font-size: 11px !important;
+        padding: 2px !important;
+    }
+    
+    .edit-buttons {
+        margin-top: 1px !important;
+    }
+    
+    .btn-save,
+    .btn-cancel {
+        padding: 1px 4px !important;
+        font-size: 10px !important;
+    }
+}
+
+/* Ensure table layout doesn't break with many columns */
+.table-container {
+    overflow-x: auto;
+    max-width: 100%;
+}
+
+.data-table {
+    min-width: 100%;
+    table-layout: auto;
+}
+
+/* Fixed column widths for non-month columns */
+.data-table th.fixed-column,
+.data-table td:first-child,
+.data-table td:nth-child(2),
+.data-table td:nth-child(3) {
+    white-space: nowrap;
+    min-width: 120px;
+}
+
+/* Ensure proper header alignment */
+.data-table thead tr.year-header-row th {
+    text-align: center;
+    vertical-align: middle;
+    padding: 8px;
+}
+
+.data-table thead tr.month-header-row th {
+    text-align: center;
+    vertical-align: middle;
+    padding: 6px 4px;
+    font-size: 12px;
+}
+
+/* Print styles */
+@media print {
+    .month-cell.editable-cell::after,
+    .edit-buttons,
+    .action-cell {
+        display: none !important;
+    }
+    
+    .month-cell.editable-cell,
+    .cost-total {
+        background: white !important;
+        border: 1px solid #ccc !important;
+    }
+}
