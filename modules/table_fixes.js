@@ -1,10 +1,11 @@
 /**
- * PROFESSIONAL STYLING FIXES - Final Version
+ * PROFESSIONAL STYLING FIXES - HEADER CORRECTED VERSION
  * 
  * Fixes:
  * 1. Auto-expanding input fields to match text size
- * 2. Correct header colors matching lines 413-433 of CSS
+ * 2. CORRECT header colors using CSS classes (NOT inline overrides)
  * 3. Professional tick/cross buttons matching pen/bin styling
+ * 4. Works with existing table_renderer.js two-row header structure
  */
 
 // SOLUTION 1: Auto-expanding input functionality
@@ -49,9 +50,9 @@ function createAutoExpandingInput(value, fieldName, itemType) {
     return input;
 }
 
-// SOLUTION 2: Enhanced rendering with correct CSS header colors and auto-expanding inputs
+// SOLUTION 2: Enhanced rendering with CORRECT CSS header support and auto-expanding inputs
 function renderInternalResourcesTableFixed() {
-    console.log('Starting renderInternalResourcesTableFixed with professional styling...');
+    console.log('Starting renderInternalResourcesTableFixed with CORRECT CSS headers...');
     
     const tbody = document.getElementById('internalResourcesTable');
     if (!tbody) {
@@ -59,6 +60,7 @@ function renderInternalResourcesTableFixed() {
         return;
     }
     
+    // Clear existing rows
     tbody.innerHTML = '';
     
     const projectData = window.projectData || {};
@@ -70,22 +72,26 @@ function renderInternalResourcesTableFixed() {
         return;
     }
     
+    // Get month information from table renderer
     const monthInfo = window.tableRenderer ? window.tableRenderer.calculateProjectMonths() : {
         months: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan'],
+        monthKeys: ['month1', 'month2', 'month3', 'month4', 'month5', 'month6', 'month7', 'month8', 'month9', 'month10', 'month11', 'month12', 'month13', 'month14', 'month15', 'month16'],
         count: 16
     };
     
-    console.log('Rendering Internal Resources with correct CSS header styling');
+    console.log('Rendering Internal Resources with CORRECT CSS header styling - NO inline overrides');
     
     projectData.internalResources.forEach((resource, index) => {
         let monthCells = '';
         let totalDays = 0;
         
-        for (let i = 1; i <= monthInfo.count; i++) {
-            const fieldName = `month${i}Days`;
+        // Generate month cells using monthKeys from table renderer
+        monthInfo.monthKeys.forEach((monthKey, i) => {
+            const fieldName = `${monthKey}Days`;
             let days = resource[fieldName];
             if (days === undefined) {
-                const quarterIndex = Math.ceil(i / 3);
+                // Fall back to quarter data if monthly data not available
+                const quarterIndex = Math.ceil((i + 1) / 3);
                 days = resource[`q${quarterIndex}Days`] || 0;
             } else {
                 days = days || 0;
@@ -93,11 +99,9 @@ function renderInternalResourcesTableFixed() {
             
             totalDays += days;
             
-            // Use original CSS styling - no background color override
-            monthCells += `<td class="month-cell" 
-                              data-field="${fieldName}" 
-                              style="text-align: center; padding: 1rem; border-bottom: 1px solid #f3f4f6;">${days}</td>`;
-        }
+            // CRITICAL FIX: Remove ALL inline styles, let CSS handle everything
+            monthCells += `<td class="month-cell" data-field="${fieldName}">${days}</td>`;
+        });
         
         const totalCost = totalDays * (resource.dailyRate || 0);
         
@@ -105,14 +109,14 @@ function renderInternalResourcesTableFixed() {
         row.setAttribute('data-id', resource.id);
         row.setAttribute('data-type', 'internal-resource');
         
-        // Let CSS handle background colors naturally - don't override
+        // CRITICAL FIX: Remove inline styles from row cells, let CSS handle styling
         row.innerHTML = `
-            <td style="padding: 1rem; border-bottom: 1px solid #f3f4f6;">${resource.role || 'Unknown Role'}</td>
-            <td style="padding: 1rem; border-bottom: 1px solid #f3f4f6;"><span class="category-badge category-internal">${resource.rateCard || 'Internal'}</span></td>
-            <td style="padding: 1rem; border-bottom: 1px solid #f3f4f6; text-align: right;">$${(resource.dailyRate || 0).toLocaleString()}</td>
+            <td>${resource.role || 'Unknown Role'}</td>
+            <td><span class="category-badge category-internal">${resource.rateCard || 'Internal'}</span></td>
+            <td style="text-align: right;">$${(resource.dailyRate || 0).toLocaleString()}</td>
             ${monthCells}
-            <td class="cost-total" style="background-color: #f0fdf4; font-weight: 700; color: #166534; text-align: right; padding: 1rem; border-left: 3px solid #16a34a; border-bottom: 1px solid #f3f4f6;"><strong>$${totalCost.toLocaleString()}</strong></td>
-            <td class="action-cell" style="text-align: center; padding: 1rem; border-bottom: 1px solid #f3f4f6;">
+            <td class="cost-total"><strong>$${totalCost.toLocaleString()}</strong></td>
+            <td class="action-cell">
                 <div class="action-buttons" style="display: flex; gap: 4px; align-items: center; justify-content: center;">
                     <button class="edit-row-btn icon-btn" data-id="${resource.id}" data-type="internal-resource" title="Edit Row" onclick="editWholeRowProfessional(this)"
                             style="background-color: #17a2b8; color: white; border: none; padding: 6px 8px; border-radius: 4px; cursor: pointer; margin-right: 4px;">
@@ -129,13 +133,10 @@ function renderInternalResourcesTableFixed() {
         tbody.appendChild(row);
     });
     
-    // Apply CSS hover effects naturally
-    tbody.closest('table').addEventListener('mouseenter', () => {
-        tbody.closest('table').classList.add('table-hover');
-    });
+    console.log('Internal Resources table rendered with CORRECT CSS header styling');
 }
 
-// SOLUTION 3: Enhanced vendor costs rendering with professional styling
+// SOLUTION 3: Enhanced vendor costs rendering with CORRECT CSS header support
 function renderVendorCostsTableFixed() {
     const tbody = document.getElementById('vendorCostsTable');
     if (!tbody) return;
@@ -150,20 +151,26 @@ function renderVendorCostsTableFixed() {
         return;
     }
     
+    // Get month information from table renderer
     const monthInfo = window.tableRenderer ? window.tableRenderer.calculateProjectMonths() : {
         months: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan'],
+        monthKeys: ['month1', 'month2', 'month3', 'month4', 'month5', 'month6', 'month7', 'month8', 'month9', 'month10', 'month11', 'month12', 'month13', 'month14', 'month15', 'month16'],
         count: 16
     };
+    
+    console.log('Rendering Vendor Costs with CORRECT CSS header styling - NO inline overrides');
     
     projectData.vendorCosts.forEach(vendor => {
         let monthCells = '';
         let totalCost = 0;
         
-        for (let i = 1; i <= monthInfo.count; i++) {
-            const fieldName = `month${i}Cost`;
+        // Generate month cells using monthKeys from table renderer
+        monthInfo.monthKeys.forEach((monthKey, i) => {
+            const fieldName = `${monthKey}Cost`;
             let cost = vendor[fieldName];
             if (cost === undefined) {
-                const quarterIndex = Math.ceil(i / 3);
+                // Fall back to quarter data if monthly data not available
+                const quarterIndex = Math.ceil((i + 1) / 3);
                 cost = vendor[`q${quarterIndex}Cost`] || 0;
             } else {
                 cost = cost || 0;
@@ -171,22 +178,22 @@ function renderVendorCostsTableFixed() {
             
             totalCost += cost;
             
-            monthCells += `<td class="month-cell" 
-                              data-field="${fieldName}" 
-                              style="text-align: center; padding: 1rem; border-bottom: 1px solid #f3f4f6;">$${cost.toLocaleString()}</td>`;
-        }
+            // CRITICAL FIX: Remove ALL inline styles, let CSS handle everything
+            monthCells += `<td class="month-cell" data-field="${fieldName}">$${cost.toLocaleString()}</td>`;
+        });
         
         const row = document.createElement('tr');
         row.setAttribute('data-id', vendor.id);
         row.setAttribute('data-type', 'vendor-cost');
         
+        // CRITICAL FIX: Remove inline styles from row cells, let CSS handle styling
         row.innerHTML = `
-            <td style="padding: 1rem; border-bottom: 1px solid #f3f4f6;">${vendor.vendor || 'Unknown Vendor'}</td>
-            <td style="padding: 1rem; border-bottom: 1px solid #f3f4f6;"><span class="category-badge">${vendor.category || 'Other'}</span></td>
-            <td style="padding: 1rem; border-bottom: 1px solid #f3f4f6;">${vendor.description || 'No description'}</td>
+            <td>${vendor.vendor || 'Unknown Vendor'}</td>
+            <td><span class="category-badge">${vendor.category || 'Other'}</span></td>
+            <td>${vendor.description || 'No description'}</td>
             ${monthCells}
-            <td class="cost-total" style="background-color: #f0fdf4; font-weight: 700; color: #166534; text-align: right; padding: 1rem; border-left: 3px solid #16a34a; border-bottom: 1px solid #f3f4f6;"><strong>$${totalCost.toLocaleString()}</strong></td>
-            <td class="action-cell" style="text-align: center; padding: 1rem; border-bottom: 1px solid #f3f4f6;">
+            <td class="cost-total"><strong>$${totalCost.toLocaleString()}</strong></td>
+            <td class="action-cell">
                 <div class="action-buttons" style="display: flex; gap: 4px; align-items: center; justify-content: center;">
                     <button class="edit-row-btn icon-btn" data-id="${vendor.id}" data-type="vendor-cost" title="Edit Row" onclick="editWholeRowProfessional(this)"
                             style="background-color: #17a2b8; color: white; border: none; padding: 6px 8px; border-radius: 4px; cursor: pointer; margin-right: 4px;">
@@ -202,6 +209,8 @@ function renderVendorCostsTableFixed() {
         
         tbody.appendChild(row);
     });
+    
+    console.log('Vendor Costs table rendered with CORRECT CSS header styling');
 }
 
 // SOLUTION 4: Professional whole row editing with auto-expanding inputs and professional buttons
@@ -342,7 +351,7 @@ function saveWholeRowProfessional(button, itemId, itemType) {
             }
         }
         
-        // Re-render with professional styling
+        // Re-render with professional styling and CORRECT headers
         if (itemType === 'internal-resource') {
             renderInternalResourcesTableFixed();
         } else if (itemType === 'vendor-cost') {
@@ -355,7 +364,7 @@ function saveWholeRowProfessional(button, itemId, itemType) {
             window.updateSummary();
         }
         
-        console.log('Professional row saved successfully');
+        console.log('Professional row saved successfully with CORRECT CSS headers');
         
     } catch (error) {
         console.error('Error saving professional row:', error);
@@ -469,21 +478,33 @@ function calculateMiscCostsTotalFixed() {
     }, 0);
 }
 
-// SOLUTION 10: Apply professional fixes
+// SOLUTION 10: Apply professional fixes with CORRECT CSS headers
 function applyProfessionalStylingFixes() {
-    console.log('Applying professional styling fixes with correct CSS headers...');
+    console.log('Applying professional styling fixes with CORRECT CSS headers (no inline overrides)...');
     
+    // CRITICAL: First ensure headers are rendered correctly by table_renderer
+    if (window.tableRenderer && window.tableRenderer.updateTableHeaders) {
+        window.tableRenderer.updateTableHeaders();
+        console.log('Headers updated to use correct CSS classes');
+    }
+    
+    // Then override the rendering functions to use correct CSS
     if (window.tableRenderer) {
         window.tableRenderer.renderInternalResourcesTable = renderInternalResourcesTableFixed;
         window.tableRenderer.renderVendorCostsTable = renderVendorCostsTableFixed;
         
         try {
+            // Re-render tables with corrected styling
             window.tableRenderer.renderInternalResourcesTable();
             window.tableRenderer.renderVendorCostsTable();
-            console.log('Professional styling applied successfully');
+            console.log('Professional styling applied successfully with CORRECT CSS headers');
         } catch (error) {
             console.error('Error applying professional styling:', error);
         }
+    } else {
+        console.warn('tableRenderer not found, applying fixes directly');
+        renderInternalResourcesTableFixed();
+        renderVendorCostsTableFixed();
     }
 }
 
@@ -494,13 +515,12 @@ window.cancelWholeRowProfessional = cancelWholeRowProfessional;
 window.updateResourcePlanTabProfessional = updateResourcePlanTabProfessional;
 window.applyProfessionalStylingFixes = applyProfessionalStylingFixes;
 
-// Auto-apply professional fixes
+// Auto-apply professional fixes - ENSURE headers are correctly styled
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
-        console.log('Auto-applying professional styling fixes...');
+        console.log('Auto-applying professional styling fixes with CORRECT CSS headers...');
         applyProfessionalStylingFixes();
     }, 1500);
 });
 
-console.log('PROFESSIONAL STYLING fixes loaded - Auto-expanding inputs, correct CSS headers, professional buttons');
-
+console.log('HEADER-CORRECTED PROFESSIONAL STYLING fixes loaded - Auto-expanding inputs, CORRECT CSS headers, professional buttons');
