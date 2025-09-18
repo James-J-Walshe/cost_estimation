@@ -1,16 +1,16 @@
 /**
- * COMPREHENSIVE TABLE FIX - Addresses all identified issues
+ * ENHANCED ROW EDITING TABLE FIX
  * 
- * Issues Fixed:
- * 1. Table formatting problems
- * 2. Internal resources not rendering
- * 3. Save/discard buttons not working
- * 4. Edit mode cells too small and illegible
+ * New Features:
+ * 1. Whole row editing when pen icon is clicked
+ * 2. Single save/cancel buttons at row level
+ * 3. Original light blue/grey table formatting
+ * 4. Resource plan tab updates when saved
  */
 
-// SOLUTION 1: Fixed Internal Resources Rendering (addresses issue #2)
+// SOLUTION 1: Enhanced Internal Resources with original styling and row editing
 function renderInternalResourcesTableFixed() {
-    console.log('Starting renderInternalResourcesTableFixed...');
+    console.log('Starting renderInternalResourcesTableFixed with row editing...');
     
     const tbody = document.getElementById('internalResourcesTable');
     if (!tbody) {
@@ -21,37 +21,30 @@ function renderInternalResourcesTableFixed() {
     tbody.innerHTML = '';
     
     const projectData = window.projectData || {};
-    console.log('Project data for internal resources:', projectData);
     
     if (!projectData.internalResources || projectData.internalResources.length === 0) {
         const monthInfo = window.tableRenderer ? window.tableRenderer.calculateProjectMonths() : { count: 16 };
-        const colspan = 3 + monthInfo.count + 2; // Fixed columns + months + Total Cost + Actions
+        const colspan = 3 + monthInfo.count + 2;
         tbody.innerHTML = `<tr><td colspan="${colspan}" class="empty-state" style="padding: 2rem; text-align: center; color: #6b7280;">No internal resources added yet</td></tr>`;
-        console.log('No internal resources found, showing empty state');
         return;
     }
     
-    // Use the same month calculation as your existing table renderer
     const monthInfo = window.tableRenderer ? window.tableRenderer.calculateProjectMonths() : {
         months: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan'],
         count: 16
     };
     
-    console.log('Rendering Internal Resources with', monthInfo.count, 'months for', projectData.internalResources.length, 'resources');
+    console.log('Rendering Internal Resources with original styling and row editing');
     
     projectData.internalResources.forEach((resource, index) => {
-        console.log(`Rendering resource ${index}:`, resource);
-        
         let monthCells = '';
         let totalDays = 0;
         
-        // Create cells for ALL calculated months
+        // Create cells for ALL calculated months with original light styling
         for (let i = 1; i <= monthInfo.count; i++) {
             const fieldName = `month${i}Days`;
-            // Get value with proper fallback to old format
             let days = resource[fieldName];
             if (days === undefined) {
-                // Fallback to old quarterly format
                 const quarterIndex = Math.ceil(i / 3);
                 days = resource[`q${quarterIndex}Days`] || 0;
             } else {
@@ -60,13 +53,11 @@ function renderInternalResourcesTableFixed() {
             
             totalDays += days;
             
-            // Create properly styled and functional editable cells
-            monthCells += `<td class="month-cell editable-cell" 
+            // Original light styling - alternating light blue/grey
+            const bgColor = i % 2 === 0 ? '#f8fafc' : '#f1f5f9';
+            monthCells += `<td class="month-cell" 
                               data-field="${fieldName}" 
-                              data-item-id="${resource.id}" 
-                              data-item-type="internal-resource"
-                              style="text-align: center; padding: 8px 4px; cursor: pointer; background-color: #f8fafc; border-right: 1px solid #e2e8f0; min-width: 60px;"
-                              onclick="makeEditableFixed(this)">${days}</td>`;
+                              style="text-align: center; padding: 8px 4px; background-color: ${bgColor}; border-right: 1px solid #e2e8f0; min-width: 60px;">${days}</td>`;
         }
         
         const totalCost = totalDays * (resource.dailyRate || 0);
@@ -76,16 +67,22 @@ function renderInternalResourcesTableFixed() {
         row.setAttribute('data-type', 'internal-resource');
         row.style.borderBottom = '1px solid #f3f4f6';
         
-        // Proper table structure with correct styling
+        // Original table structure with light styling
         row.innerHTML = `
-            <td style="padding: 12px; white-space: nowrap;">${resource.role || 'Unknown Role'}</td>
-            <td style="padding: 12px;"><span class="category-badge" style="padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; background-color: #dcfce7; color: #166534;">${resource.rateCard || 'Internal'}</span></td>
-            <td style="padding: 12px; text-align: right;">$${(resource.dailyRate || 0).toLocaleString()}</td>
+            <td style="padding: 12px; background-color: white;">${resource.role || 'Unknown Role'}</td>
+            <td style="padding: 12px; background-color: #f8fafc;"><span class="category-badge" style="padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; background-color: #dcfce7; color: #166534;">${resource.rateCard || 'Internal'}</span></td>
+            <td style="padding: 12px; text-align: right; background-color: white;">$${(resource.dailyRate || 0).toLocaleString()}</td>
             ${monthCells}
             <td class="cost-total" style="background-color: #f0fdf4; font-weight: 700; color: #166534; text-align: right; padding: 12px; border-left: 3px solid #16a34a;"><strong>$${totalCost.toLocaleString()}</strong></td>
-            <td class="action-cell" style="background-color: #fafafa; text-align: center; padding: 8px; white-space: nowrap;">
-                <div class="action-buttons" style="display: flex; gap: 4px; align-items: center; justify-content: center;">
-                    ${createEditButtonFixed(resource.id, 'internal-resource')}
+            <td class="action-cell" style="background-color: white; text-align: center; padding: 8px;">
+                <div class="action-buttons">
+                    <button class="edit-row-btn icon-btn" data-id="${resource.id}" data-type="internal-resource" title="Edit Row" onclick="editWholeRow(this)"
+                            style="background-color: #17a2b8; color: white; border: none; padding: 6px 8px; border-radius: 4px; cursor: pointer; margin-right: 4px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
                     ${createDeleteButtonFixed(resource.id, 'internalResources')}
                 </div>
             </td>
@@ -94,10 +91,10 @@ function renderInternalResourcesTableFixed() {
         tbody.appendChild(row);
     });
     
-    console.log('Internal Resources table rendered successfully with', monthInfo.count, 'editable month columns');
+    console.log('Internal Resources table rendered with original styling and row editing');
 }
 
-// SOLUTION 2: Fixed Vendor Costs Rendering with proper formatting (addresses issue #1)
+// SOLUTION 2: Enhanced Vendor Costs with original styling and row editing
 function renderVendorCostsTableFixed() {
     const tbody = document.getElementById('vendorCostsTable');
     if (!tbody) {
@@ -120,13 +117,13 @@ function renderVendorCostsTableFixed() {
         count: 16
     };
     
-    console.log('Rendering Vendor Costs with proper formatting');
+    console.log('Rendering Vendor Costs with original styling and row editing');
     
     projectData.vendorCosts.forEach(vendor => {
         let monthCells = '';
         let totalCost = 0;
         
-        // Create cells for ALL calculated months with proper formatting
+        // Create cells with original light styling
         for (let i = 1; i <= monthInfo.count; i++) {
             const fieldName = `month${i}Cost`;
             let cost = vendor[fieldName];
@@ -139,13 +136,11 @@ function renderVendorCostsTableFixed() {
             
             totalCost += cost;
             
-            // Properly formatted and styled cells
-            monthCells += `<td class="month-cell editable-cell" 
+            // Original alternating colors
+            const bgColor = i % 2 === 0 ? '#f8fafc' : '#f1f5f9';
+            monthCells += `<td class="month-cell" 
                               data-field="${fieldName}" 
-                              data-item-id="${vendor.id}" 
-                              data-item-type="vendor-cost"
-                              style="text-align: center; padding: 8px 4px; cursor: pointer; background-color: #f8fafc; border-right: 1px solid #e2e8f0; min-width: 60px;"
-                              onclick="makeEditableFixed(this)">$${cost.toLocaleString()}</td>`;
+                              style="text-align: center; padding: 8px 4px; background-color: ${bgColor}; border-right: 1px solid #e2e8f0; min-width: 60px;">$${cost.toLocaleString()}</td>`;
         }
         
         const row = document.createElement('tr');
@@ -153,16 +148,21 @@ function renderVendorCostsTableFixed() {
         row.setAttribute('data-type', 'vendor-cost');
         row.style.borderBottom = '1px solid #f3f4f6';
         
-        // Proper table structure with correct styling
         row.innerHTML = `
-            <td style="padding: 12px; white-space: nowrap;">${vendor.vendor || 'Unknown Vendor'}</td>
-            <td style="padding: 12px;"><span class="category-badge" style="padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; background-color: #dbeafe; color: #1e40af;">${vendor.category || 'Other'}</span></td>
-            <td style="padding: 12px;">${vendor.description || 'No description'}</td>
+            <td style="padding: 12px; background-color: white;">${vendor.vendor || 'Unknown Vendor'}</td>
+            <td style="padding: 12px; background-color: #f8fafc;"><span class="category-badge" style="padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; background-color: #dbeafe; color: #1e40af;">${vendor.category || 'Other'}</span></td>
+            <td style="padding: 12px; background-color: white;">${vendor.description || 'No description'}</td>
             ${monthCells}
             <td class="cost-total" style="background-color: #f0fdf4; font-weight: 700; color: #166534; text-align: right; padding: 12px; border-left: 3px solid #16a34a;"><strong>$${totalCost.toLocaleString()}</strong></td>
-            <td class="action-cell" style="background-color: #fafafa; text-align: center; padding: 8px; white-space: nowrap;">
-                <div class="action-buttons" style="display: flex; gap: 4px; align-items: center; justify-content: center;">
-                    ${createEditButtonFixed(vendor.id, 'vendor-cost')}
+            <td class="action-cell" style="background-color: white; text-align: center; padding: 8px;">
+                <div class="action-buttons">
+                    <button class="edit-row-btn icon-btn" data-id="${vendor.id}" data-type="vendor-cost" title="Edit Row" onclick="editWholeRow(this)"
+                            style="background-color: #17a2b8; color: white; border: none; padding: 6px 8px; border-radius: 4px; cursor: pointer; margin-right: 4px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                    </button>
                     ${createDeleteButtonFixed(vendor.id, 'vendorCosts')}
                 </div>
             </td>
@@ -171,300 +171,269 @@ function renderVendorCostsTableFixed() {
         tbody.appendChild(row);
     });
     
-    console.log('Vendor Costs table rendered with proper formatting');
+    console.log('Vendor Costs table rendered with original styling and row editing');
 }
 
-// SOLUTION 3: Enhanced cell editing with proper sizing and functional buttons (addresses issues #3 and #4)
-function makeEditableFixed(cell) {
-    if (cell.classList.contains('editing')) return;
+// SOLUTION 3: Whole row editing functionality
+function editWholeRow(button) {
+    const row = button.closest('tr');
+    const itemId = button.getAttribute('data-id');
+    const itemType = button.getAttribute('data-type');
     
-    const currentValue = cell.textContent.replace(/[$,]/g, '');
-    const fieldName = cell.getAttribute('data-field');
-    const itemId = cell.getAttribute('data-item-id');
-    const itemType = cell.getAttribute('data-item-type');
-    
-    console.log(`Making cell editable: ${fieldName} for ${itemType} ${itemId}, current value: ${currentValue}`);
-    
-    // Create larger, properly styled input element (addresses issue #4)
-    const input = document.createElement('input');
-    input.type = 'number';
-    input.value = currentValue;
-    input.step = itemType === 'internal-resource' ? '0.5' : '0.01';
-    input.min = '0';
-    input.className = 'cell-editor';
-    
-    // Enhanced styling for better visibility and usability
-    input.style.cssText = `
-        width: 100% !important;
-        padding: 8px 6px !important;
-        border: 2px solid #007bff !important;
-        border-radius: 4px !important;
-        text-align: center !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-        background: white !important;
-        color: #2d3748 !important;
-        min-width: 60px !important;
-        box-sizing: border-box !important;
-    `;
-    
-    const originalValue = currentValue;
-    
-    // Create properly styled and functional save/cancel buttons (addresses issue #3)
-    const buttonsDiv = document.createElement('div');
-    buttonsDiv.className = 'edit-buttons';
-    buttonsDiv.style.cssText = `
-        display: flex !important;
-        gap: 4px !important;
-        margin-top: 4px !important;
-        justify-content: center !important;
-    `;
-    
-    const saveBtn = document.createElement('button');
-    saveBtn.innerHTML = '✓';
-    saveBtn.className = 'btn-save';
-    saveBtn.title = 'Save changes';
-    saveBtn.style.cssText = `
-        background: #28a745 !important;
-        color: white !important;
-        border: none !important;
-        padding: 6px 10px !important;
-        border-radius: 4px !important;
-        cursor: pointer !important;
-        font-size: 14px !important;
-        font-weight: bold !important;
-        transition: background-color 0.2s ease !important;
-        z-index: 1000 !important;
-        position: relative !important;
-    `;
-    
-    const cancelBtn = document.createElement('button');
-    cancelBtn.innerHTML = '✗';
-    cancelBtn.className = 'btn-cancel';
-    cancelBtn.title = 'Cancel changes';
-    cancelBtn.style.cssText = `
-        background: #dc3545 !important;
-        color: white !important;
-        border: none !important;
-        padding: 6px 10px !important;
-        border-radius: 4px !important;
-        cursor: pointer !important;
-        font-size: 14px !important;
-        font-weight: bold !important;
-        transition: background-color 0.2s ease !important;
-        z-index: 1000 !important;
-        position: relative !important;
-    `;
-    
-    // Add hover effects
-    saveBtn.addEventListener('mouseenter', () => {
-        saveBtn.style.background = '#218838 !important';
-    });
-    saveBtn.addEventListener('mouseleave', () => {
-        saveBtn.style.background = '#28a745 !important';
-    });
-    
-    cancelBtn.addEventListener('mouseenter', () => {
-        cancelBtn.style.background = '#c82333 !important';
-    });
-    cancelBtn.addEventListener('mouseleave', () => {
-        cancelBtn.style.background = '#dc3545 !important';
-    });
-    
-    buttonsDiv.appendChild(saveBtn);
-    buttonsDiv.appendChild(cancelBtn);
-    
-    // Enhanced cell styling during edit
-    cell.style.cssText = `
-        background-color: #fff3cd !important;
-        border: 2px solid #ffc107 !important;
-        padding: 6px !important;
-        position: relative !important;
-        min-width: 80px !important;
-    `;
-    
-    // Replace cell content
-    cell.innerHTML = '';
-    cell.appendChild(input);
-    cell.appendChild(buttonsDiv);
-    cell.classList.add('editing');
-    
-    // Focus and select input
-    input.focus();
-    input.select();
-    
-    // Enhanced save function with proper error handling
-    function saveValue() {
-        const newValue = parseFloat(input.value) || 0;
-        console.log(`Saving value: ${newValue} for field: ${fieldName}`);
-        
-        try {
-            updateCellValueFixed(itemId, fieldName, newValue, itemType);
-            
-            // Update display with proper formatting
-            const displayValue = itemType === 'vendor-cost' ? `$${newValue.toLocaleString()}` : newValue.toString();
-            
-            // Restore original cell styling
-            cell.style.cssText = `
-                text-align: center;
-                padding: 8px 4px;
-                cursor: pointer;
-                background-color: #f8fafc;
-                border-right: 1px solid #e2e8f0;
-                min-width: 60px;
-            `;
-            
-            cell.innerHTML = displayValue;
-            cell.classList.remove('editing');
-            
-            // Recalculate totals
-            recalculateRowTotalFixed(cell.closest('tr'), itemType);
-            
-            console.log('Value saved successfully');
-        } catch (error) {
-            console.error('Error saving value:', error);
-            alert('Error saving value: ' + error.message);
-            cancelEdit();
-        }
+    // Prevent multiple edits on same row
+    if (row.classList.contains('editing-row')) {
+        return;
     }
     
-    // Enhanced cancel function
-    function cancelEdit() {
-        console.log('Cancelling edit');
+    console.log(`Starting whole row edit for ${itemType} ${itemId}`);
+    
+    // Mark row as being edited
+    row.classList.add('editing-row');
+    
+    // Store original row data
+    const originalData = {};
+    const monthCells = row.querySelectorAll('.month-cell');
+    
+    monthCells.forEach(cell => {
+        const fieldName = cell.getAttribute('data-field');
+        originalData[fieldName] = cell.textContent.replace(/[$,]/g, '');
+    });
+    
+    // Convert all month cells to inputs
+    monthCells.forEach((cell, index) => {
+        const fieldName = cell.getAttribute('data-field');
+        const currentValue = cell.textContent.replace(/[$,]/g, '');
         
-        const displayValue = itemType === 'vendor-cost' ? `$${parseFloat(originalValue).toLocaleString()}` : originalValue;
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.value = currentValue;
+        input.step = itemType === 'internal-resource' ? '0.5' : '0.01';
+        input.min = '0';
+        input.className = 'row-edit-input';
+        input.setAttribute('data-field', fieldName);
         
-        // Restore original cell styling
-        cell.style.cssText = `
-            text-align: center;
-            padding: 8px 4px;
-            cursor: pointer;
-            background-color: #f8fafc;
-            border-right: 1px solid #e2e8f0;
-            min-width: 60px;
+        // Enhanced input styling
+        input.style.cssText = `
+            width: 100% !important;
+            padding: 6px !important;
+            border: 1px solid #007bff !important;
+            border-radius: 3px !important;
+            text-align: center !important;
+            font-size: 13px !important;
+            background: white !important;
+            min-width: 50px !important;
+            box-sizing: border-box !important;
         `;
         
-        cell.innerHTML = displayValue;
-        cell.classList.remove('editing');
+        // Highlight editing state
+        cell.style.backgroundColor = '#fff3cd';
+        cell.style.border = '1px solid #ffc107';
+        
+        cell.innerHTML = '';
+        cell.appendChild(input);
+    });
+    
+    // Replace action buttons with save/cancel
+    const actionCell = row.querySelector('.action-cell');
+    actionCell.innerHTML = `
+        <div class="row-edit-actions" style="display: flex; gap: 4px; justify-content: center;">
+            <button class="save-row-btn" onclick="saveWholeRow(this, '${itemId}', '${itemType}')" title="Save Row Changes"
+                    style="background: #28a745; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;">
+                ✓
+            </button>
+            <button class="cancel-row-btn" onclick="cancelWholeRow(this, '${itemId}', '${itemType}')" title="Cancel Row Changes"
+                    style="background: #dc3545; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;">
+                ✗
+            </button>
+        </div>
+    `;
+    
+    // Store original data for potential cancellation
+    row.setAttribute('data-original', JSON.stringify(originalData));
+    
+    // Focus first input
+    const firstInput = row.querySelector('.row-edit-input');
+    if (firstInput) {
+        firstInput.focus();
+        firstInput.select();
     }
-    
-    // Enhanced event listeners with proper event handling
-    saveBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        saveValue();
-    });
-    
-    cancelBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        cancelEdit();
-    });
-    
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            saveValue();
-        }
-        if (e.key === 'Escape') {
-            e.preventDefault();
-            cancelEdit();
-        }
-    });
-    
-    // Enhanced blur handling
-    input.addEventListener('blur', (e) => {
-        // Only auto-save if not clicking on buttons
-        const relatedTarget = e.relatedTarget;
-        if (!relatedTarget || 
-            (!relatedTarget.classList.contains('btn-save') && 
-             !relatedTarget.classList.contains('btn-cancel'))) {
-            setTimeout(() => {
-                if (cell.classList.contains('editing')) {
-                    saveValue();
-                }
-            }, 200);
-        }
-    });
 }
 
-// SOLUTION 4: Enhanced data update function with proper error handling
-function updateCellValueFixed(itemId, fieldName, newValue, itemType) {
-    const projectData = window.projectData || {};
+// SOLUTION 4: Save whole row functionality with resource plan update
+function saveWholeRow(button, itemId, itemType) {
+    const row = button.closest('tr');
+    console.log(`Saving whole row for ${itemType} ${itemId}`);
     
-    let item = null;
-    if (itemType === 'internal-resource') {
-        item = projectData.internalResources?.find(r => r.id == itemId);
-    } else if (itemType === 'vendor-cost') {
-        item = projectData.vendorCosts?.find(v => v.id == itemId);
-    }
-    
-    if (item) {
-        item[fieldName] = newValue;
+    try {
+        const projectData = window.projectData || {};
+        let item = null;
         
-        // Enhanced save with multiple fallbacks
-        try {
+        if (itemType === 'internal-resource') {
+            item = projectData.internalResources?.find(r => r.id == itemId);
+        } else if (itemType === 'vendor-cost') {
+            item = projectData.vendorCosts?.find(v => v.id == itemId);
+        }
+        
+        if (!item) {
+            throw new Error('Item not found');
+        }
+        
+        // Update all month fields
+        const inputs = row.querySelectorAll('.row-edit-input');
+        let hasChanges = false;
+        
+        inputs.forEach(input => {
+            const fieldName = input.getAttribute('data-field');
+            const newValue = parseFloat(input.value) || 0;
+            const oldValue = item[fieldName] || 0;
+            
+            if (newValue !== oldValue) {
+                hasChanges = true;
+                item[fieldName] = newValue;
+            }
+        });
+        
+        // Save data if changes were made
+        if (hasChanges) {
             if (window.DataManager && window.DataManager.saveToLocalStorage) {
                 window.DataManager.saveToLocalStorage();
             } else if (typeof(Storage) !== "undefined") {
                 localStorage.setItem('ictProjectData', JSON.stringify(projectData));
             }
-            
-            console.log(`Successfully updated ${fieldName} for ${itemType} ${itemId} to ${newValue}`);
-        } catch (error) {
-            console.error('Error saving to localStorage:', error);
-            throw new Error('Failed to save changes');
         }
-    } else {
-        console.error(`Item not found: ${itemType} with id ${itemId}`);
-        throw new Error('Item not found');
-    }
-}
-
-// SOLUTION 5: Enhanced row total recalculation
-function recalculateRowTotalFixed(row, itemType) {
-    const monthCells = row.querySelectorAll('.month-cell');
-    const totalCell = row.querySelector('.cost-total');
-    
-    let total = 0;
-    
-    if (itemType === 'internal-resource') {
-        const dailyRateCell = row.querySelector('td:nth-child(3)');
-        const dailyRateText = dailyRateCell ? dailyRateCell.textContent.replace(/[$,]/g, '') : '0';
-        const dailyRate = parseFloat(dailyRateText) || 0;
         
-        monthCells.forEach(cell => {
-            const days = parseFloat(cell.textContent.replace(/[$,]/g, '')) || 0;
-            total += days * dailyRate;
-        });
-    } else {
-        monthCells.forEach(cell => {
-            const cost = parseFloat(cell.textContent.replace(/[$,]/g, '')) || 0;
-            total += cost;
-        });
-    }
-    
-    if (totalCell) {
-        totalCell.innerHTML = `<strong>$${total.toLocaleString()}</strong>`;
-    }
-    
-    // Update overall summary
-    if (window.updateSummary) {
-        setTimeout(window.updateSummary, 200);
+        // Re-render the specific table to show updated values
+        if (itemType === 'internal-resource') {
+            renderInternalResourcesTableFixed();
+        } else if (itemType === 'vendor-cost') {
+            renderVendorCostsTableFixed();
+        }
+        
+        // Update resource plan tab (NEW REQUIREMENT)
+        updateResourcePlanTab();
+        
+        // Update main summary
+        if (window.updateSummary) {
+            window.updateSummary();
+        }
+        
+        console.log('Whole row saved successfully and resource plan updated');
+        
+    } catch (error) {
+        console.error('Error saving whole row:', error);
+        alert('Error saving changes: ' + error.message);
+        cancelWholeRow(button, itemId, itemType);
     }
 }
 
-// SOLUTION 6: Enhanced button creation functions
-function createEditButtonFixed(itemId, itemType) {
-    return `<button class="edit-btn icon-btn" data-id="${itemId}" data-type="${itemType}" title="Edit" 
-                style="background-color: #17a2b8; color: white; border: none; padding: 6px 8px; border-radius: 4px; cursor: pointer; margin-right: 4px;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-            <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-        </svg>
-    </button>`;
+// SOLUTION 5: Cancel whole row functionality
+function cancelWholeRow(button, itemId, itemType) {
+    const row = button.closest('tr');
+    console.log(`Cancelling whole row edit for ${itemType} ${itemId}`);
+    
+    // Re-render the specific table to restore original values
+    if (itemType === 'internal-resource') {
+        renderInternalResourcesTableFixed();
+    } else if (itemType === 'vendor-cost') {
+        renderVendorCostsTableFixed();
+    }
 }
 
+// SOLUTION 6: Update resource plan tab functionality
+function updateResourcePlanTab() {
+    console.log('Updating resource plan tab...');
+    
+    try {
+        // Re-render forecast table if it exists
+        if (window.tableRenderer && window.tableRenderer.renderForecastTable) {
+            window.tableRenderer.renderForecastTable();
+        }
+        
+        // Update cost summary cards
+        const internalTotal = calculateInternalResourcesTotalFixed();
+        const vendorTotal = calculateVendorCostsTotalFixed();
+        const toolTotal = calculateToolCostsTotalFixed();
+        const miscTotal = calculateMiscCostsTotalFixed();
+        
+        const totalProject = internalTotal + vendorTotal + toolTotal + miscTotal;
+        const totalExternal = vendorTotal + toolTotal + miscTotal;
+        
+        // Update resource plan cards
+        const totalProjectCostEl = document.getElementById('totalProjectCost');
+        const totalInternalCostEl = document.getElementById('totalInternalCost');
+        const totalExternalCostEl = document.getElementById('totalExternalCost');
+        
+        if (totalProjectCostEl) totalProjectCostEl.textContent = `$${totalProject.toLocaleString()}`;
+        if (totalInternalCostEl) totalInternalCostEl.textContent = `$${internalTotal.toLocaleString()}`;
+        if (totalExternalCostEl) totalExternalCostEl.textContent = `$${totalExternal.toLocaleString()}`;
+        
+        console.log('Resource plan tab updated successfully');
+        
+    } catch (error) {
+        console.error('Error updating resource plan tab:', error);
+    }
+}
+
+// SOLUTION 7: Enhanced calculation functions
+function calculateInternalResourcesTotalFixed() {
+    const projectData = window.projectData || {};
+    return (projectData.internalResources || []).reduce((total, resource) => {
+        let totalDays = 0;
+        
+        // Sum all month days
+        for (let i = 1; i <= 24; i++) {
+            const monthField = `month${i}Days`;
+            if (resource[monthField] !== undefined) {
+                totalDays += resource[monthField] || 0;
+            }
+        }
+        
+        // Fallback to quarterly data if no monthly data
+        if (totalDays === 0) {
+            totalDays = (resource.q1Days || 0) + (resource.q2Days || 0) + (resource.q3Days || 0) + (resource.q4Days || 0);
+        }
+        
+        return total + (totalDays * (resource.dailyRate || 0));
+    }, 0);
+}
+
+function calculateVendorCostsTotalFixed() {
+    const projectData = window.projectData || {};
+    return (projectData.vendorCosts || []).reduce((total, vendor) => {
+        let totalCost = 0;
+        
+        // Sum all month costs
+        for (let i = 1; i <= 24; i++) {
+            const monthField = `month${i}Cost`;
+            if (vendor[monthField] !== undefined) {
+                totalCost += vendor[monthField] || 0;
+            }
+        }
+        
+        // Fallback to quarterly data
+        if (totalCost === 0) {
+            totalCost = (vendor.q1Cost || 0) + (vendor.q2Cost || 0) + (vendor.q3Cost || 0) + (vendor.q4Cost || 0);
+        }
+        
+        return total + totalCost;
+    }, 0);
+}
+
+function calculateToolCostsTotalFixed() {
+    const projectData = window.projectData || {};
+    return (projectData.toolCosts || []).reduce((total, tool) => {
+        return total + ((tool.users || 0) * (tool.monthlyCost || 0) * (tool.duration || 0));
+    }, 0);
+}
+
+function calculateMiscCostsTotalFixed() {
+    const projectData = window.projectData || {};
+    return (projectData.miscCosts || []).reduce((total, misc) => {
+        return total + (misc.cost || 0);
+    }, 0);
+}
+
+// SOLUTION 8: Enhanced delete button (unchanged)
 function createDeleteButtonFixed(itemId, arrayName) {
     return `<button class="delete-btn icon-btn" onclick="deleteItem('${arrayName}', ${typeof itemId === 'string' ? `'${itemId}'` : itemId})" title="Delete"
                 style="background-color: #dc3545; color: white; border: none; padding: 6px 8px; border-radius: 4px; cursor: pointer;">
@@ -474,69 +443,45 @@ function createDeleteButtonFixed(itemId, arrayName) {
     </button>`;
 }
 
-// SOLUTION 7: Comprehensive fix application
-function applyComprehensiveFixes() {
-    console.log('Applying comprehensive table fixes...');
+// SOLUTION 9: Apply enhanced fixes
+function applyEnhancedRowEditingFixes() {
+    console.log('Applying enhanced row editing fixes with original styling...');
     
     if (window.tableRenderer) {
-        // Store original methods
         window.tableRenderer._originalRenderInternalResourcesTable = window.tableRenderer.renderInternalResourcesTable;
         window.tableRenderer._originalRenderVendorCostsTable = window.tableRenderer.renderVendorCostsTable;
         
-        // Replace with comprehensive fixed versions
         window.tableRenderer.renderInternalResourcesTable = renderInternalResourcesTableFixed;
         window.tableRenderer.renderVendorCostsTable = renderVendorCostsTableFixed;
         
-        console.log('Table methods replaced with comprehensive fixed versions');
+        console.log('Enhanced table methods applied');
         
-        // Re-render tables
         try {
-            console.log('Rendering internal resources...');
             window.tableRenderer.renderInternalResourcesTable();
-            
-            console.log('Rendering vendor costs...');
             window.tableRenderer.renderVendorCostsTable();
-            
-            console.log('Comprehensive table fixes applied successfully');
+            console.log('Enhanced row editing tables rendered successfully');
         } catch (error) {
-            console.error('Error rendering comprehensive fixed tables:', error);
+            console.error('Error rendering enhanced tables:', error);
         }
     } else {
         console.error('Table renderer not found');
     }
 }
 
-// SOLUTION 8: Make all functions globally available
-window.makeEditableFixed = makeEditableFixed;
-window.updateCellValueFixed = updateCellValueFixed;
-window.recalculateRowTotalFixed = recalculateRowTotalFixed;
-window.applyComprehensiveFixes = applyComprehensiveFixes;
-window.renderInternalResourcesTableFixed = renderInternalResourcesTableFixed;
-window.renderVendorCostsTableFixed = renderVendorCostsTableFixed;
+// SOLUTION 10: Make all functions globally available
+window.editWholeRow = editWholeRow;
+window.saveWholeRow = saveWholeRow;
+window.cancelWholeRow = cancelWholeRow;
+window.updateResourcePlanTab = updateResourcePlanTab;
+window.applyEnhancedRowEditingFixes = applyEnhancedRowEditingFixes;
 
-// Auto-apply comprehensive fixes
+// Auto-apply enhanced fixes
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
-        console.log('Auto-applying comprehensive table fixes...');
-        applyComprehensiveFixes();
+        console.log('Auto-applying enhanced row editing fixes...');
+        applyEnhancedRowEditingFixes();
     }, 1500);
 });
 
-console.log('COMPREHENSIVE table fixes loaded - All issues addressed');
+console.log('ENHANCED ROW EDITING fixes loaded with original styling and resource plan updates');
 
-/**
- * SUMMARY OF FIXES:
- * 
- * ✅ Issue #1 (Table formatting) - Fixed with proper inline styling and structure
- * ✅ Issue #2 (Internal resources not rendering) - Enhanced rendering with better error handling  
- * ✅ Issue #3 (Save/discard buttons inactive) - Improved event handling and error checking
- * ✅ Issue #4 (Edit cells too small) - Larger inputs, better styling, improved visibility
- * 
- * FEATURES:
- * - All 16 month columns are editable
- * - Proper table formatting maintained
- * - Functional save/cancel buttons with visual feedback
- * - Enhanced error handling and logging
- * - Totals appear in correct "Total Cost" column
- * - Better responsive design for edit mode
- */
