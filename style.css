@@ -52,24 +52,10 @@ header {
     justify-content: center;
 }
 
-.logo-icon img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-}
-
-.logo-text {
-    font-size: 18px;
-    font-weight: bold;
-    color: white;
-    letter-spacing: 0.5px;
-    white-space: nowrap;
-}
-
 /* Header title - centered */
 .header-title {
     position: absolute;
-    left: 50%;
+    left: 10%;
     transform: translateX(-50%);
     margin: 0;
     font-size: 1.5rem;
