@@ -20,7 +20,7 @@ body {
     box-shadow: 0 0 20px rgba(0,0,0,0.1);
 }
 
-/* Header - Updated for logo integration */
+/* Header - Updated for logo integration like MetaSpark */
 header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
@@ -33,35 +33,47 @@ header {
     align-items: center;
     justify-content: space-between;
     width: 100%;
-    gap: 1rem;
+    max-width: 1400px;
+    margin: 0 auto;
 }
 
-/* Logo styles */
+/* Logo styles - appropriately sized like MetaSpark */
 .header-logo {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     flex-shrink: 0;
 }
 
 .logo-icon {
-    max-height: 32px;
-    width: auto;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-/* Header title - centered */
+.logo-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.logo-text {
+    font-size: 20px;
+    font-weight: 600;
+    color: white;
+    letter-spacing: 0.5px;
+}
+
+/* Header title - normal size, not dominating */
 .header-title {
-    position: absolute;
-    left: 10%;
-    transform: translateX(-50%);
-    margin: 0;
     font-size: 1.5rem;
     font-weight: 500;
-    white-space: nowrap;
     color: white;
+    margin: 0;
+    flex: 1;
+    text-align: center;
 }
 
 /* Header actions - right aligned */
@@ -71,6 +83,13 @@ header {
     align-items: center;
     flex-shrink: 0;
     position: relative;
+}
+
+/* Logo hover effects */
+.header-logo:hover {
+    cursor: pointer;
+    opacity: 0.9;
+    transition: opacity 0.2s ease;
 }
 
 /* Desktop Menu */
@@ -128,13 +147,6 @@ header {
 
 .dropdown-item:not(:last-child) {
     border-bottom: 1px solid #f3f4f6;
-}
-
-/* Logo hover effects */
-.header-logo:hover {
-    cursor: pointer;
-    opacity: 0.9;
-    transition: opacity 0.2s ease;
 }
 
 /* Buttons */
@@ -860,7 +872,7 @@ small {
     }
     
     .logo-text {
-        font-size: 16px;
+        font-size: 18px;
     }
     
     .logo-icon {
@@ -950,20 +962,16 @@ small {
 
 @media (max-width: 480px) {
     .header-title {
-        display: none; /* Hide title on very small screens to save space */
+        display: none; /* Hide title on very small screens */
     }
     
     .logo-text {
-        font-size: 14px;
+        font-size: 16px;
     }
     
     .logo-icon {
         width: 24px;
         height: 24px;
-    }
-    
-    .header-actions {
-        gap: 0.25rem;
     }
     
     .header-content {
