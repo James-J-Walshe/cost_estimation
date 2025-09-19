@@ -20,7 +20,7 @@ body {
     box-shadow: 0 0 20px rgba(0,0,0,0.1);
 }
 
-/* Header - Updated for logo integration like MetaSpark */
+/* Header - Updated for logo integration */
 header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
@@ -37,59 +37,25 @@ header {
     margin: 0 auto;
 }
 
-/* Logo styles - appropriately sized like MetaSpark */
 .header-logo {
-    display: flex;
-    align-items: center;
-    gap: 8px;
     flex-shrink: 0;
 }
 
-.logo-icon {
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.logo-icon img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-}
-
-.logo-text {
-    font-size: 20px;
-    font-weight: 600;
-    color: white;
-    letter-spacing: 0.5px;
-}
-
-/* Header title - normal size, not dominating */
 .header-title {
+    flex: 1;
+    text-align: center;
+    margin: 0;
     font-size: 1.5rem;
     font-weight: 500;
     color: white;
-    margin: 0;
-    flex: 1;
-    text-align: center;
 }
 
-/* Header actions - right aligned */
 .header-actions {
     display: flex;
     gap: 0.75rem;
     align-items: center;
     flex-shrink: 0;
     position: relative;
-}
-
-/* Logo hover effects */
-.header-logo:hover {
-    cursor: pointer;
-    opacity: 0.9;
-    transition: opacity 0.2s ease;
 }
 
 /* Desktop Menu */
@@ -871,19 +837,6 @@ small {
         font-size: 1.2rem;
     }
     
-    .logo-text {
-        font-size: 18px;
-    }
-    
-    .logo-icon {
-        width: 28px;
-        height: 28px;
-    }
-    
-    .header-actions {
-        gap: 0.5rem;
-    }
-    
     .content {
         padding: 1rem;
     }
@@ -957,24 +910,5 @@ small {
     .data-table thead tr.month-header-row th.fixed-column {
         padding: 0.75rem 0.5rem;
         font-size: 0.8rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .header-title {
-        display: none; /* Hide title on very small screens */
-    }
-    
-    .logo-text {
-        font-size: 16px;
-    }
-    
-    .logo-icon {
-        width: 24px;
-        height: 24px;
-    }
-    
-    .header-content {
-        gap: 0.5rem;
     }
 }
