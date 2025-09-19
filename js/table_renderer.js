@@ -1,9 +1,93 @@
 // Table Renderer Module
-// Handles all table rendering functionality with edit capabilities
+// Handles all table rendering functionality with edit capabilities and dynamic month columns
+// Compatible with existing dynamic_form_helper.js
+// Enhanced with two-row headers (year + month)
 
 class TableRenderer {
     constructor() {
-        console.log('Table Renderer initialized');
+        console.log('Table Renderer initialized with two-row header support');
+    }
+
+    // Calculate dynamic months based on project dates - Enhanced with year information
+    calculateProjectMonths() {
+        const projectData = window.projectData || {};
+        const projectInfo = projectData.projectInfo || {};
+        
+        if (!projectInfo.startDate || !projectInfo.endDate) {
+            console.log('No project dates found, using default 4 months');
+            return {
+                months: ['Month 1', 'Month 2', 'Month 3', 'Month 4'],
+                monthKeys: ['month1', 'month2', 'month3', 'month4'],
+                yearGroups: [{ year: new Date().getFullYear(), months: ['Month 1', 'Month 2', 'Month 3', 'Month 4'] }],
+                count: 4
+            };
+        }
+
+        const startDate = new Date(projectInfo.startDate);
+        const endDate = new Date(projectInfo.endDate);
+        
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+            console.log('Invalid project dates, using default 4 months');
+            return {
+                months: ['Month 1', 'Month 2', 'Month 3', 'Month 4'],
+                monthKeys: ['month1', 'month2', 'month3', 'month4'],
+                yearGroups: [{ year: new Date().getFullYear(), months: ['Month 1', 'Month 2', 'Month 3', 'Month 4'] }],
+                count: 4
+            };
+        }
+
+        const months = [];
+        const monthKeys = [];
+        const yearGroups = [];
+        let currentDate = new Date(startDate);
+        let monthIndex = 1;
+        let currentYear = null;
+        let currentYearGroup = null;
+
+        // Calculate months between start and end date
+        while (currentDate <= endDate) {
+            const year = currentDate.getFullYear();
+            const monthName = currentDate.toLocaleDateString('en-US', { month: 'short' });
+            
+            // Start a new year group if needed
+            if (currentYear !== year) {
+                currentYear = year;
+                currentYearGroup = { year: year, months: [], count: 0 };
+                yearGroups.push(currentYearGroup);
+            }
+            
+            months.push(monthName);
+            monthKeys.push(`month${monthIndex}`);
+            currentYearGroup.months.push(monthName);
+            currentYearGroup.count++;
+            
+            // Move to next month
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            monthIndex++;
+            
+            // Safety check to prevent infinite loops
+            if (monthIndex > 24) {
+                console.warn('Project duration exceeds 24 months, limiting to 24 months');
+                break;
+            }
+        }
+
+        // Ensure at least 1 month
+        if (months.length === 0) {
+            const currentYear = new Date().getFullYear();
+            months.push('Month 1');
+            monthKeys.push('month1');
+            yearGroups.push({ year: currentYear, months: ['Month 1'], count: 1 });
+        }
+
+        console.log(`Dynamic months calculated: ${months.length} months across ${yearGroups.length} years`, { months, yearGroups });
+        
+        return {
+            months: months,
+            monthKeys: monthKeys,
+            yearGroups: yearGroups,
+            count: months.length
+        };
     }
 
     // Helper function to create action buttons with edit functionality
@@ -36,9 +120,89 @@ class TableRenderer {
         return mapping[itemType] || itemType;
     }
 
+    // Helper function to get month value with backward compatibility
+    getMonthValue(item, monthKey, fallbackPrefix = 'q') {
+        // Try new format first (month1Days, month1Cost, etc.)
+        const newKey = monthKey + (item.hasOwnProperty(monthKey + 'Days') ? 'Days' : 'Cost');
+        if (item.hasOwnProperty(newKey)) {
+            return item[newKey] || 0;
+        }
+        
+        // Fall back to old format (q1Days, q1Cost, etc.)
+        const monthNumber = monthKey.replace('month', '');
+        const oldKey = fallbackPrefix + monthNumber + (item.hasOwnProperty('q' + monthNumber + 'Days') ? 'Days' : 'Cost');
+        return item[oldKey] || 0;
+    }
+
+    // Create two-row header HTML (year + month rows)
+    createTwoRowHeaders(fixedColumns, monthInfo, includeActions = true) {
+        let yearRowHTML = '';
+        let monthRowHTML = '';
+        
+        // Add fixed columns to both rows
+        fixedColumns.forEach(column => {
+            yearRowHTML += `<th rowspan="2" class="fixed-column">${column}</th>`;
+        });
+        
+        // Add year headers with colspan
+        monthInfo.yearGroups.forEach(yearGroup => {
+            yearRowHTML += `<th colspan="${yearGroup.count}">${yearGroup.year}</th>`;
+        });
+        
+        // Add total and actions columns
+        if (includeActions) {
+            yearRowHTML += `<th rowspan="2" class="fixed-column">Total Cost</th>`;
+            yearRowHTML += `<th rowspan="2" class="fixed-column">Actions</th>`;
+        } else {
+            yearRowHTML += `<th rowspan="2" class="fixed-column">Total</th>`;
+        }
+        
+        // Add month headers
+        monthInfo.months.forEach(month => {
+            monthRowHTML += `<th>${month}</th>`;
+        });
+        
+        return { yearRowHTML, monthRowHTML };
+    }
+
+    // Update table headers dynamically with two-row structure
+    updateTableHeaders() {
+        const monthInfo = this.calculateProjectMonths();
+        
+        // Update Internal Resources table header
+        const internalYearHeader = document.getElementById('internalResourcesYearHeader');
+        const internalHeader = document.getElementById('internalResourcesTableHeader');
+        if (internalYearHeader && internalHeader) {
+            const headers = this.createTwoRowHeaders(['Role', 'Rate Card', 'Daily Rate'], monthInfo, true);
+            internalYearHeader.innerHTML = headers.yearRowHTML;
+            internalHeader.innerHTML = headers.monthRowHTML;
+        }
+
+        // Update Vendor Costs table header
+        const vendorYearHeader = document.getElementById('vendorCostsYearHeader');
+        const vendorHeader = document.getElementById('vendorCostsTableHeader');
+        if (vendorYearHeader && vendorHeader) {
+            const headers = this.createTwoRowHeaders(['Vendor', 'Category', 'Description'], monthInfo, true);
+            vendorYearHeader.innerHTML = headers.yearRowHTML;
+            vendorHeader.innerHTML = headers.monthRowHTML;
+        }
+
+        // Update Forecast table header
+        const forecastYearHeader = document.getElementById('forecastTableYearHeader');
+        const forecastHeader = document.getElementById('forecastTableHeader');
+        if (forecastYearHeader && forecastHeader) {
+            const headers = this.createTwoRowHeaders(['Category'], monthInfo, false);
+            forecastYearHeader.innerHTML = headers.yearRowHTML;
+            forecastHeader.innerHTML = headers.monthRowHTML;
+        }
+
+        console.log('Two-row table headers updated with dynamic months:', monthInfo.months);
+    }
+
     // Render all tables
     renderAllTables() {
         try {
+            this.updateTableHeaders(); // Update headers first
             this.renderInternalResourcesTable();
             this.renderVendorCostsTable();
             this.renderToolCostsTable();
@@ -48,7 +212,7 @@ class TableRenderer {
             this.renderExternalRatesTable();
             this.renderUnifiedRateCardsTable();
             this.renderForecastTable();
-            console.log('All tables rendered successfully');
+            console.log('All tables rendered successfully with dynamic two-row headers');
         } catch (error) {
             console.error('Error rendering tables:', error);
         }
@@ -88,7 +252,7 @@ class TableRenderer {
             row.innerHTML = `
                 <td>${rate.role}</td>
                 <td><span class="category-badge category-${rate.category.toLowerCase()}">${rate.category}</span></td>
-                <td>$${rate.rate.toLocaleString()}</td>
+                <td>${rate.rate.toLocaleString()}</td>
                 <td>${this.createActionButtons(rate.id || rate.role, 'rate-card')}</td>
             `;
             tbody.appendChild(row);
@@ -97,7 +261,7 @@ class TableRenderer {
         console.log('Unified rate cards table rendered successfully');
     }
 
-    // Internal resources table
+    // Internal resources table with dynamic months and two-row headers
     renderInternalResourcesTable() {
         const tbody = document.getElementById('internalResourcesTable');
         if (!tbody) return;
@@ -106,37 +270,50 @@ class TableRenderer {
         
         const projectData = window.projectData || {};
         if (!projectData.internalResources || projectData.internalResources.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No internal resources added yet</td></tr>';
+            const monthInfo = this.calculateProjectMonths();
+            const colspan = 3 + monthInfo.count + 2; // Fixed columns + months + Total Cost + Actions
+            tbody.innerHTML = `<tr><td colspan="${colspan}" class="empty-state">No internal resources added yet</td></tr>`;
             return;
         }
         
+        const monthInfo = this.calculateProjectMonths();
+        
         projectData.internalResources.forEach(resource => {
-            // Handle both old format (q1Days) and new format (month1Days)
-            const month1Days = resource.month1Days || resource.q1Days || 0;
-            const month2Days = resource.month2Days || resource.q2Days || 0;
-            const month3Days = resource.month3Days || resource.q3Days || 0;
-            const month4Days = resource.month4Days || resource.q4Days || 0;
+            let monthlyDays = [];
+            let totalDays = 0;
             
-            const totalDays = month1Days + month2Days + month3Days + month4Days;
+            // Get days for each month
+            monthInfo.monthKeys.forEach(monthKey => {
+                const days = this.getMonthValue(resource, monthKey, 'q');
+                monthlyDays.push(days);
+                totalDays += days;
+            });
+            
             const totalCost = totalDays * resource.dailyRate;
             
             const row = document.createElement('tr');
-            row.innerHTML = `
+            let rowHTML = `
                 <td>${resource.role}</td>
                 <td>${resource.rateCard || 'Internal'}</td>
-                <td>$${resource.dailyRate.toLocaleString()}</td>
-                <td>${month1Days}</td>
-                <td>${month2Days}</td>
-                <td>${month3Days}</td>
-                <td>${month4Days}</td>
-                <td>$${totalCost.toLocaleString()}</td>
+                <td>${resource.dailyRate.toLocaleString()}</td>
+            `;
+            
+            // Add month columns
+            monthlyDays.forEach(days => {
+                rowHTML += `<td>${days}</td>`;
+            });
+            
+            rowHTML += `
+                <td>${totalCost.toLocaleString()}</td>
                 <td>${this.createActionButtons(resource.id, 'internal-resource')}</td>
             `;
+            
+            row.innerHTML = rowHTML;
             tbody.appendChild(row);
         });
     }
 
-    // Vendor costs table
+    // Vendor costs table with dynamic months and two-row headers
     renderVendorCostsTable() {
         const tbody = document.getElementById('vendorCostsTable');
         if (!tbody) return;
@@ -145,31 +322,43 @@ class TableRenderer {
         
         const projectData = window.projectData || {};
         if (!projectData.vendorCosts || projectData.vendorCosts.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No vendor costs added yet</td></tr>';
+            const monthInfo = this.calculateProjectMonths();
+            const colspan = 3 + monthInfo.count + 2; // Fixed columns + months + Total Cost + Actions
+            tbody.innerHTML = `<tr><td colspan="${colspan}" class="empty-state">No vendor costs added yet</td></tr>`;
             return;
         }
         
+        const monthInfo = this.calculateProjectMonths();
+        
         projectData.vendorCosts.forEach(vendor => {
-            // Handle both old format (q1Cost) and new format (month1Cost)
-            const month1Cost = vendor.month1Cost || vendor.q1Cost || 0;
-            const month2Cost = vendor.month2Cost || vendor.q2Cost || 0;
-            const month3Cost = vendor.month3Cost || vendor.q3Cost || 0;
-            const month4Cost = vendor.month4Cost || vendor.q4Cost || 0;
+            let monthlyCosts = [];
+            let totalCost = 0;
             
-            const totalCost = month1Cost + month2Cost + month3Cost + month4Cost;
+            // Get costs for each month
+            monthInfo.monthKeys.forEach(monthKey => {
+                const cost = this.getMonthValue(vendor, monthKey, 'q');
+                monthlyCosts.push(cost);
+                totalCost += cost;
+            });
             
             const row = document.createElement('tr');
-            row.innerHTML = `
+            let rowHTML = `
                 <td>${vendor.vendor}</td>
                 <td>${vendor.category}</td>
                 <td>${vendor.description}</td>
-                <td>$${month1Cost.toLocaleString()}</td>
-                <td>$${month2Cost.toLocaleString()}</td>
-                <td>$${month3Cost.toLocaleString()}</td>
-                <td>$${month4Cost.toLocaleString()}</td>
-                <td>$${totalCost.toLocaleString()}</td>
+            `;
+            
+            // Add month columns
+            monthlyCosts.forEach(cost => {
+                rowHTML += `<td>${cost.toLocaleString()}</td>`;
+            });
+            
+            rowHTML += `
+                <td>${totalCost.toLocaleString()}</td>
                 <td>${this.createActionButtons(vendor.id, 'vendor-cost')}</td>
             `;
+            
+            row.innerHTML = rowHTML;
             tbody.appendChild(row);
         });
     }
@@ -194,10 +383,10 @@ class TableRenderer {
             row.innerHTML = `
                 <td>${tool.tool}</td>
                 <td>${tool.licenseType}</td>
-                <td>$${tool.monthlyCost.toLocaleString()}</td>
+                <td>${tool.monthlyCost.toLocaleString()}</td>
                 <td>${tool.users}</td>
                 <td>${tool.duration}</td>
-                <td>$${totalCost.toLocaleString()}</td>
+                <td>${totalCost.toLocaleString()}</td>
                 <td>${this.createActionButtons(tool.id, 'tool-cost')}</td>
             `;
             tbody.appendChild(row);
@@ -223,7 +412,7 @@ class TableRenderer {
                 <td>${misc.category}</td>
                 <td>${misc.item}</td>
                 <td>${misc.description}</td>
-                <td>$${misc.cost.toLocaleString()}</td>
+                <td>${misc.cost.toLocaleString()}</td>
                 <td>${this.createActionButtons(misc.id, 'misc-cost')}</td>
             `;
             tbody.appendChild(row);
@@ -251,7 +440,7 @@ class TableRenderer {
                 <td>${risk.probability}</td>
                 <td>${risk.impact}</td>
                 <td>${riskScore}</td>
-                <td>$${(risk.mitigationCost || 0).toLocaleString()}</td>
+                <td>${(risk.mitigationCost || 0).toLocaleString()}</td>
                 <td>${this.createActionButtons(risk.id, 'risk')}</td>
             `;
             tbody.appendChild(row);
@@ -280,7 +469,7 @@ class TableRenderer {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${rate.role}</td>
-                <td>$${rate.rate.toLocaleString()}</td>
+                <td>${rate.rate.toLocaleString()}</td>
                 <td>${this.createActionButtons(rate.id || rate.role, 'rate-card')}</td>
             `;
             tbody.appendChild(row);
@@ -309,14 +498,14 @@ class TableRenderer {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${rate.role}</td>
-                <td>$${rate.rate.toLocaleString()}</td>
+                <td>${rate.rate.toLocaleString()}</td>
                 <td>${this.createActionButtons(rate.id || rate.role, 'rate-card')}</td>
             `;
             tbody.appendChild(row);
         });
     }
 
-    // Forecast table
+    // Forecast table with dynamic months and two-row headers
     renderForecastTable() {
         const tbody = document.getElementById('forecastTable');
         const projectData = window.projectData || {};
@@ -324,53 +513,53 @@ class TableRenderer {
         
         tbody.innerHTML = '';
         
-        // Internal Resources
-        const internalMonthly = [0, 0, 0, 0, 0, 0];
+        const monthInfo = this.calculateProjectMonths();
+        
+        // Initialize arrays for each month
+        const internalMonthly = new Array(monthInfo.count).fill(0);
+        const vendorMonthly = new Array(monthInfo.count).fill(0);
+        
+        // Calculate Internal Resources costs
         if (projectData.internalResources) {
             projectData.internalResources.forEach(resource => {
-                internalMonthly[0] += (resource.month1Days || resource.q1Days || 0) * resource.dailyRate;
-                internalMonthly[1] += (resource.month2Days || resource.q2Days || 0) * resource.dailyRate;
-                internalMonthly[2] += (resource.month3Days || resource.q3Days || 0) * resource.dailyRate;
-                internalMonthly[3] += (resource.month4Days || resource.q4Days || 0) * resource.dailyRate;
+                monthInfo.monthKeys.forEach((monthKey, index) => {
+                    const days = this.getMonthValue(resource, monthKey, 'q');
+                    internalMonthly[index] += days * resource.dailyRate;
+                });
             });
         }
         
-        // Vendor Costs
-        const vendorMonthly = [0, 0, 0, 0, 0, 0];
+        // Calculate Vendor Costs
         if (projectData.vendorCosts) {
             projectData.vendorCosts.forEach(vendor => {
-                vendorMonthly[0] += vendor.month1Cost || vendor.q1Cost || 0;
-                vendorMonthly[1] += vendor.month2Cost || vendor.q2Cost || 0;
-                vendorMonthly[2] += vendor.month3Cost || vendor.q3Cost || 0;
-                vendorMonthly[3] += vendor.month4Cost || vendor.q4Cost || 0;
+                monthInfo.monthKeys.forEach((monthKey, index) => {
+                    const cost = this.getMonthValue(vendor, monthKey, 'q');
+                    vendorMonthly[index] += cost;
+                });
             });
         }
         
-        // Add rows
+        // Calculate totals
         const internalTotal = internalMonthly.reduce((sum, val) => sum + val, 0);
         const vendorTotal = vendorMonthly.reduce((sum, val) => sum + val, 0);
         
+        // Create internal resources row
+        let internalRowHTML = '<td><strong>Internal Resources</strong></td>';
+        internalMonthly.forEach(cost => {
+            internalRowHTML += `<td>${cost.toLocaleString()}</td>`;
+        });
+        internalRowHTML += `<td><strong>${internalTotal.toLocaleString()}</strong></td>`;
+        
+        // Create vendor costs row
+        let vendorRowHTML = '<td><strong>Vendor Costs</strong></td>';
+        vendorMonthly.forEach(cost => {
+            vendorRowHTML += `<td>${cost.toLocaleString()}</td>`;
+        });
+        vendorRowHTML += `<td><strong>${vendorTotal.toLocaleString()}</strong></td>`;
+        
         tbody.innerHTML = `
-            <tr>
-                <td><strong>Internal Resources</strong></td>
-                <td>$${internalMonthly[0].toLocaleString()}</td>
-                <td>$${internalMonthly[1].toLocaleString()}</td>
-                <td>$${internalMonthly[2].toLocaleString()}</td>
-                <td>$${internalMonthly[3].toLocaleString()}</td>
-                <td>$${internalMonthly[4].toLocaleString()}</td>
-                <td>$${internalMonthly[5].toLocaleString()}</td>
-                <td><strong>$${internalTotal.toLocaleString()}</strong></td>
-            </tr>
-            <tr>
-                <td><strong>Vendor Costs</strong></td>
-                <td>$${vendorMonthly[0].toLocaleString()}</td>
-                <td>$${vendorMonthly[1].toLocaleString()}</td>
-                <td>$${vendorMonthly[2].toLocaleString()}</td>
-                <td>$${vendorMonthly[3].toLocaleString()}</td>
-                <td>$${vendorMonthly[4].toLocaleString()}</td>
-                <td>$${vendorMonthly[5].toLocaleString()}</td>
-                <td><strong>$${vendorTotal.toLocaleString()}</strong></td>
-            </tr>
+            <tr>${internalRowHTML}</tr>
+            <tr>${vendorRowHTML}</tr>
         `;
     }
 }
@@ -480,8 +669,9 @@ window.renderRisksTable = () => tableRenderer.renderRisksTable();
 window.renderInternalRatesTable = () => tableRenderer.renderInternalRatesTable();
 window.renderExternalRatesTable = () => tableRenderer.renderExternalRatesTable();
 window.renderForecastTable = () => tableRenderer.renderForecastTable();
+window.updateTableHeaders = () => tableRenderer.updateTableHeaders();
 
 // Export the update function for edit functionality
 window.updateItemById = updateItemById;
 
-console.log('Table Renderer module loaded with edit functionality');
+console.log('Enhanced Table Renderer module loaded with two-row header support - Compatible with dynamic_form_helper.js');
