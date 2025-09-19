@@ -45,7 +45,7 @@ header {
 }
 
 .logo-icon {
-    max-height: 50px;
+    max-height: 32px;
     width: auto;
     display: flex;
     align-items: center;
