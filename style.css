@@ -41,6 +41,11 @@ header {
     flex-shrink: 0;
 }
 
+.header-logo img {
+    height: 40px;
+    width: auto;
+}
+
 .header-title {
     flex: 1;
     text-align: center;
