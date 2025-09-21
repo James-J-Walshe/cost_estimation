@@ -115,6 +115,14 @@ document.addEventListener('DOMContentLoaded', function() {
             updateSummary();
         }, 100);
         
+        // Initialize New Project Welcome feature
+        if (typeof window.newProjectWelcome !== 'undefined') {
+            window.newProjectWelcome.initialize();
+            console.log('New Project Welcome feature initialized');
+        }
+        
+        console.log('Application initialized successfully');
+        
     } catch (error) {
         console.error('Error initializing application:', error);
         alert('Error initializing application. Please check the console for details.');
@@ -561,7 +569,10 @@ function exportToExcelFallback() {
 }
 
 function newProjectFallback() {
-    if (window.DataManager) {
+    // Show welcome popup instead of immediate confirmation
+    if (window.handleNewProjectWelcome) {
+        window.handleNewProjectWelcome();
+    } else if (window.DataManager) {
         window.DataManager.newProject();
     } else if (window.dataManager) {
         window.dataManager.newProject();
