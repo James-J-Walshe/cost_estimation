@@ -128,10 +128,7 @@ class NewProjectWelcome {
                     </div>
                 </div>
             </div>
-            
-            <div class="welcome-footer">
-                <button id="welcomeCloseBtn" class="welcome-btn-secondary">Skip for now</button>
-            </div>
+         
         `;
         
         this.welcomeModal.appendChild(modalContent);
