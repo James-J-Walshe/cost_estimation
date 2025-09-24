@@ -431,8 +431,11 @@ class NewProjectWelcome {
             // Close the welcome modal
             this.closeWelcomeModal();
             
-            // Navigate to project information screen in settings
-            this.navigateToProjectSettings();
+            // First, clear all cached data to ensure clean slate
+            this.clearProjectData();
+            
+            // Use the standard settings mechanism (same as clicking settings button)
+            this.triggerStandardSettings();
             
         } catch (error) {
             console.error('Error handling start new project:', error);
@@ -440,6 +443,149 @@ class NewProjectWelcome {
         }
     }
 
+    // Clear all project data for a fresh start
+    clearProjectData() {
+        try {
+            console.log('Clearing project data for new project');
+            
+            // Reset project data to initial clean state
+            if (window.projectData) {
+                window.projectData.projectInfo = {
+                    projectName: '',
+                    startDate: '',
+                    endDate: '',
+                    projectManager: '',
+                    projectDescription: ''
+                };
+                window.projectData.internalResources = [];
+                window.projectData.vendorCosts = [];
+                window.projectData.toolCosts = [];
+                window.projectData.miscCosts = [];
+                window.projectData.risks = [];
+                window.projectData.contingencyPercentage = 10;
+                // Keep default rate cards as they are system defaults
+            }
+            
+            // Clear localStorage to ensure no stale data persists
+            if (typeof(Storage) !== "undefined" && localStorage) {
+                localStorage.removeItem('ictProjectData');
+                console.log('Cleared localStorage');
+            }
+            
+            // Clear all form fields immediately
+            this.clearAllFormFields();
+            
+            // Update UI to reflect clean state
+            if (window.updateSummary) {
+                window.updateSummary();
+            }
+            if (window.TableRenderer && window.TableRenderer.renderAllTables) {
+                window.TableRenderer.renderAllTables();
+            }
+            
+            console.log('Project data cleared successfully');
+            
+        } catch (error) {
+            console.error('Error clearing project data:', error);
+        }
+    }
+    
+    // Clear all form fields
+    clearAllFormFields() {
+        try {
+            const formFields = [
+                'projectName', 
+                'startDate', 
+                'endDate', 
+                'projectManager', 
+                'projectDescription',
+                'contingencyPercentage'
+            ];
+            
+            formFields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    if (fieldId === 'contingencyPercentage') {
+                        field.value = '10'; // Default contingency
+                    } else {
+                        field.value = '';
+                    }
+                }
+            });
+            
+            console.log('Form fields cleared');
+        } catch (error) {
+            console.error('Error clearing form fields:', error);
+        }
+    }
+    
+    // Use the standard settings mechanism (same as clicking settings button)
+    triggerStandardSettings() {
+        try {
+            console.log('Triggering standard settings view');
+            
+            // Use the same mechanism as the settings button
+            const settingsBtn = document.getElementById('settingsBtn');
+            if (settingsBtn) {
+                // Trigger click on settings button to ensure proper initialization
+                settingsBtn.click();
+                
+                // After settings opens, navigate to project-info tab
+                setTimeout(() => {
+                    this.navigateToProjectInfoTab();
+                }, 100); // Small delay to ensure settings is fully loaded
+                
+            } else {
+                // Fallback: try the showSettingsView function directly
+                if (window.showSettingsView || typeof showSettingsView === 'function') {
+                    if (window.showSettingsView) {
+                        window.showSettingsView();
+                    } else {
+                        showSettingsView();
+                    }
+                    
+                    setTimeout(() => {
+                        this.navigateToProjectInfoTab();
+                    }, 100);
+                    
+                } else {
+                    console.warn('Could not find settings mechanism - using fallback navigation');
+                    this.navigateToProjectSettings(); // Original fallback method
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error triggering standard settings:', error);
+            // Use original navigation as last resort
+            this.navigateToProjectSettings();
+        }
+    }
+    
+    // Navigate specifically to the project info tab within settings
+    navigateToProjectInfoTab() {
+        try {
+            // Navigate to project-info tab within settings
+            const projectInfoTab = document.querySelector('[data-settings-tab="project-info"]');
+            if (projectInfoTab) {
+                projectInfoTab.click();
+                console.log('Navigated to project-info tab');
+                
+                // Focus on the project name field for user convenience
+                setTimeout(() => {
+                    const projectNameField = document.getElementById('projectName');
+                    if (projectNameField) {
+                        projectNameField.focus();
+                        projectNameField.select(); // Select text if any exists
+                    }
+                }, 200);
+            } else {
+                console.warn('Project info tab not found');
+            }
+            
+        } catch (error) {
+            console.error('Error navigating to project info tab:', error);
+        }
+    }
     // Navigate to project information settings
     navigateToProjectSettings() {
         try {
