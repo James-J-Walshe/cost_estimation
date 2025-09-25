@@ -24,20 +24,6 @@ let projectData = {
         { role: 'Implementation Specialist', rate: 900, category: 'External' },
         { role: 'Support Specialist', rate: 700, category: 'External' }
     ],
-    // Keep old arrays for backward compatibility
-    internalRates: [
-        { role: 'Project Manager', rate: 800 },
-        { role: 'Business Analyst', rate: 650 },
-        { role: 'Technical Lead', rate: 750 },
-        { role: 'Developer', rate: 600 },
-        { role: 'Tester', rate: 550 }
-    ],
-    externalRates: [
-        { role: 'Senior Consultant', rate: 1200 },
-        { role: 'Technical Architect', rate: 1500 },
-        { role: 'Implementation Specialist', rate: 900 },
-        { role: 'Support Specialist', rate: 700 }
-    ],
     contingencyPercentage: 10
 };
 
@@ -128,6 +114,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             updateSummary();
         }, 100);
+        
+        // Initialize New Project Welcome feature
+        if (typeof window.newProjectWelcome !== 'undefined') {
+            window.newProjectWelcome.initialize();
+            console.log('New Project Welcome feature initialized');
+        }
+        
+        console.log('Application initialized successfully');
         
     } catch (error) {
         console.error('Error initializing application:', error);
@@ -575,7 +569,10 @@ function exportToExcelFallback() {
 }
 
 function newProjectFallback() {
-    if (window.DataManager) {
+    // Show welcome popup instead of immediate confirmation
+    if (window.handleNewProjectWelcome) {
+        window.handleNewProjectWelcome();
+    } else if (window.DataManager) {
         window.DataManager.newProject();
     } else if (window.dataManager) {
         window.dataManager.newProject();
