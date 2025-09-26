@@ -1146,6 +1146,73 @@ function updateSummaryProjectInfo() {
     }
 }
 
+function validateProjectInfoAndClose() {
+    const startDate = document.getElementById('startDate');
+    const endDate = document.getElementById('endDate');
+    
+    let isValid = true;
+    let errorMessage = '';
+    
+    if (!startDate.value) {
+        isValid = false;
+        errorMessage += '• Start Date is required\n';
+        startDate.style.borderColor = 'red';
+    } else {
+        startDate.style.borderColor = '';
+    }
+    
+    if (!endDate.value) {
+        isValid = false;
+        errorMessage += '• End Date is required\n';
+        endDate.style.borderColor = 'red';
+    } else {
+        endDate.style.borderColor = '';
+    }
+    
+    // Validate that end date is after start date
+    if (startDate.value && endDate.value) {
+        const start = new Date(startDate.value);
+        const end = new Date(endDate.value);
+        
+        if (end <= start) {
+            isValid = false;
+            errorMessage += '• End Date must be after Start Date\n';
+            endDate.style.borderColor = 'red';
+        }
+    }
+    
+    if (!isValid) {
+        alert('Please fix the following errors before closing settings:\n\n' + errorMessage);
+        return false;
+    }
+    
+    showMainView();
+    return true;
+}
+
+function addRealTimeValidation() {
+    const startDate = document.getElementById('startDate');
+    const endDate = document.getElementById('endDate');
+    
+    if (startDate) {
+        startDate.addEventListener('change', () => {
+            if (startDate.value) {
+                startDate.style.borderColor = 'green';
+                setTimeout(() => startDate.style.borderColor = '', 500);
+            }
+        });
+    }
+    
+    if (endDate) {
+        endDate.addEventListener('change', () => {
+            if (endDate.value) {
+                endDate.style.borderColor = 'green';
+                setTimeout(() => endDate.style.borderColor = '', 500);
+            }
+        });
+    }
+}
+
 // Expose necessary functions globally
 window.openModal = openModal;
 window.handleModalSubmit = handleModalSubmit;
