@@ -303,11 +303,12 @@ function initializeSettingsButton() {
     
     // Back to main button
     if (backToMain) {
-        backToMain.addEventListener('click', () => {
-            console.log('Back to main button clicked');
-            showMainView();
+        backToMain.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Back to main button clicked - validating form...');
+            validateProjectInfoAndClose();
         });
-        console.log('Back to main button listener added');
+        console.log('Back to main button listener added with validation');
     }
     
     // Initialize settings navigation
