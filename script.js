@@ -101,6 +101,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update summary and month headers
         updateSummary();
         updateMonthHeaders();
+
+        // Iniatialises Save button on Project Info Screen
+        initializeProjectInfoSaveButton();
         
         console.log('Application initialized successfully');
         
@@ -407,6 +410,78 @@ function enhanceBackButton() {
     
     // Also enhance any other clickable areas that might need visual cues
     enhanceClickableAreas();
+}
+
+// Add this function to your script.js file, ideally near the initializeSettingsButton() function
+
+function initializeProjectInfoSaveButton() {
+    const saveProjectInfoBtn = document.getElementById('saveProjectInfoBtn');
+    
+    if (saveProjectInfoBtn) {
+        saveProjectInfoBtn.addEventListener('click', () => {
+            console.log('Save Project Info button clicked');
+            
+            // Validate required fields before saving
+            const startDate = document.getElementById('startDate');
+            const endDate = document.getElementById('endDate');
+            
+            let isValid = true;
+            let errorMessage = '';
+            
+            if (!startDate.value) {
+                isValid = false;
+                errorMessage += '• Start Date is required\n';
+                startDate.style.borderColor = 'red';
+            } else {
+                startDate.style.borderColor = '';
+            }
+            
+            if (!endDate.value) {
+                isValid = false;
+                errorMessage += '• End Date is required\n';
+                endDate.style.borderColor = 'red';
+            } else {
+                endDate.style.borderColor = '';
+            }
+            
+            // Validate that end date is after start date
+            if (startDate.value && endDate.value) {
+                const start = new Date(startDate.value);
+                const end = new Date(endDate.value);
+                
+                if (end <= start) {
+                    isValid = false;
+                    errorMessage += '• End Date must be after Start Date\n';
+                    endDate.style.borderColor = 'red';
+                }
+            }
+            
+            if (!isValid) {
+                alert('Please fix the following errors before saving:\n\n' + errorMessage);
+                return;
+            }
+            
+            // Call the same save function as the top-level Save Project button
+            // DataManager.saveProject() includes built-in success alert notification
+            if (window.DataManager && typeof window.DataManager.saveProject === 'function') {
+                window.DataManager.saveProject();
+            } else if (window.dataManager && typeof window.dataManager.saveProject === 'function') {
+                window.dataManager.saveProject();
+            } else {
+                // Fallback to basic localStorage save with alert
+                try {
+                    localStorage.setItem('ictProjectData', JSON.stringify(projectData));
+                    console.log('Project saved using fallback method from settings');
+                    alert('Project saved to browser storage successfully!');
+                } catch (e) {
+                    console.error('Error saving project:', e);
+                    alert('Error saving project. Please try again.');
+                }
+            }
+        });
+        
+        console.log('Project Info Save button listener added');
+    }
 }
 
 function enhanceClickableAreas() {
