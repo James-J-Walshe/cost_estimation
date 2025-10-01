@@ -412,20 +412,28 @@ function enhanceBackButton() {
     enhanceClickableAreas();
 }
 
-// Add this function to your script.js file, ideally near the initializeSettingsButton() function
-
 function initializeProjectInfoSaveButton() {
     const saveProjectInfoBtn = document.getElementById('saveProjectInfoBtn');
     const messageContainer = document.getElementById('projectInfoMessage');
+    
+    // Track active timeout for auto-hide
+    let autoHideTimeout = null;
     
     if (saveProjectInfoBtn) {
         saveProjectInfoBtn.addEventListener('click', () => {
             console.log('Save Project Info button clicked');
             
-            // Clear any existing messages (without animation for immediate clearing)
+            // Clear any existing auto-hide timeout
+            if (autoHideTimeout) {
+                clearTimeout(autoHideTimeout);
+                autoHideTimeout = null;
+            }
+            
+            // Immediately clear any existing messages
             if (messageContainer) {
                 messageContainer.style.display = 'none';
                 messageContainer.className = 'project-info-message';
+                messageContainer.innerHTML = '';
             }
             
             // Validate required fields before saving
@@ -436,8 +444,8 @@ function initializeProjectInfoSaveButton() {
             let errors = [];
             
             // Reset border colors
-            startDate.style.borderColor = '';
-            endDate.style.borderColor = '';
+            if (startDate) startDate.style.borderColor = '';
+            if (endDate) endDate.style.borderColor = '';
             
             // Validate start date
             if (!startDate.value) {
@@ -481,7 +489,7 @@ function initializeProjectInfoSaveButton() {
             } else {
                 // Fallback to basic localStorage save
                 try {
-                    localStorage.setItem('ictProjectData', JSON.stringify(projectData));
+                    localStorage.setItem('ictProjectData', JSON.stringify(window.projectData));
                     console.log('Project saved using fallback method from settings');
                     showMessage('success', 'Project saved successfully!');
                 } catch (e) {
@@ -493,6 +501,68 @@ function initializeProjectInfoSaveButton() {
         
         console.log('Project Info Save button listener added');
     }
+    
+    // Helper function to show messages
+    function showMessage(type, message, errorList = null) {
+        if (!messageContainer) {
+            console.error('Message container not found');
+            return;
+        }
+        
+        console.log('Showing message:', type, message);
+        
+        // Build message HTML
+        let html = message;
+        
+        if (errorList && errorList.length > 0) {
+            html += '<ul>';
+            errorList.forEach(error => {
+                html += `<li>${error}</li>`;
+            });
+            html += '</ul>';
+        }
+        
+        // Set message content and type
+        messageContainer.innerHTML = html;
+        messageContainer.className = `project-info-message ${type}`;
+        messageContainer.style.display = 'block';
+        
+        console.log('Message displayed, scrolling into view');
+        
+        // Scroll to message with a small delay to ensure it's rendered
+        setTimeout(() => {
+            messageContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 50);
+        
+        // Auto-hide success messages after 5 seconds
+        if (type === 'success') {
+            console.log('Setting auto-hide timeout for 5 seconds');
+            autoHideTimeout = setTimeout(() => {
+                console.log('Auto-hiding success message');
+                hideMessage();
+            }, 5000);
+        } else {
+            console.log('Error message - will not auto-hide');
+        }
+    }
+    
+    // Helper function to hide messages
+    function hideMessage() {
+        if (!messageContainer) return;
+        
+        console.log('Hiding message');
+        
+        // Add fade-out animation
+        messageContainer.classList.add('fade-out');
+        
+        // Wait for animation to complete, then hide
+        setTimeout(() => {
+            messageContainer.style.display = 'none';
+            messageContainer.classList.remove('fade-out');
+            messageContainer.className = 'project-info-message';
+        }, 300);
+    }
+}
     
     // Helper function to show messages
     function showMessage(type, message, errorList = null) {
