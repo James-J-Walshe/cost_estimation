@@ -1581,3 +1581,4 @@ window.calculateMiscCostsTotal = calculateMiscCostsTotal;
 
 // Make projectData available globally for modules
 window.projectData = projectData;
+}
