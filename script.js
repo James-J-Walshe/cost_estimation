@@ -764,7 +764,7 @@ function initializeProjectInfoSaveButton() {
             messageContainer.className = 'project-info-message';
         }, 300);
     }
-}
+
 function enhanceClickableAreas() {
     // Add visual enhancements to settings navigation buttons
     const settingsNavButtons = document.querySelectorAll('.settings-nav-btn');
