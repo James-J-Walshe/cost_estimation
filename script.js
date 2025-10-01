@@ -24,20 +24,6 @@ let projectData = {
         { role: 'Implementation Specialist', rate: 900, category: 'External' },
         { role: 'Support Specialist', rate: 700, category: 'External' }
     ],
-    // Keep old arrays for backward compatibility
-    internalRates: [
-        { role: 'Project Manager', rate: 800 },
-        { role: 'Business Analyst', rate: 650 },
-        { role: 'Technical Lead', rate: 750 },
-        { role: 'Developer', rate: 600 },
-        { role: 'Tester', rate: 550 }
-    ],
-    externalRates: [
-        { role: 'Senior Consultant', rate: 1200 },
-        { role: 'Technical Architect', rate: 1500 },
-        { role: 'Implementation Specialist', rate: 900 },
-        { role: 'Support Specialist', rate: 700 }
-    ],
     contingencyPercentage: 10
 };
 
@@ -115,6 +101,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update summary and month headers
         updateSummary();
         updateMonthHeaders();
+
+        // Iniatialises Save button on Project Info Screen
+        initializeProjectInfoSaveButton();
         
         console.log('Application initialized successfully');
         
@@ -128,6 +117,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             updateSummary();
         }, 100);
+        
+        // Initialize New Project Welcome feature
+        if (typeof window.newProjectWelcome !== 'undefined') {
+            window.newProjectWelcome.initialize();
+            console.log('New Project Welcome feature initialized');
+        }
+        
+        console.log('Application initialized successfully');
         
     } catch (error) {
         console.error('Error initializing application:', error);
@@ -318,6 +315,161 @@ function initializeSettingsButton() {
     initializeMobileMenu();
 }
 
+// Add this entire function after initializeSettingsButton() and before showSettingsView()
+// Around line 309 in your script.js file
+
+function initializeProjectInfoSaveButton() {
+    const saveProjectInfoBtn = document.getElementById('saveProjectInfoBtn');
+    const messageContainer = document.getElementById('projectInfoMessage');
+    
+    // Track active timeout for auto-hide
+    let autoHideTimeout = null;
+    
+    if (saveProjectInfoBtn) {
+        saveProjectInfoBtn.addEventListener('click', () => {
+            console.log('Save Project Info button clicked');
+            
+            // Clear any existing auto-hide timeout
+            if (autoHideTimeout) {
+                clearTimeout(autoHideTimeout);
+                autoHideTimeout = null;
+            }
+            
+            // Immediately clear any existing messages
+            if (messageContainer) {
+                messageContainer.style.display = 'none';
+                messageContainer.className = 'project-info-message';
+                messageContainer.innerHTML = '';
+            }
+            
+            // Validate required fields before saving
+            const startDate = document.getElementById('startDate');
+            const endDate = document.getElementById('endDate');
+            
+            let isValid = true;
+            let errors = [];
+            
+            // Reset border colors
+            if (startDate) startDate.style.borderColor = '';
+            if (endDate) endDate.style.borderColor = '';
+            
+            // Validate start date
+            if (!startDate.value) {
+                isValid = false;
+                errors.push('Start Date is required');
+                startDate.style.borderColor = '#dc2626';
+            }
+            
+            // Validate end date
+            if (!endDate.value) {
+                isValid = false;
+                errors.push('End Date is required');
+                endDate.style.borderColor = '#dc2626';
+            }
+            
+            // Validate that end date is after start date
+            if (startDate.value && endDate.value) {
+                const start = new Date(startDate.value);
+                const end = new Date(endDate.value);
+                
+                if (end <= start) {
+                    isValid = false;
+                    errors.push('End Date must be after Start Date');
+                    endDate.style.borderColor = '#dc2626';
+                }
+            }
+            
+            // Show errors if validation failed
+            if (!isValid) {
+                showMessage('error', 'Please fix the following errors:', errors);
+                return;
+            }
+            
+            // Call the same save function as the top-level Save Project button
+            if (window.DataManager && typeof window.DataManager.saveProject === 'function') {
+                window.DataManager.saveProject();
+                showMessage('success', 'Project saved successfully!');
+            } else if (window.dataManager && typeof window.dataManager.saveProject === 'function') {
+                window.dataManager.saveProject();
+                showMessage('success', 'Project saved successfully!');
+            } else {
+                // Fallback to basic localStorage save
+                try {
+                    localStorage.setItem('ictProjectData', JSON.stringify(window.projectData));
+                    console.log('Project saved using fallback method from settings');
+                    showMessage('success', 'Project saved successfully!');
+                } catch (e) {
+                    console.error('Error saving project:', e);
+                    showMessage('error', 'Error saving project. Please try again.');
+                }
+            }
+        });
+        
+        console.log('Project Info Save button listener added');
+    }
+    
+    // Helper function to show messages
+    function showMessage(type, message, errorList = null) {
+        if (!messageContainer) {
+            console.error('Message container not found');
+            return;
+        }
+        
+        console.log('Showing message:', type, message);
+        
+        // Build message HTML
+        let html = message;
+        
+        if (errorList && errorList.length > 0) {
+            html += '<ul>';
+            errorList.forEach(error => {
+                html += `<li>${error}</li>`;
+            });
+            html += '</ul>';
+        }
+        
+        // Set message content and type
+        messageContainer.innerHTML = html;
+        messageContainer.className = `project-info-message ${type}`;
+        messageContainer.style.display = 'block';
+        
+        console.log('Message displayed, scrolling into view');
+        
+        // Scroll to message with a small delay to ensure it's rendered
+        setTimeout(() => {
+            messageContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 50);
+        
+        // Auto-hide success messages after 5 seconds
+        if (type === 'success') {
+            console.log('Setting auto-hide timeout for 5 seconds');
+            autoHideTimeout = setTimeout(() => {
+                console.log('Auto-hiding success message');
+                hideMessage();
+            }, 5000);
+        } else {
+            console.log('Error message - will not auto-hide');
+        }
+    }
+    
+    // Helper function to hide messages
+    function hideMessage() {
+        if (!messageContainer) return;
+        
+        console.log('Hiding message');
+        
+        // Add fade-out animation
+        messageContainer.classList.add('fade-out');
+        
+        // Wait for animation to complete, then hide
+        setTimeout(() => {
+            messageContainer.style.display = 'none';
+            messageContainer.classList.remove('fade-out');
+            messageContainer.className = 'project-info-message';
+        }, 300);
+    }
+}
+
 function showSettingsView() {
     const mainApp = document.getElementById('mainApp');
     const settingsApp = document.getElementById('settingsApp');
@@ -414,6 +566,204 @@ function enhanceBackButton() {
     // Also enhance any other clickable areas that might need visual cues
     enhanceClickableAreas();
 }
+
+function initializeProjectInfoSaveButton() {
+    const saveProjectInfoBtn = document.getElementById('saveProjectInfoBtn');
+    const messageContainer = document.getElementById('projectInfoMessage');
+    
+    // Track active timeout for auto-hide
+    let autoHideTimeout = null;
+    
+    if (saveProjectInfoBtn) {
+        saveProjectInfoBtn.addEventListener('click', () => {
+            console.log('Save Project Info button clicked');
+            
+            // Clear any existing auto-hide timeout
+            if (autoHideTimeout) {
+                clearTimeout(autoHideTimeout);
+                autoHideTimeout = null;
+            }
+            
+            // Immediately clear any existing messages
+            if (messageContainer) {
+                messageContainer.style.display = 'none';
+                messageContainer.className = 'project-info-message';
+                messageContainer.innerHTML = '';
+            }
+            
+            // Validate required fields before saving
+            const startDate = document.getElementById('startDate');
+            const endDate = document.getElementById('endDate');
+            
+            let isValid = true;
+            let errors = [];
+            
+            // Reset border colors
+            if (startDate) startDate.style.borderColor = '';
+            if (endDate) endDate.style.borderColor = '';
+            
+            // Validate start date
+            if (!startDate.value) {
+                isValid = false;
+                errors.push('Start Date is required');
+                startDate.style.borderColor = '#dc2626';
+            }
+            
+            // Validate end date
+            if (!endDate.value) {
+                isValid = false;
+                errors.push('End Date is required');
+                endDate.style.borderColor = '#dc2626';
+            }
+            
+            // Validate that end date is after start date
+            if (startDate.value && endDate.value) {
+                const start = new Date(startDate.value);
+                const end = new Date(endDate.value);
+                
+                if (end <= start) {
+                    isValid = false;
+                    errors.push('End Date must be after Start Date');
+                    endDate.style.borderColor = '#dc2626';
+                }
+            }
+            
+            // Show errors if validation failed
+            if (!isValid) {
+                showMessage('error', 'Please fix the following errors:', errors);
+                return;
+            }
+            
+            // Call the same save function as the top-level Save Project button
+            if (window.DataManager && typeof window.DataManager.saveProject === 'function') {
+                window.DataManager.saveProject();
+                showMessage('success', 'Project saved successfully!');
+            } else if (window.dataManager && typeof window.dataManager.saveProject === 'function') {
+                window.dataManager.saveProject();
+                showMessage('success', 'Project saved successfully!');
+            } else {
+                // Fallback to basic localStorage save
+                try {
+                    localStorage.setItem('ictProjectData', JSON.stringify(window.projectData));
+                    console.log('Project saved using fallback method from settings');
+                    showMessage('success', 'Project saved successfully!');
+                } catch (e) {
+                    console.error('Error saving project:', e);
+                    showMessage('error', 'Error saving project. Please try again.');
+                }
+            }
+        });
+        
+        console.log('Project Info Save button listener added');
+    }
+    
+    // Helper function to show messages
+    function showMessage(type, message, errorList = null) {
+        if (!messageContainer) {
+            console.error('Message container not found');
+            return;
+        }
+        
+        console.log('Showing message:', type, message);
+        
+        // Build message HTML
+        let html = message;
+        
+        if (errorList && errorList.length > 0) {
+            html += '<ul>';
+            errorList.forEach(error => {
+                html += `<li>${error}</li>`;
+            });
+            html += '</ul>';
+        }
+        
+        // Set message content and type
+        messageContainer.innerHTML = html;
+        messageContainer.className = `project-info-message ${type}`;
+        messageContainer.style.display = 'block';
+        
+        console.log('Message displayed, scrolling into view');
+        
+        // Scroll to message with a small delay to ensure it's rendered
+        setTimeout(() => {
+            messageContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 50);
+        
+        // Auto-hide success messages after 5 seconds
+        if (type === 'success') {
+            console.log('Setting auto-hide timeout for 5 seconds');
+            autoHideTimeout = setTimeout(() => {
+                console.log('Auto-hiding success message');
+                hideMessage();
+            }, 5000);
+        } else {
+            console.log('Error message - will not auto-hide');
+        }
+    }
+    
+    // Helper function to hide messages
+    function hideMessage() {
+        if (!messageContainer) return;
+        
+        console.log('Hiding message');
+        
+        // Add fade-out animation
+        messageContainer.classList.add('fade-out');
+        
+        // Wait for animation to complete, then hide
+        setTimeout(() => {
+            messageContainer.style.display = 'none';
+            messageContainer.classList.remove('fade-out');
+            messageContainer.className = 'project-info-message';
+        }, 300);
+    }
+}
+    
+    // Helper function to show messages
+    function showMessage(type, message, errorList = null) {
+        if (!messageContainer) return;
+        
+        // Build message HTML
+        let html = message;
+        
+        if (errorList && errorList.length > 0) {
+            html += '<ul>';
+            errorList.forEach(error => {
+                html += `<li>${error}</li>`;
+            });
+            html += '</ul>';
+        }
+        
+        // Set message content and type
+        messageContainer.innerHTML = html;
+        messageContainer.className = `project-info-message ${type}`;
+        messageContainer.style.display = 'block';
+        
+        // Scroll to message
+        messageContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        
+        // Auto-hide success messages after 5 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                hideMessage();
+            }, 5000);
+        }
+    }
+    
+    // Helper function to hide messages
+    function hideMessage() {
+        if (!messageContainer) return;
+        
+        // Add fade-out animation
+        messageContainer.classList.add('fade-out');
+        
+        // Wait for animation to complete, then hide
+        setTimeout(() => {
+            messageContainer.style.display = 'none';
+            messageContainer.classList.remove('fade-out');
+            messageContainer.className = 'project-info-message';
+        }, 300);
+    }
 
 function enhanceClickableAreas() {
     // Add visual enhancements to settings navigation buttons
@@ -575,7 +925,10 @@ function exportToExcelFallback() {
 }
 
 function newProjectFallback() {
-    if (window.DataManager) {
+    // Show welcome popup instead of immediate confirmation
+    if (window.handleNewProjectWelcome) {
+        window.handleNewProjectWelcome();
+    } else if (window.DataManager) {
         window.DataManager.newProject();
     } else if (window.dataManager) {
         window.dataManager.newProject();

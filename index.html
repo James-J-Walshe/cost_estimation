@@ -375,27 +375,36 @@
                     <!-- Project Info Settings -->
                     <div id="settings-project-info" class="settings-tab-content active">
                         <h2>Project Information</h2>
+                         
+                        <!-- Success/Error Message Container -->
+                        <div id="projectInfoMessage" class="project-info-message" style="display: none;"></div>
+                            
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="projectName">Project Name:</label>
                                 <input type="text" id="projectName" class="form-control" placeholder="Enter project name">
                             </div>
                             <div class="form-group">
-                                <label for="startDate">Start Date:</label>
-                                <input type="date" id="startDate" class="form-control">
+                                <label for="startDate">Start Date: <span style="color: red;">*</span></label>
+                                <input type="date" id="startDate" class="form-control" required>
                             </div>
                             <div class="form-group">
                                 <label for="projectManager">Project Manager:</label>
                                 <input type="text" id="projectManager" class="form-control" placeholder="Enter project manager name">
                             </div>
                             <div class="form-group">
-                                <label for="endDate">End Date:</label>
-                                <input type="date" id="endDate" class="form-control">
+                                <label for="endDate">End Date: <span style="color: red;">*</span></label>
+                                <input type="date" id="endDate" class="form-control" required>
                             </div>
                             <div class="form-group full-width">
                                 <label for="projectDescription">Project Description:</label>
                                 <textarea id="projectDescription" class="form-control" rows="4" placeholder="Enter project description"></textarea>
                             </div>
+                        </div>
+
+                        <!-- Add Save Button -->
+                        <div class="settings-actions" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+                            <button id="saveProjectInfoBtn" class="btn btn-primary">Save Project Information</button>
                         </div>
                     </div>
 
@@ -498,5 +507,6 @@
     <script src="modules/dynamic_form_helper.js"></script>
     <script src="script.js"></script>
     <script src="modules/table_fixes.js"></script>
+    <script src="modules/new_project_welcome.js"></script>
 </body>
 </html>
