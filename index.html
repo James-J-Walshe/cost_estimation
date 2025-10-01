@@ -375,6 +375,10 @@
                     <!-- Project Info Settings -->
                     <div id="settings-project-info" class="settings-tab-content active">
                         <h2>Project Information</h2>
+                         
+                        <!-- Success/Error Message Container -->
+                        <div id="projectInfoMessage" class="project-info-message" style="display: none;"></div>
+                            
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="projectName">Project Name:</label>
@@ -396,6 +400,11 @@
                                 <label for="projectDescription">Project Description:</label>
                                 <textarea id="projectDescription" class="form-control" rows="4" placeholder="Enter project description"></textarea>
                             </div>
+                        </div>
+
+                        <!-- Add Save Button -->
+                        <div class="settings-actions" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+                            <button id="saveProjectInfoBtn" class="btn btn-primary">Save Project Information</button>
                         </div>
                     </div>
 

@@ -917,3 +917,72 @@ small {
         font-size: 0.8rem;
     }
 }
+
+/* Settings Actions - Save Button Container */
+.settings-actions {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+#saveProjectInfoBtn {
+    min-width: 180px;
+}
+
+/* Project Info Message Styles */
+.project-info-message {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+    animation: slideDown 0.3s ease;
+}
+
+.project-info-message.success {
+    background-color: #d1fae5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+.project-info-message.error {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+
+.project-info-message ul {
+    margin: 0.5rem 0 0 1.5rem;
+    padding: 0;
+}
+
+.project-info-message li {
+    margin: 0.25rem 0;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Fade out animation */
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+.project-info-message.fade-out {
+    animation: fadeOut 0.3s ease forwards;
+}
