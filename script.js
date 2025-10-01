@@ -563,7 +563,6 @@ function loadProjectFallback() {
         };
         input.click();
     }
-}
 
 function exportToExcelFallback() {
     if (window.DataManager) {
