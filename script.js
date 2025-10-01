@@ -416,32 +416,38 @@ function enhanceBackButton() {
 
 function initializeProjectInfoSaveButton() {
     const saveProjectInfoBtn = document.getElementById('saveProjectInfoBtn');
+    const messageContainer = document.getElementById('projectInfoMessage');
     
     if (saveProjectInfoBtn) {
         saveProjectInfoBtn.addEventListener('click', () => {
             console.log('Save Project Info button clicked');
+            
+            // Clear any existing messages
+            hideMessage();
             
             // Validate required fields before saving
             const startDate = document.getElementById('startDate');
             const endDate = document.getElementById('endDate');
             
             let isValid = true;
-            let errorMessage = '';
+            let errors = [];
             
+            // Reset border colors
+            startDate.style.borderColor = '';
+            endDate.style.borderColor = '';
+            
+            // Validate start date
             if (!startDate.value) {
                 isValid = false;
-                errorMessage += '• Start Date is required\n';
-                startDate.style.borderColor = 'red';
-            } else {
-                startDate.style.borderColor = '';
+                errors.push('Start Date is required');
+                startDate.style.borderColor = '#dc2626';
             }
             
+            // Validate end date
             if (!endDate.value) {
                 isValid = false;
-                errorMessage += '• End Date is required\n';
-                endDate.style.borderColor = 'red';
-            } else {
-                endDate.style.borderColor = '';
+                errors.push('End Date is required');
+                endDate.style.borderColor = '#dc2626';
             }
             
             // Validate that end date is after start date
@@ -451,39 +457,86 @@ function initializeProjectInfoSaveButton() {
                 
                 if (end <= start) {
                     isValid = false;
-                    errorMessage += '• End Date must be after Start Date\n';
-                    endDate.style.borderColor = 'red';
+                    errors.push('End Date must be after Start Date');
+                    endDate.style.borderColor = '#dc2626';
                 }
             }
             
+            // Show errors if validation failed
             if (!isValid) {
-                alert('Please fix the following errors before saving:\n\n' + errorMessage);
+                showMessage('error', 'Please fix the following errors:', errors);
                 return;
             }
             
             // Call the same save function as the top-level Save Project button
-            // DataManager.saveProject() includes built-in success alert notification
             if (window.DataManager && typeof window.DataManager.saveProject === 'function') {
                 window.DataManager.saveProject();
+                showMessage('success', 'Project saved successfully!');
             } else if (window.dataManager && typeof window.dataManager.saveProject === 'function') {
                 window.dataManager.saveProject();
+                showMessage('success', 'Project saved successfully!');
             } else {
-                // Fallback to basic localStorage save with alert
+                // Fallback to basic localStorage save
                 try {
                     localStorage.setItem('ictProjectData', JSON.stringify(projectData));
                     console.log('Project saved using fallback method from settings');
-                    alert('Project saved to browser storage successfully!');
+                    showMessage('success', 'Project saved successfully!');
                 } catch (e) {
                     console.error('Error saving project:', e);
-                    alert('Error saving project. Please try again.');
+                    showMessage('error', 'Error saving project. Please try again.');
                 }
             }
         });
         
         console.log('Project Info Save button listener added');
     }
+    
+    // Helper function to show messages
+    function showMessage(type, message, errorList = null) {
+        if (!messageContainer) return;
+        
+        // Build message HTML
+        let html = message;
+        
+        if (errorList && errorList.length > 0) {
+            html += '<ul>';
+            errorList.forEach(error => {
+                html += `<li>${error}</li>`;
+            });
+            html += '</ul>';
+        }
+        
+        // Set message content and type
+        messageContainer.innerHTML = html;
+        messageContainer.className = `project-info-message ${type}`;
+        messageContainer.style.display = 'block';
+        
+        // Scroll to message
+        messageContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        
+        // Auto-hide success messages after 5 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                hideMessage();
+            }, 5000);
+        }
+    }
+    
+    // Helper function to hide messages
+    function hideMessage() {
+        if (!messageContainer) return;
+        
+        // Add fade-out animation
+        messageContainer.classList.add('fade-out');
+        
+        // Wait for animation to complete, then hide
+        setTimeout(() => {
+            messageContainer.style.display = 'none';
+            messageContainer.classList.remove('fade-out');
+            messageContainer.className = 'project-info-message';
+        }, 300);
+    }
 }
-
 function enhanceClickableAreas() {
     // Add visual enhancements to settings navigation buttons
     const settingsNavButtons = document.querySelectorAll('.settings-nav-btn');
