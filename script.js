@@ -422,8 +422,11 @@ function initializeProjectInfoSaveButton() {
         saveProjectInfoBtn.addEventListener('click', () => {
             console.log('Save Project Info button clicked');
             
-            // Clear any existing messages
-            hideMessage();
+            // Clear any existing messages (without animation for immediate clearing)
+            if (messageContainer) {
+                messageContainer.style.display = 'none';
+                messageContainer.className = 'project-info-message';
+            }
             
             // Validate required fields before saving
             const startDate = document.getElementById('startDate');
