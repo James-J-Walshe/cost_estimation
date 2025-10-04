@@ -1,133 +1,31 @@
-// Application State
-let projectData = {
-    projectInfo: {
-        projectName: '',
-        startDate: '',
-        endDate: '',
-        projectManager: '',
-        projectDescription: ''
-    },
-    internalResources: [],
-    vendorCosts: [],
-    toolCosts: [],
-    miscCosts: [],
-    risks: [],
-    // Unified rate cards with category metadata
-    rateCards: [
-        { role: 'Project Manager', rate: 800, category: 'Internal' },
-        { role: 'Business Analyst', rate: 650, category: 'Internal' },
-        { role: 'Technical Lead', rate: 750, category: 'Internal' },
-        { role: 'Developer', rate: 600, category: 'Internal' },
-        { role: 'Tester', rate: 550, category: 'Internal' },
-        { role: 'Senior Consultant', rate: 1200, category: 'External' },
-        { role: 'Technical Architect', rate: 1500, category: 'External' },
-        { role: 'Implementation Specialist', rate: 900, category: 'External' },
-        { role: 'Support Specialist', rate: 700, category: 'External' }
-    ],
-    contingencyPercentage: 10
-};
+// Application State - Reference to global projectData (initialized by init_manager.js)
+// This ensures a single source of truth across all modules
 
 // Initialize Application
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Starting application initialization...');
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('🎬 DOM Content Loaded');
     
     try {
-        // Check if DOM Manager is available and initialize
-        if (typeof window.DOMManager !== 'undefined') {
-            console.log('DOM Manager found, initializing...');
-            if (typeof window.DOMManager.initialize === 'function') {
-                window.DOMManager.initialize();
-            } else {
-                console.log('DOM Manager found but no initialize method, checking available methods:', Object.keys(window.DOMManager));
-                initializeBasicFunctionality();
-            }
-        } else if (typeof window.domManager !== 'undefined') {
-            console.log('DOM Manager (lowercase) found, initializing...');
-            console.log('Available methods on domManager:', Object.keys(window.domManager));
-            
-            if (typeof window.domManager.initialize === 'function') {
-                window.domManager.initialize();
-            } else if (typeof window.domManager.init === 'function') {
-                window.domManager.init();
-            } else {
-                console.log('DOM Manager found but no initialize/init method, using basic functionality');
-                initializeBasicFunctionality();
-            }
+        // Initialize basic DOM functionality first
+        initializeBasicFunctionality();
+        console.log('✓ Basic functionality initialized');
+        
+        // Use initialization manager for proper loading sequence
+        if (window.initManager) {
+            await window.initManager.initialize();
         } else {
-            console.log('DOM Manager not found, initializing basic functionality...');
-            initializeBasicFunctionality();
-        }
-        
-        console.log('DOM elements initialized successfully');
-        console.log('Tabs initialized');
-        console.log('Event listeners initialized');
-        
-        // Load data and render tables
-        console.log('Loading data and rendering tables...');
-        
-        // Check if Data Manager is available
-        if (typeof window.DataManager !== 'undefined') {
-            const dataLoaded = window.DataManager.loadDefaultData();
-            console.log('Data Manager found and data loaded');
-            
-            // Ensure we're using the updated data
-            if (window.projectData) {
-                projectData = window.projectData;
+            console.warn('⚠️ Initialization Manager not found - using fallback initialization');
+            // Fallback initialization
+            if (window.dataManager) {
+                window.dataManager.loadDefaultData();
             }
-        } else if (typeof window.dataManager !== 'undefined') {
-            const dataLoaded = window.dataManager.loadDefaultData();
-            console.log('Data Manager (lowercase) found and data loaded');
-            
-            // Ensure we're using the updated data
-            if (window.projectData) {
-                projectData = window.projectData;
-            }
-        } else {
-            console.warn('Data Manager not found - using basic data loading');
-            loadDefaultDataBasic();
-        }
-        
-        // Check if Table Renderer is available
-        if (typeof window.TableRenderer !== 'undefined') {
-            window.TableRenderer.renderAllTables();
-            console.log('Table Renderer found and tables rendered');
-        } else if (typeof window.tableRenderer !== 'undefined') {
-            window.tableRenderer.renderAllTables();
-            console.log('Table Renderer (lowercase) found and tables rendered');
-        } else {
-            console.warn('Table Renderer not found - tables may not render properly');
-        }
-        
-        // Update summary and month headers
-        updateSummary();
-        updateMonthHeaders();
-
-        // Iniatialises Save button on Project Info Screen
-        initializeProjectInfoSaveButton();
-        
-        console.log('Application initialized successfully');
-        
-        // Re-render tables after a short delay to ensure all data is properly loaded
-        setTimeout(() => {
-            console.log('Re-rendering tables with loaded data...');
-            if (window.TableRenderer) {
-                window.TableRenderer.renderAllTables();
-            } else if (window.tableRenderer) {
+            if (window.tableRenderer) {
                 window.tableRenderer.renderAllTables();
             }
-            updateSummary();
-        }, 100);
-        
-        // Initialize New Project Welcome feature
-        if (typeof window.newProjectWelcome !== 'undefined') {
-            window.newProjectWelcome.initialize();
-            console.log('New Project Welcome feature initialized');
         }
         
-        console.log('Application initialized successfully');
-        
     } catch (error) {
-        console.error('Error initializing application:', error);
+        console.error('❌ Error initializing application:', error);
         alert('Error initializing application. Please check the console for details.');
     }
 });
@@ -158,7 +56,9 @@ function initializeBasicFunctionality() {
                 
                 // Refresh data for specific tabs
                 if (targetTab === 'summary') {
-                    updateSummary();
+                    if (typeof updateSummary === 'function') {
+                        updateSummary();
+                    }
                 }
             });
         });
@@ -252,14 +152,18 @@ function initializeBasicEventListeners() {
         const field = document.getElementById(fieldId);
         if (field) {
             field.addEventListener('input', (e) => {
+                if (!window.projectData) return;
+                
                 if (fieldId === 'contingencyPercentage') {
-                    projectData.contingencyPercentage = parseFloat(e.target.value) || 0;
+                    window.projectData.contingencyPercentage = parseFloat(e.target.value) || 0;
                 } else {
-                    projectData.projectInfo[fieldId] = e.target.value;
+                    window.projectData.projectInfo[fieldId] = e.target.value;
                 }
                 
-                updateSummary();
-                if ((fieldId === 'startDate' || fieldId === 'endDate')) {
+                if (typeof updateSummary === 'function') {
+                    updateSummary();
+                }
+                if ((fieldId === 'startDate' || fieldId === 'endDate') && typeof updateMonthHeaders === 'function') {
                     updateMonthHeaders();
                 }
             });
@@ -300,12 +204,11 @@ function initializeSettingsButton() {
     
     // Back to main button
     if (backToMain) {
-        backToMain.addEventListener('click', (e) => {
-            e.preventDefault();
-            console.log('Back to main button clicked - validating form...');
-            validateProjectInfoAndClose();
+        backToMain.addEventListener('click', () => {
+            console.log('Back to main button clicked');
+            showMainView();
         });
-        console.log('Back to main button listener added with validation');
+        console.log('Back to main button listener added');
     }
     
     // Initialize settings navigation
@@ -313,161 +216,6 @@ function initializeSettingsButton() {
     
     // Initialize mobile hamburger menu
     initializeMobileMenu();
-}
-
-// Add this entire function after initializeSettingsButton() and before showSettingsView()
-// Around line 309 in your script.js file
-
-function initializeProjectInfoSaveButton() {
-    const saveProjectInfoBtn = document.getElementById('saveProjectInfoBtn');
-    const messageContainer = document.getElementById('projectInfoMessage');
-    
-    // Track active timeout for auto-hide
-    let autoHideTimeout = null;
-    
-    if (saveProjectInfoBtn) {
-        saveProjectInfoBtn.addEventListener('click', () => {
-            console.log('Save Project Info button clicked');
-            
-            // Clear any existing auto-hide timeout
-            if (autoHideTimeout) {
-                clearTimeout(autoHideTimeout);
-                autoHideTimeout = null;
-            }
-            
-            // Immediately clear any existing messages
-            if (messageContainer) {
-                messageContainer.style.display = 'none';
-                messageContainer.className = 'project-info-message';
-                messageContainer.innerHTML = '';
-            }
-            
-            // Validate required fields before saving
-            const startDate = document.getElementById('startDate');
-            const endDate = document.getElementById('endDate');
-            
-            let isValid = true;
-            let errors = [];
-            
-            // Reset border colors
-            if (startDate) startDate.style.borderColor = '';
-            if (endDate) endDate.style.borderColor = '';
-            
-            // Validate start date
-            if (!startDate.value) {
-                isValid = false;
-                errors.push('Start Date is required');
-                startDate.style.borderColor = '#dc2626';
-            }
-            
-            // Validate end date
-            if (!endDate.value) {
-                isValid = false;
-                errors.push('End Date is required');
-                endDate.style.borderColor = '#dc2626';
-            }
-            
-            // Validate that end date is after start date
-            if (startDate.value && endDate.value) {
-                const start = new Date(startDate.value);
-                const end = new Date(endDate.value);
-                
-                if (end <= start) {
-                    isValid = false;
-                    errors.push('End Date must be after Start Date');
-                    endDate.style.borderColor = '#dc2626';
-                }
-            }
-            
-            // Show errors if validation failed
-            if (!isValid) {
-                showMessage('error', 'Please fix the following errors:', errors);
-                return;
-            }
-            
-            // Call the same save function as the top-level Save Project button
-            if (window.DataManager && typeof window.DataManager.saveProject === 'function') {
-                window.DataManager.saveProject();
-                showMessage('success', 'Project saved successfully!');
-            } else if (window.dataManager && typeof window.dataManager.saveProject === 'function') {
-                window.dataManager.saveProject();
-                showMessage('success', 'Project saved successfully!');
-            } else {
-                // Fallback to basic localStorage save
-                try {
-                    localStorage.setItem('ictProjectData', JSON.stringify(window.projectData));
-                    console.log('Project saved using fallback method from settings');
-                    showMessage('success', 'Project saved successfully!');
-                } catch (e) {
-                    console.error('Error saving project:', e);
-                    showMessage('error', 'Error saving project. Please try again.');
-                }
-            }
-        });
-        
-        console.log('Project Info Save button listener added');
-    }
-    
-    // Helper function to show messages
-    function showMessage(type, message, errorList = null) {
-        if (!messageContainer) {
-            console.error('Message container not found');
-            return;
-        }
-        
-        console.log('Showing message:', type, message);
-        
-        // Build message HTML
-        let html = message;
-        
-        if (errorList && errorList.length > 0) {
-            html += '<ul>';
-            errorList.forEach(error => {
-                html += `<li>${error}</li>`;
-            });
-            html += '</ul>';
-        }
-        
-        // Set message content and type
-        messageContainer.innerHTML = html;
-        messageContainer.className = `project-info-message ${type}`;
-        messageContainer.style.display = 'block';
-        
-        console.log('Message displayed, scrolling into view');
-        
-        // Scroll to message with a small delay to ensure it's rendered
-        setTimeout(() => {
-            messageContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 50);
-        
-        // Auto-hide success messages after 5 seconds
-        if (type === 'success') {
-            console.log('Setting auto-hide timeout for 5 seconds');
-            autoHideTimeout = setTimeout(() => {
-                console.log('Auto-hiding success message');
-                hideMessage();
-            }, 5000);
-        } else {
-            console.log('Error message - will not auto-hide');
-        }
-    }
-    
-    // Helper function to hide messages
-    function hideMessage() {
-        if (!messageContainer) return;
-        
-        console.log('Hiding message');
-        
-        // Add fade-out animation
-        messageContainer.classList.add('fade-out');
-        
-        // Wait for animation to complete, then hide
-        setTimeout(() => {
-            messageContainer.style.display = 'none';
-            messageContainer.classList.remove('fade-out');
-            messageContainer.className = 'project-info-message';
-        }, 300);
-    }
 }
 
 function showSettingsView() {
@@ -567,204 +315,6 @@ function enhanceBackButton() {
     enhanceClickableAreas();
 }
 
-function initializeProjectInfoSaveButton() {
-    const saveProjectInfoBtn = document.getElementById('saveProjectInfoBtn');
-    const messageContainer = document.getElementById('projectInfoMessage');
-    
-    // Track active timeout for auto-hide
-    let autoHideTimeout = null;
-    
-    if (saveProjectInfoBtn) {
-        saveProjectInfoBtn.addEventListener('click', () => {
-            console.log('Save Project Info button clicked');
-            
-            // Clear any existing auto-hide timeout
-            if (autoHideTimeout) {
-                clearTimeout(autoHideTimeout);
-                autoHideTimeout = null;
-            }
-            
-            // Immediately clear any existing messages
-            if (messageContainer) {
-                messageContainer.style.display = 'none';
-                messageContainer.className = 'project-info-message';
-                messageContainer.innerHTML = '';
-            }
-            
-            // Validate required fields before saving
-            const startDate = document.getElementById('startDate');
-            const endDate = document.getElementById('endDate');
-            
-            let isValid = true;
-            let errors = [];
-            
-            // Reset border colors
-            if (startDate) startDate.style.borderColor = '';
-            if (endDate) endDate.style.borderColor = '';
-            
-            // Validate start date
-            if (!startDate.value) {
-                isValid = false;
-                errors.push('Start Date is required');
-                startDate.style.borderColor = '#dc2626';
-            }
-            
-            // Validate end date
-            if (!endDate.value) {
-                isValid = false;
-                errors.push('End Date is required');
-                endDate.style.borderColor = '#dc2626';
-            }
-            
-            // Validate that end date is after start date
-            if (startDate.value && endDate.value) {
-                const start = new Date(startDate.value);
-                const end = new Date(endDate.value);
-                
-                if (end <= start) {
-                    isValid = false;
-                    errors.push('End Date must be after Start Date');
-                    endDate.style.borderColor = '#dc2626';
-                }
-            }
-            
-            // Show errors if validation failed
-            if (!isValid) {
-                showMessage('error', 'Please fix the following errors:', errors);
-                return;
-            }
-            
-            // Call the same save function as the top-level Save Project button
-            if (window.DataManager && typeof window.DataManager.saveProject === 'function') {
-                window.DataManager.saveProject();
-                showMessage('success', 'Project saved successfully!');
-            } else if (window.dataManager && typeof window.dataManager.saveProject === 'function') {
-                window.dataManager.saveProject();
-                showMessage('success', 'Project saved successfully!');
-            } else {
-                // Fallback to basic localStorage save
-                try {
-                    localStorage.setItem('ictProjectData', JSON.stringify(window.projectData));
-                    console.log('Project saved using fallback method from settings');
-                    showMessage('success', 'Project saved successfully!');
-                } catch (e) {
-                    console.error('Error saving project:', e);
-                    showMessage('error', 'Error saving project. Please try again.');
-                }
-            }
-        });
-        
-        console.log('Project Info Save button listener added');
-    }
-    
-    // Helper function to show messages
-    function showMessage(type, message, errorList = null) {
-        if (!messageContainer) {
-            console.error('Message container not found');
-            return;
-        }
-        
-        console.log('Showing message:', type, message);
-        
-        // Build message HTML
-        let html = message;
-        
-        if (errorList && errorList.length > 0) {
-            html += '<ul>';
-            errorList.forEach(error => {
-                html += `<li>${error}</li>`;
-            });
-            html += '</ul>';
-        }
-        
-        // Set message content and type
-        messageContainer.innerHTML = html;
-        messageContainer.className = `project-info-message ${type}`;
-        messageContainer.style.display = 'block';
-        
-        console.log('Message displayed, scrolling into view');
-        
-        // Scroll to message with a small delay to ensure it's rendered
-        setTimeout(() => {
-            messageContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 50);
-        
-        // Auto-hide success messages after 5 seconds
-        if (type === 'success') {
-            console.log('Setting auto-hide timeout for 5 seconds');
-            autoHideTimeout = setTimeout(() => {
-                console.log('Auto-hiding success message');
-                hideMessage();
-            }, 5000);
-        } else {
-            console.log('Error message - will not auto-hide');
-        }
-    }
-    
-    // Helper function to hide messages
-    function hideMessage() {
-        if (!messageContainer) return;
-        
-        console.log('Hiding message');
-        
-        // Add fade-out animation
-        messageContainer.classList.add('fade-out');
-        
-        // Wait for animation to complete, then hide
-        setTimeout(() => {
-            messageContainer.style.display = 'none';
-            messageContainer.classList.remove('fade-out');
-            messageContainer.className = 'project-info-message';
-        }, 300);
-    }
-}
-    
-    // Helper function to show messages
-    function showMessage(type, message, errorList = null) {
-        if (!messageContainer) return;
-        
-        // Build message HTML
-        let html = message;
-        
-        if (errorList && errorList.length > 0) {
-            html += '<ul>';
-            errorList.forEach(error => {
-                html += `<li>${error}</li>`;
-            });
-            html += '</ul>';
-        }
-        
-        // Set message content and type
-        messageContainer.innerHTML = html;
-        messageContainer.className = `project-info-message ${type}`;
-        messageContainer.style.display = 'block';
-        
-        // Scroll to message
-        messageContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        
-        // Auto-hide success messages after 5 seconds
-        if (type === 'success') {
-            setTimeout(() => {
-                hideMessage();
-            }, 5000);
-        }
-    }
-    
-    // Helper function to hide messages
-    function hideMessage() {
-        if (!messageContainer) return;
-        
-        // Add fade-out animation
-        messageContainer.classList.add('fade-out');
-        
-        // Wait for animation to complete, then hide
-        setTimeout(() => {
-            messageContainer.style.display = 'none';
-            messageContainer.classList.remove('fade-out');
-            messageContainer.className = 'project-info-message';
-        }, 300);
-    }
-
 function enhanceClickableAreas() {
     // Add visual enhancements to settings navigation buttons
     const settingsNavButtons = document.querySelectorAll('.settings-nav-btn');
@@ -810,7 +360,9 @@ function showMainView() {
         if (window.TableRenderer) {
             setTimeout(() => {
                 window.TableRenderer.renderAllTables();
-                updateSummary();
+                if (typeof updateSummary === 'function') {
+                    updateSummary();
+                }
             }, 100);
         }
     }
@@ -873,7 +425,7 @@ function saveProjectFallback() {
     } else {
         // Basic localStorage save
         try {
-            localStorage.setItem('ictProjectData', JSON.stringify(projectData));
+            localStorage.setItem('ictProjectData', JSON.stringify(window.projectData));
             console.log('Project saved using fallback method');
         } catch (e) {
             console.error('Error saving project:', e);
@@ -898,8 +450,10 @@ function loadProjectFallback() {
                 reader.onload = (e) => {
                     try {
                         const data = JSON.parse(e.target.result);
-                        projectData = { ...projectData, ...data };
-                        updateSummary();
+                        window.projectData = { ...window.projectData, ...data };
+                        if (typeof updateSummary === 'function') {
+                            updateSummary();
+                        }
                         if (window.TableRenderer) {
                             window.TableRenderer.renderAllTables();
                         }
@@ -913,6 +467,7 @@ function loadProjectFallback() {
         };
         input.click();
     }
+}
 
 function exportToExcelFallback() {
     if (window.DataManager) {
@@ -925,25 +480,24 @@ function exportToExcelFallback() {
 }
 
 function newProjectFallback() {
-    // Show welcome popup instead of immediate confirmation
-    if (window.handleNewProjectWelcome) {
-        window.handleNewProjectWelcome();
-    } else if (window.DataManager) {
+    if (window.DataManager) {
         window.DataManager.newProject();
     } else if (window.dataManager) {
         window.dataManager.newProject();
     } else {
         if (confirm('Start a new project? This will clear all current data.')) {
             // Reset to initial state
-            projectData = {
+            window.projectData = {
                 projectInfo: { projectName: '', startDate: '', endDate: '', projectManager: '', projectDescription: '' },
                 internalResources: [], vendorCosts: [], toolCosts: [], miscCosts: [], risks: [],
-                rateCards: projectData.rateCards, // Keep default rate cards
-                internalRates: projectData.internalRates,
-                externalRates: projectData.externalRates,
+                rateCards: window.projectData.rateCards, // Keep default rate cards
+                internalRates: window.projectData.internalRates,
+                externalRates: window.projectData.externalRates,
                 contingencyPercentage: 10
             };
-            updateSummary();
+            if (typeof updateSummary === 'function') {
+                updateSummary();
+            }
             if (window.TableRenderer) {
                 window.TableRenderer.renderAllTables();
             }
@@ -959,11 +513,11 @@ function downloadProjectFallback() {
         window.dataManager.downloadProject();
     } else {
         // Basic download
-        const dataStr = JSON.stringify(projectData, null, 2);
+        const dataStr = JSON.stringify(window.projectData, null, 2);
         const blob = new Blob([dataStr], { type: 'application/json' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = `ICT_Project_${projectData.projectInfo.projectName || 'Untitled'}.json`;
+        link.download = `ICT_Project_${window.projectData.projectInfo.projectName || 'Untitled'}.json`;
         link.click();
         console.log('Project downloaded using fallback method');
     }
@@ -975,7 +529,7 @@ function loadDefaultDataBasic() {
             const savedData = localStorage.getItem('ictProjectData');
             if (savedData) {
                 const parsed = JSON.parse(savedData);
-                projectData = { ...projectData, ...parsed };
+                window.projectData = { ...window.projectData, ...parsed };
                 console.log('Data loaded using basic method');
             }
         }
@@ -986,7 +540,9 @@ function loadDefaultDataBasic() {
 
 // Calculate months based on start date
 function calculateProjectMonths() {
-    const startDate = projectData.projectInfo.startDate;
+    if (!window.projectData) return ['Month 1', 'Month 2', 'Month 3', 'Month 4', 'Month 5', 'Month 6'];
+    
+    const startDate = window.projectData.projectInfo.startDate;
     
     if (!startDate) {
         return ['Month 1', 'Month 2', 'Month 3', 'Month 4', 'Month 5', 'Month 6'];
@@ -1062,12 +618,14 @@ function openModal(title, type) {
 function getModalFields(type) {
     const months = calculateProjectMonths();
     
+    if (!window.projectData) return '';
+    
     const fields = {
         internalResource: `
             <div class="form-group">
                 <label>Role:</label>
                 <select name="role" class="form-control" required>
-                    ${projectData.rateCards.map(rate => `<option value="${rate.role}" data-category="${rate.category}">${rate.role} (${rate.category})</option>`).join('')}
+                    ${window.projectData.rateCards.map(rate => `<option value="${rate.role}" data-category="${rate.category}">${rate.role} (${rate.category})</option>`).join('')}
                 </select>
             </div>
             <div class="form-group">
@@ -1216,6 +774,11 @@ function getModalFields(type) {
 
 function handleModalSubmit() {
     try {
+        if (!window.projectData) {
+            console.error('projectData not initialized');
+            return;
+        }
+        
         const modalForm = document.getElementById('modalForm');
         const formData = new FormData(modalForm);
         const type = modalForm.getAttribute('data-type');
@@ -1231,9 +794,9 @@ function handleModalSubmit() {
         // Add item to appropriate array
         switch(type) {
             case 'internalResource':
-                const rate = projectData.rateCards.find(r => r.role === data.role) || 
-                            projectData.internalRates.find(r => r.role === data.role);
-                projectData.internalResources.push({
+                const rate = window.projectData.rateCards.find(r => r.role === data.role) || 
+                            window.projectData.internalRates.find(r => r.role === data.role);
+                window.projectData.internalResources.push({
                     id: Date.now(),
                     role: data.role,
                     rateCard: rate ? rate.category || 'Internal' : 'Internal',
@@ -1245,7 +808,7 @@ function handleModalSubmit() {
                 });
                 break;
             case 'vendorCost':
-                projectData.vendorCosts.push({
+                window.projectData.vendorCosts.push({
                     id: Date.now(),
                     vendor: data.vendor,
                     description: data.description,
@@ -1257,7 +820,7 @@ function handleModalSubmit() {
                 });
                 break;
             case 'toolCost':
-                projectData.toolCosts.push({
+                window.projectData.toolCosts.push({
                     id: Date.now(),
                     tool: data.tool,
                     licenseType: data.licenseType,
@@ -1267,7 +830,7 @@ function handleModalSubmit() {
                 });
                 break;
             case 'miscCost':
-                projectData.miscCosts.push({
+                window.projectData.miscCosts.push({
                     id: Date.now(),
                     item: data.item,
                     description: data.description,
@@ -1276,7 +839,7 @@ function handleModalSubmit() {
                 });
                 break;
             case 'risk':
-                projectData.risks.push({
+                window.projectData.risks.push({
                     id: Date.now(),
                     description: data.description,
                     probability: parseInt(data.probability),
@@ -1292,17 +855,17 @@ function handleModalSubmit() {
                     rate: parseFloat(data.rate),
                     category: data.category
                 };
-                projectData.rateCards.push(newRateCard);
+                window.projectData.rateCards.push(newRateCard);
                 
                 // Update both old arrays for backward compatibility
                 if (data.category === 'Internal') {
-                    projectData.internalRates.push({
+                    window.projectData.internalRates.push({
                         id: Date.now(),
                         role: data.role,
                         rate: parseFloat(data.rate)
                     });
                 } else if (data.category === 'External') {
-                    projectData.externalRates.push({
+                    window.projectData.externalRates.push({
                         id: Date.now(),
                         role: data.role,
                         rate: parseFloat(data.rate)
@@ -1318,7 +881,9 @@ function handleModalSubmit() {
             window.tableRenderer.renderAllTables();
         }
         
-        updateSummary();
+        if (typeof updateSummary === 'function') {
+            updateSummary();
+        }
         document.getElementById('modal').style.display = 'none';
         console.log('Modal submit completed successfully');
     } catch (error) {
@@ -1328,24 +893,29 @@ function handleModalSubmit() {
 
 // Delete Item Function
 function deleteItem(arrayName, id) {
+    if (!window.projectData) {
+        console.error('projectData not initialized');
+        return;
+    }
+    
     if (confirm('Are you sure you want to delete this item?')) {
         if (arrayName === 'rateCards' || arrayName === 'internalRates' || arrayName === 'externalRates') {
-            projectData.rateCards = projectData.rateCards.filter(item => 
+            window.projectData.rateCards = window.projectData.rateCards.filter(item => 
                 (item.id && item.id !== id) || (item.role !== id)
             );
             // Also remove from old arrays for backward compatibility
-            if (projectData.internalRates) {
-                projectData.internalRates = projectData.internalRates.filter(item => 
+            if (window.projectData.internalRates) {
+                window.projectData.internalRates = window.projectData.internalRates.filter(item => 
                     (item.id && item.id !== id) || (item.role !== id)
                 );
             }
-            if (projectData.externalRates) {
-                projectData.externalRates = projectData.externalRates.filter(item => 
+            if (window.projectData.externalRates) {
+                window.projectData.externalRates = window.projectData.externalRates.filter(item => 
                     (item.id && item.id !== id) || (item.role !== id)
                 );
             }
         } else {
-            projectData[arrayName] = projectData[arrayName].filter(item => item.id !== id);
+            window.projectData[arrayName] = window.projectData[arrayName].filter(item => item.id !== id);
         }
         
         // Re-render tables
@@ -1355,13 +925,20 @@ function deleteItem(arrayName, id) {
             window.tableRenderer.renderAllTables();
         }
         
-        updateSummary();
+        if (typeof updateSummary === 'function') {
+            updateSummary();
+        }
     }
 }
 
 // Summary Calculations
 function updateSummary() {
     try {
+        if (!window.projectData) {
+            console.error('projectData not initialized');
+            return;
+        }
+        
         // Calculate totals
         const internalTotal = calculateInternalResourcesTotal();
         const vendorTotal = calculateVendorCostsTotal();
@@ -1369,7 +946,7 @@ function updateSummary() {
         const miscTotal = calculateMiscCostsTotal();
         
         const subtotal = internalTotal + vendorTotal + toolTotal + miscTotal;
-        const contingency = subtotal * (projectData.contingencyPercentage / 100);
+        const contingency = subtotal * (window.projectData.contingencyPercentage / 100);
         const total = subtotal + contingency;
         
         // Update resource plan cards
@@ -1411,7 +988,9 @@ function updateSummary() {
 }
 
 function calculateInternalResourcesTotal() {
-    return projectData.internalResources.reduce((total, resource) => {
+    if (!window.projectData) return 0;
+    
+    return window.projectData.internalResources.reduce((total, resource) => {
         // Handle both old format (q1Days) and new format (month1Days)
         const month1Days = resource.month1Days || resource.q1Days || 0;
         const month2Days = resource.month2Days || resource.q2Days || 0;
@@ -1423,7 +1002,9 @@ function calculateInternalResourcesTotal() {
 }
 
 function calculateVendorCostsTotal() {
-    return projectData.vendorCosts.reduce((total, vendor) => {
+    if (!window.projectData) return 0;
+    
+    return window.projectData.vendorCosts.reduce((total, vendor) => {
         // Handle both old format (q1Cost) and new format (month1Cost)
         const month1Cost = vendor.month1Cost || vendor.q1Cost || 0;
         const month2Cost = vendor.month2Cost || vendor.q2Cost || 0;
@@ -1435,13 +1016,17 @@ function calculateVendorCostsTotal() {
 }
 
 function calculateToolCostsTotal() {
-    return projectData.toolCosts.reduce((total, tool) => {
+    if (!window.projectData) return 0;
+    
+    return window.projectData.toolCosts.reduce((total, tool) => {
         return total + (tool.users * tool.monthlyCost * tool.duration);
     }, 0);
 }
 
 function calculateMiscCostsTotal() {
-    return projectData.miscCosts.reduce((total, misc) => {
+    if (!window.projectData) return 0;
+    
+    return window.projectData.miscCosts.reduce((total, misc) => {
         return total + misc.cost;
     }, 0);
 }
@@ -1449,13 +1034,18 @@ function calculateMiscCostsTotal() {
 // Function to update project info in summary tab
 function updateSummaryProjectInfo() {
     try {
+        if (!window.projectData) {
+            console.error('projectData not initialized');
+            return;
+        }
+        
         // Update project info in summary tab
         const projectInfoElements = {
-            summaryProjectName: projectData.projectInfo.projectName || 'Not specified',
-            summaryStartDate: projectData.projectInfo.startDate || 'Not specified', 
-            summaryEndDate: projectData.projectInfo.endDate || 'Not specified',
-            summaryProjectManager: projectData.projectInfo.projectManager || 'Not specified',
-            summaryProjectDescription: projectData.projectInfo.projectDescription || 'Not specified'
+            summaryProjectName: window.projectData.projectInfo.projectName || 'Not specified',
+            summaryStartDate: window.projectData.projectInfo.startDate || 'Not specified', 
+            summaryEndDate: window.projectData.projectInfo.endDate || 'Not specified',
+            summaryProjectManager: window.projectData.projectInfo.projectManager || 'Not specified',
+            summaryProjectDescription: window.projectData.projectInfo.projectDescription || 'Not specified'
         };
         
         Object.keys(projectInfoElements).forEach(id => {
@@ -1467,9 +1057,9 @@ function updateSummaryProjectInfo() {
         
         // Calculate project duration if both dates are provided
         const summaryDurationEl = document.getElementById('summaryProjectDuration');
-        if (summaryDurationEl && projectData.projectInfo.startDate && projectData.projectInfo.endDate) {
-            const start = new Date(projectData.projectInfo.startDate);
-            const end = new Date(projectData.projectInfo.endDate);
+        if (summaryDurationEl && window.projectData.projectInfo.startDate && window.projectData.projectInfo.endDate) {
+            const start = new Date(window.projectData.projectInfo.startDate);
+            const end = new Date(window.projectData.projectInfo.endDate);
             const diffTime = Math.abs(end - start);
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             const diffMonths = Math.round(diffDays / 30.44);
@@ -1480,10 +1070,10 @@ function updateSummaryProjectInfo() {
         
         // Update resource counts
         const resourceCountsElements = {
-            summaryInternalResourceCount: projectData.internalResources.length,
-            summaryVendorCount: projectData.vendorCosts.length,
-            summaryToolCount: projectData.toolCosts.length,
-            summaryRiskCount: projectData.risks.length
+            summaryInternalResourceCount: window.projectData.internalResources.length,
+            summaryVendorCount: window.projectData.vendorCosts.length,
+            summaryToolCount: window.projectData.toolCosts.length,
+            summaryRiskCount: window.projectData.risks.length
         };
         
         Object.keys(resourceCountsElements).forEach(id => {
@@ -1498,72 +1088,9 @@ function updateSummaryProjectInfo() {
     }
 }
 
-function validateProjectInfoAndClose() {
-    const startDate = document.getElementById('startDate');
-    const endDate = document.getElementById('endDate');
-    
-    let isValid = true;
-    let errorMessage = '';
-    
-    if (!startDate.value) {
-        isValid = false;
-        errorMessage += '• Start Date is required\n';
-        startDate.style.borderColor = 'red';
-    } else {
-        startDate.style.borderColor = '';
-    }
-    
-    if (!endDate.value) {
-        isValid = false;
-        errorMessage += '• End Date is required\n';
-        endDate.style.borderColor = 'red';
-    } else {
-        endDate.style.borderColor = '';
-    }
-    
-    // Validate that end date is after start date
-    if (startDate.value && endDate.value) {
-        const start = new Date(startDate.value);
-        const end = new Date(endDate.value);
-        
-        if (end <= start) {
-            isValid = false;
-            errorMessage += '• End Date must be after Start Date\n';
-            endDate.style.borderColor = 'red';
-        }
-    }
-    
-    if (!isValid) {
-        alert('Please fix the following errors before closing settings:\n\n' + errorMessage);
-        return false;
-    }
-    
-    showMainView();
-    return true;
-}
-
-function addRealTimeValidation() {
-    const startDate = document.getElementById('startDate');
-    const endDate = document.getElementById('endDate');
-    
-    if (startDate) {
-        startDate.addEventListener('change', () => {
-            if (startDate.value) {
-                startDate.style.borderColor = 'green';
-                setTimeout(() => startDate.style.borderColor = '', 500);
-            }
-        });
-    }
-    
-    if (endDate) {
-        endDate.addEventListener('change', () => {
-            if (endDate.value) {
-                endDate.style.borderColor = 'green';
-                setTimeout(() => endDate.style.borderColor = '', 500);
-            }
-        });
-    }
-}
+// ============================================================================
+// GLOBAL EXPORTS - Make functions available to other modules immediately
+// ============================================================================
 
 // Expose necessary functions globally
 window.openModal = openModal;
@@ -1579,6 +1106,6 @@ window.calculateVendorCostsTotal = calculateVendorCostsTotal;
 window.calculateToolCostsTotal = calculateToolCostsTotal;
 window.calculateMiscCostsTotal = calculateMiscCostsTotal;
 
-// Make projectData available globally for modules
-window.projectData = projectData;
-}
+console.log('✓ Global functions exported');
+
+// ============================================================================
