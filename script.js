@@ -913,6 +913,7 @@ reader.readAsText(file);
 };
 input.click();
 }
+}
 
 function exportToExcelFallback() {
 if (window.DataManager) {
@@ -1581,4 +1582,3 @@ window.calculateMiscCostsTotal = calculateMiscCostsTotal;
 
 // Make projectData available globally for modules
 window.projectData = projectData;
-}
