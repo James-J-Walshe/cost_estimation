@@ -27,110 +27,16 @@ rateCards: [
 contingencyPercentage: 10
 };
 
-// Initialize Application
-document.addEventListener('DOMContentLoaded', function() {
-console.log('Starting application initialization...');
-
-try {
-// Check if DOM Manager is available and initialize
-if (typeof window.DOMManager !== 'undefined') {
-console.log('DOM Manager found, initializing...');
-if (typeof window.DOMManager.initialize === 'function') {
-window.DOMManager.initialize();
-} else {
-console.log('DOM Manager found but no initialize method, checking available methods:', Object.keys(window.DOMManager));
-initializeBasicFunctionality();
-}
-} else if (typeof window.domManager !== 'undefined') {
-console.log('DOM Manager (lowercase) found, initializing...');
-console.log('Available methods on domManager:', Object.keys(window.domManager));
-
-if (typeof window.domManager.initialize === 'function') {
-window.domManager.initialize();
-} else if (typeof window.domManager.init === 'function') {
-window.domManager.init();
-} else {
-console.log('DOM Manager found but no initialize/init method, using basic functionality');
-initializeBasicFunctionality();
-}
-} else {
-console.log('DOM Manager not found, initializing basic functionality...');
-initializeBasicFunctionality();
-}
-
-console.log('DOM elements initialized successfully');
-console.log('Tabs initialized');
-console.log('Event listeners initialized');
-
-// Load data and render tables
-console.log('Loading data and rendering tables...');
-
-// Check if Data Manager is available
-if (typeof window.DataManager !== 'undefined') {
-const dataLoaded = window.DataManager.loadDefaultData();
-console.log('Data Manager found and data loaded');
-
-// Ensure we're using the updated data
-if (window.projectData) {
-projectData = window.projectData;
-}
-} else if (typeof window.dataManager !== 'undefined') {
-const dataLoaded = window.dataManager.loadDefaultData();
-console.log('Data Manager (lowercase) found and data loaded');
-
-// Ensure we're using the updated data
-if (window.projectData) {
-projectData = window.projectData;
-}
-} else {
-console.warn('Data Manager not found - using basic data loading');
-loadDefaultDataBasic();
-}
-
-// Check if Table Renderer is available
-if (typeof window.TableRenderer !== 'undefined') {
-window.TableRenderer.renderAllTables();
-console.log('Table Renderer found and tables rendered');
-} else if (typeof window.tableRenderer !== 'undefined') {
-window.tableRenderer.renderAllTables();
-console.log('Table Renderer (lowercase) found and tables rendered');
-} else {
-console.warn('Table Renderer not found - tables may not render properly');
-}
-
-// Update summary and month headers
-updateSummary();
-updateMonthHeaders();
-
-// Iniatialises Save button on Project Info Screen
-initializeProjectInfoSaveButton();
-
-console.log('Application initialized successfully');
-
-// Re-render tables after a short delay to ensure all data is properly loaded
-setTimeout(() => {
-console.log('Re-rendering tables with loaded data...');
-if (window.TableRenderer) {
-window.TableRenderer.renderAllTables();
-} else if (window.tableRenderer) {
-window.tableRenderer.renderAllTables();
-}
-updateSummary();
-}, 100);
-
-// Initialize New Project Welcome feature
-if (typeof window.newProjectWelcome !== 'undefined') {
-window.newProjectWelcome.initialize();
-console.log('New Project Welcome feature initialized');
-}
-
-console.log('Application initialized successfully');
-
-} catch (error) {
-console.error('Error initializing application:', error);
-alert('Error initializing application. Please check the console for details.');
-}
-});
+// Make projectData available globally for modules
+  window.projectData = projectData;
+  
+  // ====================================================================
+  // NOTE: DOMContentLoaded initialization has been REMOVED
+  // All initialization is now handled by js/init_manager.js
+  // ====================================================================
+  
+  // Basic functionality fallback
+  function initializeBasicFunctionality() {
 
 // Basic functionality fallback
 function initializeBasicFunctionality() {
