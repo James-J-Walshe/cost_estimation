@@ -506,13 +506,28 @@ function showMainView() {
         settingsApp.style.display = 'none';
         console.log('Switched to main view');
 
-        // Re-render all tables when returning to main view
+        // FIXED: Ensure all data is properly refreshed when returning to main view
+        // This fixes Bug #1 - summary not refreshing after date changes
+        
+        // Update month headers immediately (synchronously)
+        updateMonthHeaders();
+        
+        // Update summary immediately (synchronously) 
+        updateSummary();
+        
+        // Re-render all tables with updated month structure
         if (window.TableRenderer) {
-            setTimeout(() => {
-                window.TableRenderer.renderAllTables();
-                updateSummary();
-            }, 100);
+            // Use immediate execution instead of setTimeout to avoid race conditions
+            window.TableRenderer.updateTableHeaders();
+            window.TableRenderer.renderAllTables();
+            console.log('Tables re-rendered with updated headers');
         }
+        
+        // Force a second summary update after tables render to ensure totals are correct
+        setTimeout(() => {
+            updateSummary();
+            console.log('Summary updated after table re-render');
+        }, 50);
     }
 }
 
@@ -1175,20 +1190,22 @@ function validateProjectInfoAndClose() {
     let isValid = true;
     let errorMessage = '';
 
+    // Reset border colors
+    if (startDate) startDate.style.borderColor = '';
+    if (endDate) endDate.style.borderColor = '';
+
+    // Validate start date
     if (!startDate.value) {
         isValid = false;
         errorMessage += '• Start Date is required\n';
         startDate.style.borderColor = 'red';
-    } else {
-        startDate.style.borderColor = '';
     }
 
+    // Validate end date
     if (!endDate.value) {
         isValid = false;
         errorMessage += '• End Date is required\n';
         endDate.style.borderColor = 'red';
-    } else {
-        endDate.style.borderColor = '';
     }
 
     // Validate that end date is after start date
@@ -1208,6 +1225,22 @@ function validateProjectInfoAndClose() {
         return false;
     }
 
+    // FIXED: Ensure project data is saved before switching views
+    // Save the current values to projectData
+    if (window.projectData && window.projectData.projectInfo) {
+        window.projectData.projectInfo.startDate = startDate.value;
+        window.projectData.projectInfo.endDate = endDate.value;
+        window.projectData.projectInfo.projectName = document.getElementById('projectName')?.value || '';
+        window.projectData.projectInfo.projectManager = document.getElementById('projectManager')?.value || '';
+        window.projectData.projectInfo.projectDescription = document.getElementById('projectDescription')?.value || '';
+    }
+    
+    // Save to localStorage
+    if (window.DataManager && window.DataManager.saveToLocalStorage) {
+        window.DataManager.saveToLocalStorage();
+    }
+
+    // Now show main view with all updates
     showMainView();
     return true;
 }
