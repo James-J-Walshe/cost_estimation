@@ -115,6 +115,14 @@ class InitializationManager {
                 }
             }
             console.log('✓ DOM Manager initialized');
+            
+            // ALWAYS also initialize basic functionality from script.js
+            // This sets up tab listeners, button listeners, etc.
+            if (typeof window.initializeBasicFunctionality === 'function') {
+                console.log('Initializing basic event listeners from script.js...');
+                window.initializeBasicFunctionality();
+                console.log('✓ Basic event listeners initialized');
+            }
         } else {
             console.log('DOM Manager not available, using fallback initialization');
             if (typeof window.initializeBasicFunctionality === 'function') {
