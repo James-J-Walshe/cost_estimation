@@ -507,30 +507,48 @@ function showMainView() {
         console.log('Switched to main view');
 
         // FIXED: Ensure all data is properly refreshed when returning to main view
-        // This fixes Bug #1 - summary not refreshing after date changes
         
-        // Update month headers immediately (synchronously)
-        updateMonthHeaders();
-        
-        // Update summary immediately (synchronously) 
+        // Update summary immediately
         updateSummary();
         
         // Re-render all tables with updated month structure
         if (window.TableRenderer) {
-            // Use immediate execution instead of setTimeout to avoid race conditions
+            // Update table headers first
             window.TableRenderer.updateTableHeaders();
+            
+            // Render ALL tables including forecast
             window.TableRenderer.renderAllTables();
+            
+            // CRITICAL: Force forecast table re-render specifically
+            window.TableRenderer.renderForecastTable();
+            
             console.log('Tables re-rendered with updated headers');
         }
         
-        // Force a second summary update after tables render to ensure totals are correct
+        // Also force the table_fixes rendering
+        if (window.renderTableHeadersCorrectly) {
+            window.renderTableHeadersCorrectly();
+        }
+        
+        if (window.renderInternalResourcesTableFixed) {
+            window.renderInternalResourcesTableFixed();
+        }
+        
+        if (window.renderVendorCostsTableFixed) {
+            window.renderVendorCostsTableFixed();
+        }
+        
+        // Force a second summary update after tables render
         setTimeout(() => {
             updateSummary();
-            console.log('Summary updated after table re-render');
+            // Force forecast table one more time to ensure it's updated
+            if (window.TableRenderer && window.TableRenderer.renderForecastTable) {
+                window.TableRenderer.renderForecastTable();
+            }
+            console.log('Summary and forecast updated after table re-render');
         }, 50);
     }
 }
-
 function initializeSettingsNavigation() {
     const settingsNavButtons = document.querySelectorAll('.settings-nav-btn');
     const settingsTabContents = document.querySelectorAll('.settings-tab-content');
