@@ -506,26 +506,44 @@ function showMainView() {
         settingsApp.style.display = 'none';
         console.log('Switched to main view');
 
-        // FIXED: Ensure all data is properly refreshed when returning to main view
+        // CRITICAL: Clean up old month data before rendering
+        if (window.tableRenderer) {
+            const monthInfo = window.tableRenderer.calculateProjectMonths();
+            const currentMonthCount = monthInfo.count;
+            
+            // Clean internal resources
+            if (window.projectData && window.projectData.internalResources) {
+                window.projectData.internalResources.forEach(resource => {
+                    // Remove any month data beyond current range
+                    for (let i = currentMonthCount + 1; i <= 24; i++) {
+                        delete resource[`month${i}Days`];
+                    }
+                });
+            }
+            
+            // Clean vendor costs
+            if (window.projectData && window.projectData.vendorCosts) {
+                window.projectData.vendorCosts.forEach(vendor => {
+                    // Remove any month data beyond current range
+                    for (let i = currentMonthCount + 1; i <= 24; i++) {
+                        delete vendor[`month${i}Cost`];
+                    }
+                });
+            }
+        }
         
         // Update summary immediately
         updateSummary();
         
         // Re-render all tables with updated month structure
         if (window.TableRenderer) {
-            // Update table headers first
             window.TableRenderer.updateTableHeaders();
-            
-            // Render ALL tables including forecast
             window.TableRenderer.renderAllTables();
-            
-            // CRITICAL: Force forecast table re-render specifically
             window.TableRenderer.renderForecastTable();
-            
             console.log('Tables re-rendered with updated headers');
         }
         
-        // Also force the table_fixes rendering
+        // Force table_fixes rendering
         if (window.renderTableHeadersCorrectly) {
             window.renderTableHeadersCorrectly();
         }
@@ -541,7 +559,6 @@ function showMainView() {
         // Force a second summary update after tables render
         setTimeout(() => {
             updateSummary();
-            // Force forecast table one more time to ensure it's updated
             if (window.TableRenderer && window.TableRenderer.renderForecastTable) {
                 window.TableRenderer.renderForecastTable();
             }
@@ -549,6 +566,7 @@ function showMainView() {
         }, 50);
     }
 }
+
 function initializeSettingsNavigation() {
     const settingsNavButtons = document.querySelectorAll('.settings-nav-btn');
     const settingsTabContents = document.querySelectorAll('.settings-tab-content');
