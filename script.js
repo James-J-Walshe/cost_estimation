@@ -500,35 +500,51 @@ function enhanceClickableAreas() {
 function showMainView() {
     const mainApp = document.getElementById('mainApp');
     const settingsApp = document.getElementById('settingsApp');
-
+    
     if (mainApp && settingsApp) {
         mainApp.style.display = 'block';
         settingsApp.style.display = 'none';
         console.log('Switched to main view');
-
+        
         // CRITICAL: Clean up old month data before rendering
         if (window.tableRenderer) {
             const monthInfo = window.tableRenderer.calculateProjectMonths();
             const currentMonthCount = monthInfo.count;
             
+            console.log(`Current month count: ${currentMonthCount}, months:`, monthInfo.months);
+            
             // Clean internal resources
             if (window.projectData && window.projectData.internalResources) {
                 window.projectData.internalResources.forEach(resource => {
+                    // Ensure all current months exist
+                    for (let i = 1; i <= currentMonthCount; i++) {
+                        if (resource[`month${i}Days`] === undefined) {
+                            resource[`month${i}Days`] = 0;
+                        }
+                    }
                     // Remove any month data beyond current range
                     for (let i = currentMonthCount + 1; i <= 24; i++) {
                         delete resource[`month${i}Days`];
                     }
                 });
+                console.log('Internal resources cleaned');
             }
             
             // Clean vendor costs
             if (window.projectData && window.projectData.vendorCosts) {
                 window.projectData.vendorCosts.forEach(vendor => {
+                    // Ensure all current months exist
+                    for (let i = 1; i <= currentMonthCount; i++) {
+                        if (vendor[`month${i}Cost`] === undefined) {
+                            vendor[`month${i}Cost`] = 0;
+                        }
+                    }
                     // Remove any month data beyond current range
                     for (let i = currentMonthCount + 1; i <= 24; i++) {
                         delete vendor[`month${i}Cost`];
                     }
                 });
+                console.log('Vendor costs cleaned');
             }
         }
         
@@ -537,15 +553,26 @@ function showMainView() {
         
         // Re-render all tables with updated month structure
         if (window.TableRenderer) {
+            // CRITICAL: Update headers FIRST before rendering any content
             window.TableRenderer.updateTableHeaders();
+            console.log('Headers updated');
+            
+            // Clear forecast table completely before re-rendering
+            const forecastTbody = document.getElementById('forecastTable');
+            if (forecastTbody) {
+                forecastTbody.innerHTML = '';
+                console.log('Forecast table cleared');
+            }
+            
+            // Now render all tables
             window.TableRenderer.renderAllTables();
-            window.TableRenderer.renderForecastTable();
-            console.log('Tables re-rendered with updated headers');
+            console.log('All tables rendered');
         }
         
-        // Force table_fixes rendering
+        // Force table_fixes rendering (this may override forecast table headers)
         if (window.renderTableHeadersCorrectly) {
             window.renderTableHeadersCorrectly();
+            console.log('Table headers corrected via table_fixes');
         }
         
         if (window.renderInternalResourcesTableFixed) {
@@ -556,13 +583,20 @@ function showMainView() {
             window.renderVendorCostsTableFixed();
         }
         
-        // Force a second summary update after tables render
+        // Force a final forecast table re-render
         setTimeout(() => {
             updateSummary();
+            
+            // Clear and re-render forecast one more time
+            const forecastTbody = document.getElementById('forecastTable');
+            if (forecastTbody) {
+                forecastTbody.innerHTML = '';
+            }
+            
             if (window.TableRenderer && window.TableRenderer.renderForecastTable) {
                 window.TableRenderer.renderForecastTable();
+                console.log('Forecast table re-rendered in timeout');
             }
-            console.log('Summary and forecast updated after table re-render');
         }, 50);
     }
 }
