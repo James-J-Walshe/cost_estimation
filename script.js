@@ -500,19 +500,104 @@ function enhanceClickableAreas() {
 function showMainView() {
     const mainApp = document.getElementById('mainApp');
     const settingsApp = document.getElementById('settingsApp');
-
+    
     if (mainApp && settingsApp) {
         mainApp.style.display = 'block';
         settingsApp.style.display = 'none';
         console.log('Switched to main view');
-
-        // Re-render all tables when returning to main view
-        if (window.TableRenderer) {
-            setTimeout(() => {
-                window.TableRenderer.renderAllTables();
-                updateSummary();
-            }, 100);
+        
+        // CRITICAL: Clean up old month data before rendering
+        if (window.tableRenderer) {
+            const monthInfo = window.tableRenderer.calculateProjectMonths();
+            const currentMonthCount = monthInfo.count;
+            
+            console.log(`Current month count: ${currentMonthCount}, months:`, monthInfo.months);
+            
+            // Clean internal resources
+            if (window.projectData && window.projectData.internalResources) {
+                window.projectData.internalResources.forEach(resource => {
+                    // Ensure all current months exist
+                    for (let i = 1; i <= currentMonthCount; i++) {
+                        if (resource[`month${i}Days`] === undefined) {
+                            resource[`month${i}Days`] = 0;
+                        }
+                    }
+                    // Remove any month data beyond current range
+                    for (let i = currentMonthCount + 1; i <= 24; i++) {
+                        delete resource[`month${i}Days`];
+                    }
+                });
+                console.log('Internal resources cleaned');
+            }
+            
+            // Clean vendor costs
+            if (window.projectData && window.projectData.vendorCosts) {
+                window.projectData.vendorCosts.forEach(vendor => {
+                    // Ensure all current months exist
+                    for (let i = 1; i <= currentMonthCount; i++) {
+                        if (vendor[`month${i}Cost`] === undefined) {
+                            vendor[`month${i}Cost`] = 0;
+                        }
+                    }
+                    // Remove any month data beyond current range
+                    for (let i = currentMonthCount + 1; i <= 24; i++) {
+                        delete vendor[`month${i}Cost`];
+                    }
+                });
+                console.log('Vendor costs cleaned');
+            }
         }
+        
+        // Update summary immediately
+        updateSummary();
+        
+        // Re-render all tables with updated month structure
+        if (window.TableRenderer) {
+            // CRITICAL: Update headers FIRST before rendering any content
+            window.TableRenderer.updateTableHeaders();
+            console.log('Headers updated');
+            
+            // Clear forecast table completely before re-rendering
+            const forecastTbody = document.getElementById('forecastTable');
+            if (forecastTbody) {
+                forecastTbody.innerHTML = '';
+                console.log('Forecast table cleared');
+            }
+            
+            // Now render all tables
+            window.TableRenderer.renderAllTables();
+            console.log('All tables rendered');
+        }
+        
+        // Force table_fixes rendering (this may override forecast table headers)
+        if (window.renderTableHeadersCorrectly) {
+            window.renderTableHeadersCorrectly();
+            console.log('Table headers corrected via table_fixes');
+        }
+        
+        if (window.renderInternalResourcesTableFixed) {
+            window.renderInternalResourcesTableFixed();
+        }
+        
+        if (window.renderVendorCostsTableFixed) {
+            window.renderVendorCostsTableFixed();
+        }
+        
+        // Force a final forecast table re-render
+        setTimeout(() => {
+            updateSummary();
+            
+            // Clear and re-render forecast one more time
+            const forecastTbody = document.getElementById('forecastTable');
+            if (forecastTbody) {
+                forecastTbody.innerHTML = '';
+            }
+            
+            if (window.TableRenderer && window.TableRenderer.renderForecastTable) {
+                window.TableRenderer.renderForecastTable();
+                console.log('Forecast table re-rendered in timeout');
+            }
+        }, 50);
     }
 }
 
@@ -1175,20 +1260,22 @@ function validateProjectInfoAndClose() {
     let isValid = true;
     let errorMessage = '';
 
+    // Reset border colors
+    if (startDate) startDate.style.borderColor = '';
+    if (endDate) endDate.style.borderColor = '';
+
+    // Validate start date
     if (!startDate.value) {
         isValid = false;
         errorMessage += '• Start Date is required\n';
         startDate.style.borderColor = 'red';
-    } else {
-        startDate.style.borderColor = '';
     }
 
+    // Validate end date
     if (!endDate.value) {
         isValid = false;
         errorMessage += '• End Date is required\n';
         endDate.style.borderColor = 'red';
-    } else {
-        endDate.style.borderColor = '';
     }
 
     // Validate that end date is after start date
@@ -1208,6 +1295,22 @@ function validateProjectInfoAndClose() {
         return false;
     }
 
+    // FIXED: Ensure project data is saved before switching views
+    // Save the current values to projectData
+    if (window.projectData && window.projectData.projectInfo) {
+        window.projectData.projectInfo.startDate = startDate.value;
+        window.projectData.projectInfo.endDate = endDate.value;
+        window.projectData.projectInfo.projectName = document.getElementById('projectName')?.value || '';
+        window.projectData.projectInfo.projectManager = document.getElementById('projectManager')?.value || '';
+        window.projectData.projectInfo.projectDescription = document.getElementById('projectDescription')?.value || '';
+    }
+    
+    // Save to localStorage
+    if (window.DataManager && window.DataManager.saveToLocalStorage) {
+        window.DataManager.saveToLocalStorage();
+    }
+
+    // Now show main view with all updates
     showMainView();
     return true;
 }
