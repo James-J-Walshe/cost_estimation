@@ -212,6 +212,36 @@ function renderTableHeadersCorrectly() {
         vendorMonthHeader.innerHTML = monthRowHTML;
         
         console.log('Vendor Costs headers rendered correctly');
+
+            const forecastYearHeader = document.getElementById('forecastTableYearHeader');
+    const forecastMonthHeader = document.getElementById('forecastTableHeader');
+    
+    if (forecastYearHeader && forecastMonthHeader) {
+        forecastYearHeader.className = 'year-header-row';
+        forecastMonthHeader.className = 'month-header-row';
+        
+        let yearRowHTML = `
+            <th rowspan="2" class="fixed-column">Category</th>
+        `;
+        
+        monthInfo.yearGroups.forEach(yearGroup => {
+            yearRowHTML += `<th colspan="${yearGroup.count}">${yearGroup.year}</th>`;
+        });
+        
+        yearRowHTML += `
+            <th rowspan="2" class="fixed-column">Total</th>
+        `;
+        
+        let monthRowHTML = '';
+        monthInfo.months.forEach(month => {
+            monthRowHTML += `<th>${month}</th>`;
+        });
+        
+        forecastYearHeader.innerHTML = yearRowHTML;
+        forecastMonthHeader.innerHTML = monthRowHTML;
+        
+        console.log('Forecast table headers rendered correctly');
+    }
     }
 }
 
