@@ -24,141 +24,41 @@ let projectData = {
         { role: 'Implementation Specialist', rate: 900, category: 'External' },
         { role: 'Support Specialist', rate: 700, category: 'External' }
     ],
-    // Keep old arrays for backward compatibility
-    internalRates: [
-        { role: 'Project Manager', rate: 800 },
-        { role: 'Business Analyst', rate: 650 },
-        { role: 'Technical Lead', rate: 750 },
-        { role: 'Developer', rate: 600 },
-        { role: 'Tester', rate: 550 }
-    ],
-    externalRates: [
-        { role: 'Senior Consultant', rate: 1200 },
-        { role: 'Technical Architect', rate: 1500 },
-        { role: 'Implementation Specialist', rate: 900 },
-        { role: 'Support Specialist', rate: 700 }
-    ],
     contingencyPercentage: 10
 };
 
-// Initialize Application
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('Starting application initialization...');
-    
-    try {
-        // Check if DOM Manager is available and initialize
-        if (typeof window.DOMManager !== 'undefined') {
-            console.log('DOM Manager found, initializing...');
-            if (typeof window.DOMManager.initialize === 'function') {
-                window.DOMManager.initialize();
-            } else {
-                console.log('DOM Manager found but no initialize method, checking available methods:', Object.keys(window.DOMManager));
-                initializeBasicFunctionality();
-            }
-        } else if (typeof window.domManager !== 'undefined') {
-            console.log('DOM Manager (lowercase) found, initializing...');
-            console.log('Available methods on domManager:', Object.keys(window.domManager));
-            
-            if (typeof window.domManager.initialize === 'function') {
-                window.domManager.initialize();
-            } else if (typeof window.domManager.init === 'function') {
-                window.domManager.init();
-            } else {
-                console.log('DOM Manager found but no initialize/init method, using basic functionality');
-                initializeBasicFunctionality();
-            }
-        } else {
-            console.log('DOM Manager not found, initializing basic functionality...');
-            initializeBasicFunctionality();
-        }
-        
-        console.log('DOM elements initialized successfully');
-        console.log('Tabs initialized');
-        console.log('Event listeners initialized');
-        
-        // Load data and render tables
-        console.log('Loading data and rendering tables...');
-        
-        // Check if Data Manager is available
-        if (typeof window.DataManager !== 'undefined') {
-            const dataLoaded = window.DataManager.loadDefaultData();
-            console.log('Data Manager found and data loaded');
-            
-            // Ensure we're using the updated data
-            if (window.projectData) {
-                projectData = window.projectData;
-            }
-        } else if (typeof window.dataManager !== 'undefined') {
-            const dataLoaded = window.dataManager.loadDefaultData();
-            console.log('Data Manager (lowercase) found and data loaded');
-            
-            // Ensure we're using the updated data
-            if (window.projectData) {
-                projectData = window.projectData;
-            }
-        } else {
-            console.warn('Data Manager not found - using basic data loading');
-            loadDefaultDataBasic();
-        }
-        
-        // Check if Table Renderer is available
-        if (typeof window.TableRenderer !== 'undefined') {
-            window.TableRenderer.renderAllTables();
-            console.log('Table Renderer found and tables rendered');
-        } else if (typeof window.tableRenderer !== 'undefined') {
-            window.tableRenderer.renderAllTables();
-            console.log('Table Renderer (lowercase) found and tables rendered');
-        } else {
-            console.warn('Table Renderer not found - tables may not render properly');
-        }
-        
-        // Update summary and month headers
-        updateSummary();
-        updateMonthHeaders();
-        
-        console.log('Application initialized successfully');
-        
-        // Re-render tables after a short delay to ensure all data is properly loaded
-        setTimeout(() => {
-            console.log('Re-rendering tables with loaded data...');
-            if (window.TableRenderer) {
-                window.TableRenderer.renderAllTables();
-            } else if (window.tableRenderer) {
-                window.tableRenderer.renderAllTables();
-            }
-            updateSummary();
-        }, 100);
-        
-    } catch (error) {
-        console.error('Error initializing application:', error);
-        alert('Error initializing application. Please check the console for details.');
-    }
-});
+// Make projectData available globally for modules
+window.projectData = projectData;
+
+// ====================================================================
+// NOTE: DOMContentLoaded initialization has been REMOVED
+// All initialization is now handled by js/init_manager.js
+// ====================================================================
 
 // Basic functionality fallback
 function initializeBasicFunctionality() {
     console.log('Initializing basic functionality...');
-    
+
     // Initialize tab functionality
     const tabButtons = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
-    
+
     if (tabButtons && tabContents) {
         tabButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const targetTab = button.getAttribute('data-tab');
-                
+
                 // Update active tab button
                 tabButtons.forEach(btn => btn.classList.remove('active'));
                 button.classList.add('active');
-                
+
                 // Update active tab content
                 tabContents.forEach(content => content.classList.remove('active'));
                 const targetContent = document.getElementById(targetTab);
                 if (targetContent) {
                     targetContent.classList.add('active');
                 }
-                
+
                 // Refresh data for specific tabs
                 if (targetTab === 'summary') {
                     updateSummary();
@@ -167,7 +67,7 @@ function initializeBasicFunctionality() {
         });
         console.log('Tab functionality initialized');
     }
-    
+
     // Initialize button event listeners
     initializeBasicEventListeners();
 }
@@ -193,7 +93,7 @@ function initializeBasicEventListeners() {
             console.log(`Event listener added to ${btn.id}`);
         }
     });
-    
+
     // Action buttons
     const actionButtons = [
         { id: 'saveBtn', action: () => saveProjectFallback() },
@@ -202,7 +102,7 @@ function initializeBasicEventListeners() {
         { id: 'newProjectBtn', action: () => newProjectFallback() },
         { id: 'downloadBtn', action: () => downloadProjectFallback() }
     ];
-    
+
     actionButtons.forEach(({ id, action }) => {
         const element = document.getElementById(id);
         if (element) {
@@ -210,41 +110,41 @@ function initializeBasicEventListeners() {
             console.log(`Event listener added to ${id}`);
         }
     });
-    
+
     // Settings button functionality
     initializeSettingsButton();
-    
+
     // Modal listeners
     const modal = document.getElementById('modal');
     const closeModal = document.querySelector('.close');
     const cancelModal = document.getElementById('cancelModal');
     const modalForm = document.getElementById('modalForm');
-    
+
     if (closeModal) {
         closeModal.addEventListener('click', () => {
             modal.style.display = 'none';
         });
     }
-    
+
     if (cancelModal) {
         cancelModal.addEventListener('click', () => {
             modal.style.display = 'none';
         });
     }
-    
+
     window.addEventListener('click', (e) => {
         if (e.target === modal) {
             modal.style.display = 'none';
         }
     });
-    
+
     if (modalForm) {
         modalForm.addEventListener('submit', (e) => {
             e.preventDefault();
             handleModalSubmit();
         });
     }
-    
+
     // Project info form listeners
     const projectFields = [
         'projectName', 'startDate', 'endDate', 
@@ -260,7 +160,7 @@ function initializeBasicEventListeners() {
                 } else {
                     projectData.projectInfo[fieldId] = e.target.value;
                 }
-                
+
                 updateSummary();
                 if ((fieldId === 'startDate' || fieldId === 'endDate')) {
                     updateMonthHeaders();
@@ -275,9 +175,7 @@ function initializeSettingsButton() {
     const settingsBtn = document.getElementById('settingsBtn');
     const settingsBtnMobile = document.getElementById('settingsBtnMobile');
     const backToMain = document.getElementById('backToMain');
-    const mainApp = document.getElementById('mainApp');
-    const settingsApp = document.getElementById('settingsApp');
-    
+
     // Desktop settings button
     if (settingsBtn) {
         settingsBtn.addEventListener('click', () => {
@@ -286,7 +184,7 @@ function initializeSettingsButton() {
         });
         console.log('Settings button listener added');
     }
-    
+
     // Mobile settings button
     if (settingsBtnMobile) {
         settingsBtnMobile.addEventListener('click', () => {
@@ -300,35 +198,188 @@ function initializeSettingsButton() {
         });
         console.log('Mobile settings button listener added');
     }
-    
+
     // Back to main button
     if (backToMain) {
-        backToMain.addEventListener('click', () => {
-            console.log('Back to main button clicked');
-            showMainView();
+        backToMain.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Back to main button clicked - validating form...');
+            validateProjectInfoAndClose();
         });
-        console.log('Back to main button listener added');
+        console.log('Back to main button listener added with validation');
     }
-    
+
     // Initialize settings navigation
     initializeSettingsNavigation();
-    
+
     // Initialize mobile hamburger menu
     initializeMobileMenu();
+}
+
+function initializeProjectInfoSaveButton() {
+    const saveProjectInfoBtn = document.getElementById('saveProjectInfoBtn');
+    const messageContainer = document.getElementById('projectInfoMessage');
+
+    // Track active timeout for auto-hide
+    let autoHideTimeout = null;
+
+    if (saveProjectInfoBtn) {
+        saveProjectInfoBtn.addEventListener('click', () => {
+            console.log('Save Project Info button clicked');
+
+            // Clear any existing auto-hide timeout
+            if (autoHideTimeout) {
+                clearTimeout(autoHideTimeout);
+                autoHideTimeout = null;
+            }
+
+            // Immediately clear any existing messages
+            if (messageContainer) {
+                messageContainer.style.display = 'none';
+                messageContainer.className = 'project-info-message';
+                messageContainer.innerHTML = '';
+            }
+
+            // Validate required fields before saving
+            const startDate = document.getElementById('startDate');
+            const endDate = document.getElementById('endDate');
+
+            let isValid = true;
+            let errors = [];
+
+            // Reset border colors
+            if (startDate) startDate.style.borderColor = '';
+            if (endDate) endDate.style.borderColor = '';
+
+            // Validate start date
+            if (!startDate.value) {
+                isValid = false;
+                errors.push('Start Date is required');
+                startDate.style.borderColor = '#dc2626';
+            }
+
+            // Validate end date
+            if (!endDate.value) {
+                isValid = false;
+                errors.push('End Date is required');
+                endDate.style.borderColor = '#dc2626';
+            }
+
+            // Validate that end date is after start date
+            if (startDate.value && endDate.value) {
+                const start = new Date(startDate.value);
+                const end = new Date(endDate.value);
+
+                if (end <= start) {
+                    isValid = false;
+                    errors.push('End Date must be after Start Date');
+                    endDate.style.borderColor = '#dc2626';
+                }
+            }
+
+            // Show errors if validation failed
+            if (!isValid) {
+                showMessage('error', 'Please fix the following errors:', errors);
+                return;
+            }
+
+            // Call the same save function as the top-level Save Project button
+            if (window.DataManager && typeof window.DataManager.saveProject === 'function') {
+                window.DataManager.saveProject();
+                showMessage('success', 'Project saved successfully!');
+            } else if (window.dataManager && typeof window.dataManager.saveProject === 'function') {
+                window.dataManager.saveProject();
+                showMessage('success', 'Project saved successfully!');
+            } else {
+                // Fallback to basic localStorage save
+                try {
+                    localStorage.setItem('ictProjectData', JSON.stringify(window.projectData));
+                    console.log('Project saved using fallback method from settings');
+                    showMessage('success', 'Project saved successfully!');
+                } catch (e) {
+                    console.error('Error saving project:', e);
+                    showMessage('error', 'Error saving project. Please try again.');
+                }
+            }
+        });
+
+        console.log('Project Info Save button listener added');
+    }
+
+    // Helper function to show messages
+    function showMessage(type, message, errorList = null) {
+        if (!messageContainer) {
+            console.error('Message container not found');
+            return;
+        }
+
+        console.log('Showing message:', type, message);
+
+        // Build message HTML
+        let html = message;
+
+        if (errorList && errorList.length > 0) {
+            html += '<ul>';
+            errorList.forEach(error => {
+                html += `<li>${error}</li>`;
+            });
+            html += '</ul>';
+        }
+
+        // Set message content and type
+        messageContainer.innerHTML = html;
+        messageContainer.className = `project-info-message ${type}`;
+        messageContainer.style.display = 'block';
+
+        console.log('Message displayed, scrolling into view');
+
+        // Scroll to message with a small delay to ensure it's rendered
+        setTimeout(() => {
+            messageContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 50);
+
+        // Auto-hide success messages after 5 seconds
+        if (type === 'success') {
+            console.log('Setting auto-hide timeout for 5 seconds');
+            autoHideTimeout = setTimeout(() => {
+                console.log('Auto-hiding success message');
+                hideMessage();
+            }, 5000);
+        } else {
+            console.log('Error message - will not auto-hide');
+        }
+    }
+
+    // Helper function to hide messages
+    function hideMessage() {
+        if (!messageContainer) return;
+
+        console.log('Hiding message');
+
+        // Add fade-out animation
+        messageContainer.classList.add('fade-out');
+
+        // Wait for animation to complete, then hide
+        setTimeout(() => {
+            messageContainer.style.display = 'none';
+            messageContainer.classList.remove('fade-out');
+            messageContainer.className = 'project-info-message';
+        }, 300);
+    }
 }
 
 function showSettingsView() {
     const mainApp = document.getElementById('mainApp');
     const settingsApp = document.getElementById('settingsApp');
-    
+
     if (mainApp && settingsApp) {
         mainApp.style.display = 'none';
         settingsApp.style.display = 'block';
         console.log('Switched to settings view');
-        
+
         // Add visual enhancements to the back button
         enhanceBackButton();
-        
+
         // Re-render tables in settings if needed
         if (window.TableRenderer) {
             setTimeout(() => {
@@ -341,17 +392,17 @@ function showSettingsView() {
 function enhanceBackButton() {
     const backToMain = document.getElementById('backToMain');
     const settingsHeader = document.querySelector('.settings-header');
-    
+
     if (backToMain && settingsHeader) {
         // Transform the back button into an X close button
         backToMain.innerHTML = '×'; // Use × symbol for close
-        
+
         // Position it on the right side of the settings header
         settingsHeader.style.position = 'relative';
         settingsHeader.style.display = 'flex';
         settingsHeader.style.justifyContent = 'space-between';
         settingsHeader.style.alignItems = 'center';
-        
+
         // Style the X button
         backToMain.style.position = 'absolute';
         backToMain.style.right = '20px';
@@ -373,7 +424,7 @@ function enhanceBackButton() {
         backToMain.style.padding = '0';
         backToMain.style.lineHeight = '1';
         backToMain.style.zIndex = '10';
-        
+
         // Add hover effects for the X button
         backToMain.addEventListener('mouseenter', () => {
             backToMain.style.backgroundColor = '#e9ecef';
@@ -382,7 +433,7 @@ function enhanceBackButton() {
             backToMain.style.transform = 'translateY(-50%) scale(1.1)';
             backToMain.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
         });
-        
+
         backToMain.addEventListener('mouseleave', () => {
             backToMain.style.backgroundColor = '#f8f9fa';
             backToMain.style.borderColor = '#dee2e6';
@@ -390,26 +441,26 @@ function enhanceBackButton() {
             backToMain.style.transform = 'translateY(-50%) scale(1)';
             backToMain.style.boxShadow = 'none';
         });
-        
+
         backToMain.addEventListener('mousedown', () => {
             backToMain.style.transform = 'translateY(-50%) scale(0.95)';
             backToMain.style.backgroundColor = '#dee2e6';
         });
-        
+
         backToMain.addEventListener('mouseup', () => {
             backToMain.style.transform = 'translateY(-50%) scale(1.1)';
             backToMain.style.backgroundColor = '#e9ecef';
         });
-        
+
         // Add title for accessibility
         backToMain.title = 'Close Settings';
         backToMain.setAttribute('aria-label', 'Close Settings');
-        
+
         console.log('Back button transformed to X close button');
     } else {
         console.log('Settings header or back button not found');
     }
-    
+
     // Also enhance any other clickable areas that might need visual cues
     enhanceClickableAreas();
 }
@@ -420,21 +471,21 @@ function enhanceClickableAreas() {
     settingsNavButtons.forEach(button => {
         button.style.cursor = 'pointer';
         button.style.transition = 'all 0.2s ease';
-        
+
         // Add subtle hover effects if they don't already exist
         button.addEventListener('mouseenter', () => {
             if (!button.classList.contains('active')) {
                 button.style.backgroundColor = 'rgba(0, 123, 255, 0.1)';
             }
         });
-        
+
         button.addEventListener('mouseleave', () => {
             if (!button.classList.contains('active')) {
                 button.style.backgroundColor = '';
             }
         });
     });
-    
+
     // Enhance any other potentially unclear clickable areas
     const allButtons = document.querySelectorAll('button:not([style*="cursor"])');
     allButtons.forEach(button => {
@@ -442,7 +493,7 @@ function enhanceClickableAreas() {
             button.style.cursor = 'pointer';
         }
     });
-    
+
     console.log('Additional clickable areas enhanced');
 }
 
@@ -455,60 +506,145 @@ function showMainView() {
         settingsApp.style.display = 'none';
         console.log('Switched to main view');
         
-        // Re-render all tables when returning to main view
-        if (window.TableRenderer) {
-            setTimeout(() => {
-                window.TableRenderer.renderAllTables();
-                updateSummary();
-            }, 100);
+        // CRITICAL: Clean up old month data before rendering
+        if (window.tableRenderer) {
+            const monthInfo = window.tableRenderer.calculateProjectMonths();
+            const currentMonthCount = monthInfo.count;
+            
+            console.log(`Current month count: ${currentMonthCount}, months:`, monthInfo.months);
+            
+            // Clean internal resources
+            if (window.projectData && window.projectData.internalResources) {
+                window.projectData.internalResources.forEach(resource => {
+                    // Ensure all current months exist
+                    for (let i = 1; i <= currentMonthCount; i++) {
+                        if (resource[`month${i}Days`] === undefined) {
+                            resource[`month${i}Days`] = 0;
+                        }
+                    }
+                    // Remove any month data beyond current range
+                    for (let i = currentMonthCount + 1; i <= 24; i++) {
+                        delete resource[`month${i}Days`];
+                    }
+                });
+                console.log('Internal resources cleaned');
+            }
+            
+            // Clean vendor costs
+            if (window.projectData && window.projectData.vendorCosts) {
+                window.projectData.vendorCosts.forEach(vendor => {
+                    // Ensure all current months exist
+                    for (let i = 1; i <= currentMonthCount; i++) {
+                        if (vendor[`month${i}Cost`] === undefined) {
+                            vendor[`month${i}Cost`] = 0;
+                        }
+                    }
+                    // Remove any month data beyond current range
+                    for (let i = currentMonthCount + 1; i <= 24; i++) {
+                        delete vendor[`month${i}Cost`];
+                    }
+                });
+                console.log('Vendor costs cleaned');
+            }
         }
+        
+        // Update summary immediately
+        updateSummary();
+        
+        // Re-render all tables with updated month structure
+        if (window.TableRenderer) {
+            // CRITICAL: Update headers FIRST before rendering any content
+            window.TableRenderer.updateTableHeaders();
+            console.log('Headers updated');
+            
+            // Clear forecast table completely before re-rendering
+            const forecastTbody = document.getElementById('forecastTable');
+            if (forecastTbody) {
+                forecastTbody.innerHTML = '';
+                console.log('Forecast table cleared');
+            }
+            
+            // Now render all tables
+            window.TableRenderer.renderAllTables();
+            console.log('All tables rendered');
+        }
+        
+        // Force table_fixes rendering (this may override forecast table headers)
+        if (window.renderTableHeadersCorrectly) {
+            window.renderTableHeadersCorrectly();
+            console.log('Table headers corrected via table_fixes');
+        }
+        
+        if (window.renderInternalResourcesTableFixed) {
+            window.renderInternalResourcesTableFixed();
+        }
+        
+        if (window.renderVendorCostsTableFixed) {
+            window.renderVendorCostsTableFixed();
+        }
+        
+        // Force a final forecast table re-render
+        setTimeout(() => {
+            updateSummary();
+            
+            // Clear and re-render forecast one more time
+            const forecastTbody = document.getElementById('forecastTable');
+            if (forecastTbody) {
+                forecastTbody.innerHTML = '';
+            }
+            
+            if (window.TableRenderer && window.TableRenderer.renderForecastTable) {
+                window.TableRenderer.renderForecastTable();
+                console.log('Forecast table re-rendered in timeout');
+            }
+        }, 50);
     }
 }
 
 function initializeSettingsNavigation() {
     const settingsNavButtons = document.querySelectorAll('.settings-nav-btn');
     const settingsTabContents = document.querySelectorAll('.settings-tab-content');
-    
+
     settingsNavButtons.forEach(button => {
         button.addEventListener('click', () => {
             const targetTab = button.getAttribute('data-settings-tab');
-            
+
             // Update active nav button
             settingsNavButtons.forEach(btn => btn.classList.remove('active'));
             button.classList.add('active');
-            
+
             // Update active tab content
             settingsTabContents.forEach(content => content.classList.remove('active'));
             const targetContent = document.getElementById(`settings-${targetTab}`);
             if (targetContent) {
                 targetContent.classList.add('active');
             }
-            
+
             console.log(`Switched to settings tab: ${targetTab}`);
         });
     });
-    
+
     console.log('Settings navigation initialized');
 }
 
 function initializeMobileMenu() {
     const hamburgerBtn = document.getElementById('hamburgerBtn');
     const mobileDropdown = document.getElementById('mobileDropdown');
-    
+
     if (hamburgerBtn && mobileDropdown) {
         hamburgerBtn.addEventListener('click', () => {
             const isVisible = mobileDropdown.style.display === 'block';
             mobileDropdown.style.display = isVisible ? 'none' : 'block';
             console.log('Mobile menu toggled');
         });
-        
+
         // Close mobile menu when clicking outside
         document.addEventListener('click', (e) => {
             if (!hamburgerBtn.contains(e.target) && !mobileDropdown.contains(e.target)) {
                 mobileDropdown.style.display = 'none';
             }
         });
-        
+
         console.log('Mobile menu initialized');
     }
 }
@@ -575,7 +711,10 @@ function exportToExcelFallback() {
 }
 
 function newProjectFallback() {
-    if (window.DataManager) {
+    // Show welcome popup instead of immediate confirmation
+    if (window.handleNewProjectWelcome) {
+        window.handleNewProjectWelcome();
+    } else if (window.DataManager) {
         window.DataManager.newProject();
     } else if (window.dataManager) {
         window.dataManager.newProject();
@@ -586,8 +725,6 @@ function newProjectFallback() {
                 projectInfo: { projectName: '', startDate: '', endDate: '', projectManager: '', projectDescription: '' },
                 internalResources: [], vendorCosts: [], toolCosts: [], miscCosts: [], risks: [],
                 rateCards: projectData.rateCards, // Keep default rate cards
-                internalRates: projectData.internalRates,
-                externalRates: projectData.externalRates,
                 contingencyPercentage: 10
             };
             updateSummary();
@@ -634,15 +771,15 @@ function loadDefaultDataBasic() {
 // Calculate months based on start date
 function calculateProjectMonths() {
     const startDate = projectData.projectInfo.startDate;
-    
+
     if (!startDate) {
         return ['Month 1', 'Month 2', 'Month 3', 'Month 4', 'Month 5', 'Month 6'];
     }
-    
+
     const start = new Date(startDate);
     const months = [];
     const current = new Date(start);
-    
+
     // Generate up to 12 months from start date
     for (let i = 0; i < 12; i++) {
         months.push(current.toLocaleDateString('en-US', { 
@@ -651,14 +788,14 @@ function calculateProjectMonths() {
         }));
         current.setMonth(current.getMonth() + 1);
     }
-    
+
     return months;
 }
 
 // Update all month headers
 function updateMonthHeaders() {
     const months = calculateProjectMonths();
-    
+
     // Update forecast table headers (6 months shown)
     for (let i = 1; i <= 6; i++) {
         const header = document.getElementById(`month${i}Header`);
@@ -666,7 +803,7 @@ function updateMonthHeaders() {
             header.textContent = months[i-1];
         }
     }
-    
+
     // Update internal resources headers (4 months shown)
     for (let i = 1; i <= 4; i++) {
         const header = document.getElementById(`month${i}DaysHeader`);
@@ -674,7 +811,7 @@ function updateMonthHeaders() {
             header.textContent = `${months[i-1]} Days`;
         }
     }
-    
+
     // Update vendor costs headers (4 months shown)
     for (let i = 1; i <= 4; i++) {
         const header = document.getElementById(`month${i}CostHeader`);
@@ -691,12 +828,12 @@ function openModal(title, type) {
         const modalTitle = document.getElementById('modalTitle');
         const modalFields = document.getElementById('modalFields');
         const modalForm = document.getElementById('modalForm');
-        
+
         if (!modal || !modalTitle || !modalFields || !modalForm) {
             console.error('Modal elements not found');
             return;
         }
-        
+
         modalTitle.textContent = title;
         modalFields.innerHTML = getModalFields(type);
         modal.style.display = 'block';
@@ -708,7 +845,7 @@ function openModal(title, type) {
 
 function getModalFields(type) {
     const months = calculateProjectMonths();
-    
+
     const fields = {
         internalResource: `
             <div class="form-group">
@@ -857,7 +994,7 @@ function getModalFields(type) {
             </div>
         `
     };
-    
+
     return fields[type] || '';
 }
 
@@ -867,19 +1004,18 @@ function handleModalSubmit() {
         const formData = new FormData(modalForm);
         const type = modalForm.getAttribute('data-type');
         const data = {};
-        
+
         for (let [key, value] of formData.entries()) {
             data[key] = value;
         }
-        
+
         console.log('Modal submit - Type:', type);
         console.log('Modal submit - Data:', data);
-        
+
         // Add item to appropriate array
         switch(type) {
             case 'internalResource':
-                const rate = projectData.rateCards.find(r => r.role === data.role) || 
-                            projectData.internalRates.find(r => r.role === data.role);
+                const rate = projectData.rateCards.find(r => r.role === data.role);
                 projectData.internalResources.push({
                     id: Date.now(),
                     role: data.role,
@@ -940,31 +1076,16 @@ function handleModalSubmit() {
                     category: data.category
                 };
                 projectData.rateCards.push(newRateCard);
-                
-                // Update both old arrays for backward compatibility
-                if (data.category === 'Internal') {
-                    projectData.internalRates.push({
-                        id: Date.now(),
-                        role: data.role,
-                        rate: parseFloat(data.rate)
-                    });
-                } else if (data.category === 'External') {
-                    projectData.externalRates.push({
-                        id: Date.now(),
-                        role: data.role,
-                        rate: parseFloat(data.rate)
-                    });
-                }
                 break;
         }
-        
+
         // Re-render tables
         if (window.TableRenderer) {
             window.TableRenderer.renderAllTables();
         } else if (window.tableRenderer) {
             window.tableRenderer.renderAllTables();
         }
-        
+
         updateSummary();
         document.getElementById('modal').style.display = 'none';
         console.log('Modal submit completed successfully');
@@ -976,32 +1097,21 @@ function handleModalSubmit() {
 // Delete Item Function
 function deleteItem(arrayName, id) {
     if (confirm('Are you sure you want to delete this item?')) {
-        if (arrayName === 'rateCards' || arrayName === 'internalRates' || arrayName === 'externalRates') {
+        if (arrayName === 'rateCards') {
             projectData.rateCards = projectData.rateCards.filter(item => 
                 (item.id && item.id !== id) || (item.role !== id)
             );
-            // Also remove from old arrays for backward compatibility
-            if (projectData.internalRates) {
-                projectData.internalRates = projectData.internalRates.filter(item => 
-                    (item.id && item.id !== id) || (item.role !== id)
-                );
-            }
-            if (projectData.externalRates) {
-                projectData.externalRates = projectData.externalRates.filter(item => 
-                    (item.id && item.id !== id) || (item.role !== id)
-                );
-            }
         } else {
             projectData[arrayName] = projectData[arrayName].filter(item => item.id !== id);
         }
-        
+
         // Re-render tables
         if (window.TableRenderer) {
             window.TableRenderer.renderAllTables();
         } else if (window.tableRenderer) {
             window.tableRenderer.renderAllTables();
         }
-        
+
         updateSummary();
     }
 }
@@ -1014,24 +1124,24 @@ function updateSummary() {
         const vendorTotal = calculateVendorCostsTotal();
         const toolTotal = calculateToolCostsTotal();
         const miscTotal = calculateMiscCostsTotal();
-        
+
         const subtotal = internalTotal + vendorTotal + toolTotal + miscTotal;
         const contingency = subtotal * (projectData.contingencyPercentage / 100);
         const total = subtotal + contingency;
-        
+
         // Update resource plan cards
         const totalProjectCostEl = document.getElementById('totalProjectCost');
         const totalInternalCostEl = document.getElementById('totalInternalCost');
         const totalExternalCostEl = document.getElementById('totalExternalCost');
-        
+
         if (totalProjectCostEl) totalProjectCostEl.textContent = `${total.toLocaleString()}`;
         if (totalInternalCostEl) totalInternalCostEl.textContent = `${internalTotal.toLocaleString()}`;
         if (totalExternalCostEl) totalExternalCostEl.textContent = `${(vendorTotal + toolTotal + miscTotal).toLocaleString()}`;
-        
+
         // Update contingency display
         const contingencyAmountEl = document.getElementById('contingencyAmount');
         if (contingencyAmountEl) contingencyAmountEl.textContent = contingency.toLocaleString();
-        
+
         // Update summary tab
         const summaryElements = {
             summaryInternalCost: internalTotal,
@@ -1042,14 +1152,14 @@ function updateSummary() {
             summaryContingency: contingency,
             summaryTotal: total
         };
-        
+
         Object.keys(summaryElements).forEach(id => {
             const element = document.getElementById(id);
             if (element) {
                 element.textContent = `${summaryElements[id].toLocaleString()}`;
             }
         });
-        
+
         // Update project info in summary
         updateSummaryProjectInfo();
     } catch (error) {
@@ -1059,24 +1169,22 @@ function updateSummary() {
 
 function calculateInternalResourcesTotal() {
     return projectData.internalResources.reduce((total, resource) => {
-        // Handle both old format (q1Days) and new format (month1Days)
-        const month1Days = resource.month1Days || resource.q1Days || 0;
-        const month2Days = resource.month2Days || resource.q2Days || 0;
-        const month3Days = resource.month3Days || resource.q3Days || 0;
-        const month4Days = resource.month4Days || resource.q4Days || 0;
-        
+        const month1Days = resource.month1Days || 0;
+        const month2Days = resource.month2Days || 0;
+        const month3Days = resource.month3Days || 0;
+        const month4Days = resource.month4Days || 0;
+
         return total + ((month1Days + month2Days + month3Days + month4Days) * resource.dailyRate);
     }, 0);
 }
 
 function calculateVendorCostsTotal() {
     return projectData.vendorCosts.reduce((total, vendor) => {
-        // Handle both old format (q1Cost) and new format (month1Cost)
-        const month1Cost = vendor.month1Cost || vendor.q1Cost || 0;
-        const month2Cost = vendor.month2Cost || vendor.q2Cost || 0;
-        const month3Cost = vendor.month3Cost || vendor.q3Cost || 0;
-        const month4Cost = vendor.month4Cost || vendor.q4Cost || 0;
-        
+        const month1Cost = vendor.month1Cost || 0;
+        const month2Cost = vendor.month2Cost || 0;
+        const month3Cost = vendor.month3Cost || 0;
+        const month4Cost = vendor.month4Cost || 0;
+
         return total + (month1Cost + month2Cost + month3Cost + month4Cost);
     }, 0);
 }
@@ -1104,14 +1212,14 @@ function updateSummaryProjectInfo() {
             summaryProjectManager: projectData.projectInfo.projectManager || 'Not specified',
             summaryProjectDescription: projectData.projectInfo.projectDescription || 'Not specified'
         };
-        
+
         Object.keys(projectInfoElements).forEach(id => {
             const element = document.getElementById(id);
             if (element) {
                 element.textContent = projectInfoElements[id];
             }
         });
-        
+
         // Calculate project duration if both dates are provided
         const summaryDurationEl = document.getElementById('summaryProjectDuration');
         if (summaryDurationEl && projectData.projectInfo.startDate && projectData.projectInfo.endDate) {
@@ -1124,7 +1232,7 @@ function updateSummaryProjectInfo() {
         } else if (summaryDurationEl) {
             summaryDurationEl.textContent = 'Not specified';
         }
-        
+
         // Update resource counts
         const resourceCountsElements = {
             summaryInternalResourceCount: projectData.internalResources.length,
@@ -1132,17 +1240,79 @@ function updateSummaryProjectInfo() {
             summaryToolCount: projectData.toolCosts.length,
             summaryRiskCount: projectData.risks.length
         };
-        
+
         Object.keys(resourceCountsElements).forEach(id => {
             const element = document.getElementById(id);
             if (element) {
                 element.textContent = resourceCountsElements[id];
             }
         });
-        
+
     } catch (error) {
         console.error('Error in updateSummaryProjectInfo:', error);
     }
+}
+
+function validateProjectInfoAndClose() {
+    const startDate = document.getElementById('startDate');
+    const endDate = document.getElementById('endDate');
+
+    let isValid = true;
+    let errorMessage = '';
+
+    // Reset border colors
+    if (startDate) startDate.style.borderColor = '';
+    if (endDate) endDate.style.borderColor = '';
+
+    // Validate start date
+    if (!startDate.value) {
+        isValid = false;
+        errorMessage += '• Start Date is required\n';
+        startDate.style.borderColor = 'red';
+    }
+
+    // Validate end date
+    if (!endDate.value) {
+        isValid = false;
+        errorMessage += '• End Date is required\n';
+        endDate.style.borderColor = 'red';
+    }
+
+    // Validate that end date is after start date
+    if (startDate.value && endDate.value) {
+        const start = new Date(startDate.value);
+        const end = new Date(endDate.value);
+
+        if (end <= start) {
+            isValid = false;
+            errorMessage += '• End Date must be after Start Date\n';
+            endDate.style.borderColor = 'red';
+        }
+    }
+
+    if (!isValid) {
+        alert('Please fix the following errors before closing settings:\n\n' + errorMessage);
+        return false;
+    }
+
+    // FIXED: Ensure project data is saved before switching views
+    // Save the current values to projectData
+    if (window.projectData && window.projectData.projectInfo) {
+        window.projectData.projectInfo.startDate = startDate.value;
+        window.projectData.projectInfo.endDate = endDate.value;
+        window.projectData.projectInfo.projectName = document.getElementById('projectName')?.value || '';
+        window.projectData.projectInfo.projectManager = document.getElementById('projectManager')?.value || '';
+        window.projectData.projectInfo.projectDescription = document.getElementById('projectDescription')?.value || '';
+    }
+    
+    // Save to localStorage
+    if (window.DataManager && window.DataManager.saveToLocalStorage) {
+        window.DataManager.saveToLocalStorage();
+    }
+
+    // Now show main view with all updates
+    showMainView();
+    return true;
 }
 
 // Expose necessary functions globally
@@ -1152,12 +1322,11 @@ window.deleteItem = deleteItem;
 window.updateSummary = updateSummary;
 window.updateMonthHeaders = updateMonthHeaders;
 window.calculateProjectMonths = calculateProjectMonths;
+window.initializeBasicFunctionality = initializeBasicFunctionality;
+window.initializeProjectInfoSaveButton = initializeProjectInfoSaveButton;
 
 // Calculation functions for modules
 window.calculateInternalResourcesTotal = calculateInternalResourcesTotal;
 window.calculateVendorCostsTotal = calculateVendorCostsTotal;
 window.calculateToolCostsTotal = calculateToolCostsTotal;
-window.calculateMiscCostsTotal = calculateMiscCostsTotal;
-
-// Make projectData available globally for modules
-window.projectData = projectData;
+window.calculateMiscCostsTotal = calculateMiscCostsTotal

@@ -115,8 +115,11 @@ class DynamicFormHelper {
             // Migrate existing data to new month structure
             this.migrateDataToNewFormat();
             
-            // Re-render all tables with new month structure
-            if (window.tableRenderer) {
+            // Re-render all tables with new month structure ONLY if we're in main view
+            const settingsApp = document.getElementById('settingsApp');
+            const isInSettingsView = settingsApp && settingsApp.style.display !== 'none';
+            
+            if (window.tableRenderer && !isInSettingsView) {
                 window.tableRenderer.renderAllTables();
             }
             
