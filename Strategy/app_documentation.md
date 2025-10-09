@@ -175,11 +175,10 @@ class InitializationManager {
 ```
 cost_estimation/
 ├── index.html                          # Main HTML file
+├── script.js                           # Core application logic & functions
 ├── style.css                           # Main stylesheet
 ├── README.md                           # This file
 ├── js/
-│   ├── init_manager.js                # ⭐ INITIALIZATION MANAGER (load LAST)
-│   ├── script.js                      # Core application logic & functions
 │   ├── dom_manager.js                 # DOM manipulation utilities
 │   ├── table_renderer.js              # Table rendering logic
 │   └── data_manager.js                # Data persistence & loading
@@ -187,6 +186,7 @@ cost_estimation/
 │   ├── editManager.js                 # Inline editing functionality
 │   ├── dynamic_form_helper.js         # Dynamic form generation
 │   ├── table_fixes.js                 # Table styling fixes
+│   ├── init_manager.js                # ⭐ INITIALIZATION MANAGER (load LAST)
 │   └── new_project_welcome.js         # New project popup
 └── Styles/
     └── edit-styles.css                # Edit-specific styles
