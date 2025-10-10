@@ -11,7 +11,7 @@ class InitializationManager {
             dynamicFormHelper: false,
             domManager: false,
             tableFixes: false,
-            newProjectWelcome: false
+            newProjectWelcome: false,
             currencyManager: false
         };
     }
