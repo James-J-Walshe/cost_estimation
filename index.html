@@ -369,6 +369,12 @@
                         </svg>
                         Rate Cards
                     </button>
+                    <button class="settings-nav-btn" data-settings-tab="currency">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+                        </svg>
+                        Currency
+                    </button>
                 </nav>
                 
                 <div class="settings-content">
@@ -476,6 +482,105 @@
                                     </table>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Currency Settings -->
+                    <div id="settings-currency" class="settings-tab-content">
+                        <h2>Currency Settings</h2>
+                        
+                        <!-- Success/Error Message Container -->
+                        <div id="currencyMessage" class="project-info-message" style="display: none;"></div>
+                        
+                        <!-- Primary Currency Section -->
+                        <div class="currency-section">
+                            <h3>Primary Currency</h3>
+                            <p class="section-description">Select the currency that your project will be costed in. All costs will be displayed in this currency.</p>
+                            
+                            <div class="form-group" style="max-width: 400px;">
+                                <label for="primaryCurrencySelect">Project Currency:</label>
+                                <select id="primaryCurrencySelect" class="form-control">
+                                    <!-- Top 10 most common currencies -->
+                                    <optgroup label="Common Currencies">
+                                        <option value="USD">🇺🇸 USD - US Dollar</option>
+                                        <option value="EUR">🇪🇺 EUR - Euro</option>
+                                        <option value="GBP">🇬🇧 GBP - British Pound</option>
+                                        <option value="JPY">🇯🇵 JPY - Japanese Yen</option>
+                                        <option value="CNY">🇨🇳 CNY - Chinese Yuan</option>
+                                        <option value="AUD">🇦🇺 AUD - Australian Dollar</option>
+                                        <option value="CAD">🇨🇦 CAD - Canadian Dollar</option>
+                                        <option value="CHF">🇨🇭 CHF - Swiss Franc</option>
+                                        <option value="INR">🇮🇳 INR - Indian Rupee</option>
+                                        <option value="SGD">🇸🇬 SGD - Singapore Dollar</option>
+                                    </optgroup>
+                                    <!-- Other currencies -->
+                                    <optgroup label="Other Currencies">
+                                        <option value="AED">🇦🇪 AED - UAE Dirham</option>
+                                        <option value="ARS">🇦🇷 ARS - Argentine Peso</option>
+                                        <option value="BRL">🇧🇷 BRL - Brazilian Real</option>
+                                        <option value="CZK">🇨🇿 CZK - Czech Koruna</option>
+                                        <option value="DKK">🇩🇰 DKK - Danish Krone</option>
+                                        <option value="HKD">🇭🇰 HKD - Hong Kong Dollar</option>
+                                        <option value="HUF">🇭🇺 HUF - Hungarian Forint</option>
+                                        <option value="IDR">🇮🇩 IDR - Indonesian Rupiah</option>
+                                        <option value="ILS">🇮🇱 ILS - Israeli Shekel</option>
+                                        <option value="KRW">🇰🇷 KRW - South Korean Won</option>
+                                        <option value="MXN">🇲🇽 MXN - Mexican Peso</option>
+                                        <option value="MYR">🇲🇾 MYR - Malaysian Ringgit</option>
+                                        <option value="NOK">🇳🇴 NOK - Norwegian Krone</option>
+                                        <option value="NZD">🇳🇿 NZD - New Zealand Dollar</option>
+                                        <option value="PHP">🇵🇭 PHP - Philippine Peso</option>
+                                        <option value="PLN">🇵🇱 PLN - Polish Zloty</option>
+                                        <option value="RON">🇷🇴 RON - Romanian Leu</option>
+                                        <option value="SEK">🇸🇪 SEK - Swedish Krona</option>
+                                        <option value="THB">🇹🇭 THB - Thai Baht</option>
+                                        <option value="TRY">🇹🇷 TRY - Turkish Lira</option>
+                                        <option value="TWD">🇹🇼 TWD - Taiwan Dollar</option>
+                                        <option value="ZAR">🇿🇦 ZAR - South African Rand</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            
+                            <div class="currency-preview">
+                                <strong>Current Currency:</strong> 
+                                <span id="currentCurrencyDisplay" class="currency-badge-large">USD - US Dollar</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Exchange Rates Section -->
+                        <div class="currency-section" style="margin-top: 2rem;">
+                            <h3>Exchange Rates</h3>
+                            <p class="section-description">Add currencies that you want to convert to your primary currency. This allows you to add items in different currencies.</p>
+                            
+                            <div class="section-actions">
+                                <button id="addExchangeRate" class="btn btn-primary">Add Currency Exchange</button>
+                            </div>
+                            
+                            <div class="table-container">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Currency</th>
+                                            <th>Exchange Rate</th>
+                                            <th>Last Updated</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="exchangeRatesTable">
+                                        <!-- Populated by JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="empty-state" id="exchangeRatesEmptyState" style="display: none;">
+                                <h3>No Exchange Rates Added</h3>
+                                <p>Click "Add Currency Exchange" to add currencies that you need to convert.</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Save Button -->
+                        <div class="settings-actions">
+                            <button id="saveCurrencySettingsBtn" class="btn btn-primary">Save Currency Settings</button>
                         </div>
                     </div>
                 </div>
