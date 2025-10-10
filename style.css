@@ -986,3 +986,64 @@ small {
 .project-info-message.fade-out {
     animation: fadeOut 0.3s ease forwards;
 }
+
+/* Currency Settings Styles */
+.currency-section {
+    background-color: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.currency-section h3 {
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.section-description {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+.currency-preview {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+}
+
+.currency-badge-large {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 6px;
+    font-weight: 600;
+    margin-left: 0.5rem;
+}
+
+/* Exchange Rate Specific Styles */
+.exchange-rate-row {
+    transition: background-color 0.2s ease;
+}
+
+.exchange-rate-row:hover {
+    background-color: #f9fafb;
+}
+
+.rate-input {
+    max-width: 150px;
+}
+
+.currency-code {
+    font-weight: 600;
+    color: #4f46e5;
+}
+
+.last-updated {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
