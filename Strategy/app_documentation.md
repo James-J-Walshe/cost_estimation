@@ -21,6 +21,7 @@ A web-based ICT project estimation tool for calculating and managing project cos
 - Dynamic month-based timeline calculations
 - Vendor, tool, and miscellaneous cost tracking
 - Risk assessment and contingency planning
+- **Currency management with exchange rates** ⭐ NEW
 - Data persistence via localStorage
 - Export capabilities
 
@@ -72,7 +73,7 @@ window.initManager.initialize();
 
 ## Initialization Manager Pattern
 
-### File: `js/init_manager.js`
+### File: `modules/init_manager.js`
 
 **Purpose:** Orchestrates the entire application startup sequence.
 
@@ -81,9 +82,10 @@ window.initManager.initialize();
 1. **Data Structure Initialization**
    - Creates `window.projectData` if it doesn't exist
    - Sets up default rate cards and project structure
+   - Initializes currency settings with default primary currency
 
 2. **Module Detection**
-   - Checks for available modules (DataManager, TableRenderer, etc.)
+   - Checks for available modules (DataManager, TableRenderer, CurrencyManager, etc.)
    - Logs which modules are loaded
    - Handles both capitalized and lowercase module naming
 
@@ -103,7 +105,8 @@ window.initManager.initialize();
    Step 8: Render all tables
    Step 9: Update UI (summary and month headers)
    Step 10: Initialize New Project Welcome feature
-   Step 11: Final re-render after 100ms delay
+   Step 11: Initialize Currency Manager ⭐ NEW
+   Step 12: Final re-render after 100ms delay
    ```
 
 5. **Comprehensive Logging**
@@ -124,7 +127,8 @@ class InitializationManager {
             dynamicFormHelper: false,
             domManager: false,
             tableFixes: false,
-            newProjectWelcome: false
+            newProjectWelcome: false,
+            currencyManager: false  // ⭐ NEW
         };
     }
 
@@ -149,12 +153,13 @@ class InitializationManager {
 <script src="modules/dynamic_form_helper.js"></script>
 <script src="modules/table_fixes.js"></script>
 <script src="modules/new_project_welcome.js"></script>
+<script src="modules/currency_manager.js"></script> <!-- ⭐ NEW -->
 
 <!-- Load main script (contains functions but NO auto-init) -->
 <script src="script.js"></script>
 
 <!-- Load initialization manager LAST -->
-<script src="js/init_manager.js"></script>
+<script src="modules/init_manager.js"></script>
 
 <!-- Trigger initialization -->
 <script>
@@ -175,11 +180,10 @@ class InitializationManager {
 ```
 cost_estimation/
 ├── index.html                          # Main HTML file
+├── script.js                           # Core application logic & functions
 ├── style.css                           # Main stylesheet
 ├── README.md                           # This file
 ├── js/
-│   ├── init_manager.js                # ⭐ INITIALIZATION MANAGER (load LAST)
-│   ├── script.js                      # Core application logic & functions
 │   ├── dom_manager.js                 # DOM manipulation utilities
 │   ├── table_renderer.js              # Table rendering logic
 │   └── data_manager.js                # Data persistence & loading
@@ -187,14 +191,16 @@ cost_estimation/
 │   ├── editManager.js                 # Inline editing functionality
 │   ├── dynamic_form_helper.js         # Dynamic form generation
 │   ├── table_fixes.js                 # Table styling fixes
-│   └── new_project_welcome.js         # New project popup
+│   ├── init_manager.js                # ⭐ INITIALIZATION MANAGER (load LAST)
+│   ├── new_project_welcome.js         # New project popup
+│   └── currency_manager.js            # ⭐ Currency & exchange rate management (NEW)
 └── Styles/
     └── edit-styles.css                # Edit-specific styles
 ```
 
 ### File Responsibilities
 
-#### `js/init_manager.js` ⭐ **START HERE**
+#### `modules/init_manager.js` ⭐ **START HERE**
 - **What:** Central initialization orchestrator
 - **When to modify:** Adding new modules, changing startup sequence
 - **Key principle:** This is the ONLY file that should run initialization logic
@@ -214,6 +220,16 @@ cost_estimation/
   - `window.initializeBasicFunctionality` ⭐ **CRITICAL**
   - `window.initializeProjectInfoSaveButton`
   - All calculation functions
+
+#### `modules/currency_manager.js` ⭐ **NEW MODULE**
+- **What:** Manages currency selection and exchange rates
+- **Key features:**
+  - Primary currency selection from 33 global currencies
+  - Exchange rate management (add, edit, delete)
+  - Currency conversion utilities
+  - Currency symbol mapping
+- **Global export:** `window.currencyManager`
+- **Must have:** `initialize()` method called by init_manager
 
 #### Module Files (`js/*.js` and `modules/*.js`)
 - **What:** Specific functionality modules
@@ -260,11 +276,12 @@ cost_estimation/
    <script src="modules/my_new_module.js"></script>
    ```
 
-3. **Register in init_manager.js**
+3. **Register in init_manager.js** ⚠️ **CRITICAL: Don't forget the comma!**
    ```javascript
    this.modules = {
        // ... existing modules
-       myNewModule: false  // Add your module
+       newProjectWelcome: false,  // ← MUST have comma here
+       myNewModule: false         // ← Add your module (no comma if last)
    };
 
    // In checkModules()
@@ -402,6 +419,32 @@ window.projectData.projectInfo.projectName = 'New Project';
 projectData.projectInfo.projectName = 'New Project';
 ```
 
+### Pattern 5: Currency Data Structure ⭐ NEW
+
+```javascript
+// Currency settings are stored in window.projectData.currency
+window.projectData = {
+    projectInfo: { /* ... */ },
+    currency: {
+        primaryCurrency: 'USD',  // ISO 4217 currency code
+        exchangeRates: [
+            {
+                id: 1234567890,
+                currency: 'EUR',
+                rate: 0.85,           // 1 USD = 0.85 EUR
+                lastUpdated: '2024-10-10T12:00:00Z'
+            }
+        ]
+    },
+    internalResources: [],
+    // ... other data
+};
+
+// Using currency utilities
+const symbol = window.currencyManager.getCurrencySymbol('USD');  // Returns '$'
+const converted = window.currencyManager.convertCurrency(100, 'USD', 'EUR');  // Returns 85
+```
+
 ---
 
 ## Troubleshooting
@@ -424,6 +467,19 @@ window.updateSummary = updateSummary;
 2. Exported to window: `window.initializeBasicFunctionality = initializeBasicFunctionality;`
 3. Called by init_manager.js in the `initializeDOMManager()` method
 
+### Problem: "Uncaught SyntaxError: Unexpected identifier 'currencyManager'" ⭐ NEW
+
+**Cause:** Missing comma before the new module in the modules object
+
+**Fix:** In init_manager.js, ensure there's a comma after the previous module:
+```javascript
+this.modules = {
+    // ... other modules
+    newProjectWelcome: false,  // ← MUST have comma here
+    currencyManager: false     // ← Last item, no comma
+};
+```
+
 ### Problem: "Uncaught SyntaxError: Unexpected end of input"
 
 **Cause:** Missing closing brace `}` somewhere in the file
@@ -439,7 +495,8 @@ window.updateSummary = updateSummary;
 1. ✅ Script tag in index.html? (before init_manager.js)
 2. ✅ Module exports to window? (`window.myModule = ...`)
 3. ✅ Module registered in init_manager.js modules list?
-4. ✅ Check browser console for loading errors
+4. ✅ **Comma added after previous module?** ⚠️ Common mistake!
+5. ✅ Check browser console for loading errors
 
 ### Problem: Functions not found / undefined errors
 
@@ -449,6 +506,16 @@ window.updateSummary = updateSummary;
 1. Export function: `window.myFunction = myFunction;`
 2. Ensure init_manager has completed before calling
 3. Check function is defined before the export line
+
+### Problem: Currency settings not saving ⭐ NEW
+
+**Cause:** Currency data structure not initialized or localStorage not working
+
+**Fix:**
+1. Check browser console for errors
+2. Verify `window.projectData.currency` exists
+3. Try clearing localStorage: `localStorage.clear()`
+4. Check if DataManager is properly saving
 
 ---
 
@@ -464,6 +531,7 @@ window.updateSummary = updateSummary;
 - **Use consistent naming** - Either MyModule or myModule, but be consistent
 - **Comment your code** - Especially initialization and integration points
 - **Test in isolation** - Each module should work independently when possible
+- **Add commas in object literals** - Remember the comma before adding new properties ⚠️
 
 ### DON'T ❌
 
@@ -475,6 +543,7 @@ window.updateSummary = updateSummary;
 - **Don't mix global and local scope** - Always be explicit with window.
 - **Don't duplicate functions** - Check for existing implementations first
 - **Don't skip error handling** - Wrap critical code in try-catch blocks
+- **Don't forget commas in modules object** - This causes syntax errors! ⚠️
 
 ---
 
@@ -483,7 +552,7 @@ window.updateSummary = updateSummary;
 ```
 Browser Loads Page
       ↓
-All module scripts load (dom_manager, table_renderer, etc.)
+All module scripts load (dom_manager, table_renderer, currency_manager, etc.)
       ↓
 script.js loads (defines functions, NO execution)
       ↓
@@ -493,7 +562,7 @@ DOMContentLoaded fires
       ↓
 init_manager.initialize() called
       ↓
-1. Initialize projectData
+1. Initialize projectData (including currency structure)
       ↓
 2. Check which modules are available
       ↓
@@ -517,7 +586,13 @@ init_manager.initialize() called
       ↓
 10. Initialize New Project Welcome
       ↓
-11. Final re-render after 100ms
+11. Initialize Currency Manager ⭐ NEW
+   - Load currency settings
+   - Setup event listeners
+   - Render exchange rates table
+   - Update currency display
+      ↓
+12. Final re-render after 100ms
       ↓
 ✅ Application Ready
 ```
@@ -536,6 +611,7 @@ When creating a new module, ensure:
 - [ ] Console log on load: `console.log('Module Name loaded')`
 - [ ] Added to index.html (before init_manager.js)
 - [ ] Registered in init_manager.js modules object
+- [ ] **Comma added after previous module in modules object** ⚠️ Critical!
 - [ ] Initialization code added to init_manager.initialize() if needed
 - [ ] Public methods documented
 - [ ] Dependencies checked before use
@@ -544,9 +620,93 @@ When creating a new module, ensure:
 
 ---
 
+## Currency Feature Documentation ⭐ NEW
+
+### Overview
+The Currency Manager module provides comprehensive currency management including:
+- Primary currency selection from 33 global currencies
+- Exchange rate management (manual entry)
+- Currency conversion utilities
+- Persistent storage of settings
+
+### Using the Currency Manager
+
+#### Setting Primary Currency
+```javascript
+// Access current primary currency
+const primaryCurrency = window.projectData.currency.primaryCurrency;  // 'USD'
+
+// Change primary currency (through UI or programmatically)
+window.projectData.currency.primaryCurrency = 'EUR';
+window.currencyManager.updateCurrencyDisplay();
+```
+
+#### Managing Exchange Rates
+```javascript
+// Add an exchange rate
+window.currencyManager.addExchangeRate('EUR', 0.85);
+
+// Delete an exchange rate
+window.currencyManager.deleteExchangeRate(rateId);
+
+// Get all exchange rates
+const rates = window.projectData.currency.exchangeRates;
+```
+
+#### Converting Currency
+```javascript
+// Convert 100 USD to EUR
+const converted = window.currencyManager.convertCurrency(100, 'USD', 'EUR');
+
+// Get currency symbol
+const symbol = window.currencyManager.getCurrencySymbol('USD');  // '$'
+const name = window.currencyManager.getCurrencyName('USD');      // 'US Dollar'
+```
+
+### Supported Currencies
+**Top 10 (Priority Display):**
+USD, EUR, GBP, JPY, CNY, AUD, CAD, CHF, INR, SGD
+
+**Additional 23 Currencies:**
+AED, ARS, BRL, CZK, DKK, HKD, HUF, IDR, ILS, KRW, MXN, MYR, NOK, NZD, PHP, PLN, RON, RUB, SEK, THB, TRY, TWD, ZAR
+
+### Data Structure
+```javascript
+{
+  currency: {
+    primaryCurrency: 'USD',           // ISO 4217 code
+    exchangeRates: [
+      {
+        id: 1234567890,              // Timestamp ID
+        currency: 'EUR',              // Target currency
+        rate: 0.85,                   // 1 primary = rate target
+        lastUpdated: '2024-10-10'     // ISO date string
+      }
+    ]
+  }
+}
+```
+
+### Future Enhancements
+- Automatic exchange rate fetching from API
+- Multi-currency cost entry in modals
+- Currency conversion history
+- Real-time rate updates
+- Bulk exchange rate imports
+
+---
+
 ## Version History
 
-### v2.0 - Init Manager Pattern (Current)
+### v2.1 - Currency Management (Current) ⭐ NEW
+- ✅ Added Currency Manager module
+- ✅ Primary currency selection (33 global currencies)
+- ✅ Exchange rate management
+- ✅ Currency conversion utilities
+- ✅ Settings page currency tab
+- ✅ Updated initialization sequence (Step 11)
+
+### v2.0 - Init Manager Pattern
 - ✅ Centralized initialization with init_manager.js
 - ✅ Removed DOMContentLoaded from script.js
 - ✅ Proper module dependency management
@@ -568,6 +728,7 @@ When asking for help or suggesting improvements:
 3. **Reference this README** so context is clear
 4. **Describe which module you're working on**
 5. **Note any deviations from these patterns**
+6. **For currency issues, include the currency data structure**
 
 This ensures efficient problem-solving and maintains architectural consistency.
 
@@ -575,4 +736,5 @@ This ensures efficient problem-solving and maintains architectural consistency.
 
 **Last Updated:** October 2025  
 **Maintained By:** Project Development Team  
-**Architecture Pattern:** Centralized Initialization Manager
+**Architecture Pattern:** Centralized Initialization Manager  
+**Latest Feature:** Currency Management v2.1
