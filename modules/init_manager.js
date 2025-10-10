@@ -12,6 +12,7 @@ class InitializationManager {
             domManager: false,
             tableFixes: false,
             newProjectWelcome: false
+            currencyManager: false
         };
     }
 
@@ -25,6 +26,10 @@ class InitializationManager {
                     endDate: '',
                     projectManager: '',
                     projectDescription: ''
+                },
+                currency: {
+                    primaryCurrency: 'USD',
+                    exchangeRates: []
                 },
                 internalResources: [],
                 vendorCosts: [],
@@ -75,6 +80,10 @@ class InitializationManager {
             .filter(([_, status]) => status)
             .map(([name, _]) => name);
 
+         // Check for Currency Manager
+         this.modules.currencyManager = !!(window.currencyManager || window.CurrencyManager);
+
+        
         console.log('✓ Modules loaded:', loaded.join(', '));
         
         return this.modules;
@@ -196,7 +205,15 @@ class InitializationManager {
                 console.log('✓ New Project Welcome initialized');
             }
 
-            // Step 10: Re-render after short delay for loaded data
+            // Step 10: Initialize Currency Manager
+            if (this.modules.currencyManager && typeof window.currencyManager.initialize === 'function') {
+                window.currencyManager.initialize();
+                console.log('✓ Step 11: Currency Manager initialized');
+            } else {
+                console.log('⚠ Step 11: Currency Manager not available');
+            }
+            
+            // Step 11: Re-render after short delay for loaded data
             setTimeout(() => {
                 if (this.modules.tableRenderer) {
                     if (window.TableRenderer && typeof window.TableRenderer.renderAllTables === 'function') {
