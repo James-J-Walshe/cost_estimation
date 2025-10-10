@@ -7,6 +7,10 @@ let projectData = {
         projectManager: '',
         projectDescription: ''
     },
+    currency: {
+        primaryCurrency: 'USD',
+        exchangeRates: []  // Array of {currency, rate, lastUpdated}
+    },
     internalResources: [],
     vendorCosts: [],
     toolCosts: [],
