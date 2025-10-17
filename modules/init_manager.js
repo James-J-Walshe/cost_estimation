@@ -12,7 +12,9 @@ class InitializationManager {
             domManager: false,
             tableFixes: false,
             newProjectWelcome: false,
-            currencyManager: false
+            currencyManager: false,
+            userManager: false,        // ADDED: User Manager module
+            featureToggleManager: false // ADDED: Feature Toggle Manager module
         };
     }
 
@@ -76,13 +78,18 @@ class InitializationManager {
         // Check for new project welcome
         this.modules.newProjectWelcome = !!(window.newProjectWelcome);
 
+        // Check for Currency Manager
+        this.modules.currencyManager = !!(window.currencyManager || window.CurrencyManager);
+
+        // ADDED: Check for User Manager
+        this.modules.userManager = !!(window.userManager || window.UserManager);
+
+        // ADDED: Check for Feature Toggle Manager  
+        this.modules.featureToggleManager = !!(window.featureToggleManager || window.FeatureToggleManager);
+
         const loaded = Object.entries(this.modules)
             .filter(([_, status]) => status)
             .map(([name, _]) => name);
-
-         // Check for Currency Manager
-         this.modules.currencyManager = !!(window.currencyManager || window.CurrencyManager);
-
         
         console.log('✓ Modules loaded:', loaded.join(', '));
         
@@ -205,15 +212,31 @@ class InitializationManager {
                 console.log('✓ New Project Welcome initialized');
             }
 
-            // Step 10: Initialize Currency Manager
+            // ADDED: Step 10: Initialize User Manager
+            if (this.modules.userManager && typeof window.userManager.initialize === 'function') {
+                window.userManager.initialize();
+                console.log('✓ Step 10: User Manager initialized');
+            } else {
+                console.log('⚠ Step 10: User Manager not available');
+            }
+
+            // ADDED: Step 11: Initialize Feature Toggle Manager
+            if (this.modules.featureToggleManager && typeof window.featureToggleManager.initialize === 'function') {
+                window.featureToggleManager.initialize();
+                console.log('✓ Step 11: Feature Toggle Manager initialized');
+            } else {
+                console.log('⚠ Step 11: Feature Toggle Manager not available');
+            }
+
+            // UPDATED: Step 12: Initialize Currency Manager (renumbered from Step 11)
             if (this.modules.currencyManager && typeof window.currencyManager.initialize === 'function') {
                 window.currencyManager.initialize();
-                console.log('✓ Step 11: Currency Manager initialized');
+                console.log('✓ Step 12: Currency Manager initialized');
             } else {
-                console.log('⚠ Step 11: Currency Manager not available');
+                console.log('⚠ Step 12: Currency Manager not available');
             }
             
-            // Step 11: Re-render after short delay for loaded data
+            // Step 13: Re-render after short delay for loaded data
             setTimeout(() => {
                 if (this.modules.tableRenderer) {
                     if (window.TableRenderer && typeof window.TableRenderer.renderAllTables === 'function') {
