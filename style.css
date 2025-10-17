@@ -1047,3 +1047,37 @@ small {
     color: #6b7280;
     font-size: 0.875rem;
 }
+
+/* Feature Toggle Admin Styles */
+.feature-toggles-view {
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+.user-display {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Role badges */
+.role-badge {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Feature toggle cards hover effect */
+.toggle-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.toggle-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
