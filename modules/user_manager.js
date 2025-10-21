@@ -267,7 +267,6 @@ class UserManager {
     isAuthenticated() {
         return this.currentUser !== null;
     }
-}
 
 showUserProfile() {
     // Show user profile view from dropdown
