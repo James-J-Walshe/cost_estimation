@@ -268,49 +268,51 @@ class UserManager {
         return this.currentUser !== null;
     }
 
-showUserProfile() {
-    // Show user profile view from dropdown
-    const mainApp = document.getElementById('mainApp');
-    const userApp = document.getElementById('userApp');
-    
-    if (mainApp && userApp) {
-        mainApp.style.display = 'none';
-        userApp.style.display = 'block';
+    showUserProfile() {
+        // Show user profile view from dropdown
+        const mainApp = document.getElementById('mainApp');
+        const userApp = document.getElementById('userApp');
         
-        // Load current user data
-        this.loadUserProfileData();
+        if (mainApp && userApp) {
+            mainApp.style.display = 'none';
+            userApp.style.display = 'block';
+            
+            // Load current user data
+            this.loadUserProfileData();
+        }
     }
-}
 
-loadUserProfileData() {
-    if (this.currentUser) {
-        const userNameField = document.getElementById('userName');
-        const userEmailField = document.getElementById('userEmail');
-        const userRoleField = document.getElementById('userRole');
+    loadUserProfileData() {
+        if (this.currentUser) {
+            const userNameField = document.getElementById('userName');
+            const userEmailField = document.getElementById('userEmail');
+            const userRoleField = document.getElementById('userRole');
+            
+            if (userNameField) userNameField.value = this.currentUser.username;
+            if (userEmailField) userEmailField.value = this.currentUser.email || '';
+            if (userRoleField) userRoleField.value = this.currentUser.role;
+        }
+    }
+
+    setupDropdownIntegration() {
+        // Update the user badge in the new dropdown menu
+        const currentUserName = document.getElementById('currentUserName');
+        if (currentUserName && this.currentUser) {
+            currentUserName.textContent = this.currentUser.username;
+        }
         
-        if (userNameField) userNameField.value = this.currentUser.username;
-        if (userEmailField) userEmailField.value = this.currentUser.email || '';
-        if (userRoleField) userRoleField.value = this.currentUser.role;
+        // Hook up the dropdown menu items
+        const userProfileBtn = document.getElementById('userProfileBtn');
+        if (userProfileBtn) {
+            userProfileBtn.addEventListener('click', () => this.showUserProfile());
+        }
+        
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => this.logout());
+        }
     }
-}
 
-setupDropdownIntegration() {
-    // Update the user badge in the new dropdown menu
-    const currentUserName = document.getElementById('currentUserName');
-    if (currentUserName && this.currentUser) {
-        currentUserName.textContent = this.currentUser.username;
-    }
-    
-    // Hook up the dropdown menu items
-    const userProfileBtn = document.getElementById('userProfileBtn');
-    if (userProfileBtn) {
-        userProfileBtn.addEventListener('click', () => this.showUserProfile());
-    }
-    
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', () => this.logout());
-    }
 }
 
 // Create and export singleton
