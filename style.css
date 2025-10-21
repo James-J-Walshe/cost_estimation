@@ -518,6 +518,11 @@ header {
     height: calc(100vh - 80px);
 }
 
+.content {
+    padding: 2rem;
+    background-color: #f5f7fa;  /* ← ADD THIS LINE */
+}
+
 /* Settings Header */
 .settings-header {
     background-color: #f8fafc;
