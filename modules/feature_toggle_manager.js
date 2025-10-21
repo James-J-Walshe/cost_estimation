@@ -801,7 +801,6 @@ class FeatureToggleManager {
         this.applyFeatureToggles();
         console.log('Features refreshed based on user context');
     }
-}
 
 // Add to your existing FeatureToggleManager class:
 
