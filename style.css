@@ -21,7 +21,6 @@ body {
 }
 
 .app-container {
-    max-width: 1400px;
     margin: 0 auto;
     background-color: white;
     min-height: 100vh;
@@ -521,6 +520,22 @@ header {
 .content {
     padding: 2rem;
     background-color: #f5f7fa;  /* ← ADD THIS LINE */
+}
+
+.content h2 {
+    color: #374151;  /* ADD THIS */
+}   
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: white;  /* Changed from #f5f7fa */
+    color: #2d3748;
+    line-height: 1.6;
+}
+
+.main-view {
+    display: block;
+    background-color: white;  /* ADD THIS LINE */
 }
 
 /* Settings Header */
