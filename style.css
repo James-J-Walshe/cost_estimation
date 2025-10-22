@@ -380,6 +380,27 @@ header {
     height: 20px;
 }
 
+.close-settings-btn {
+    position: absolute;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: transparent !important;
+    border: none !important;
+    color: white;
+    padding: 0.5rem;
+}
+
+.close-settings-btn:hover {
+    background-color: rgba(255,255,255,0.1) !important;
+    transform: translateY(-50%);
+}
+
+.close-settings-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
 /* ==========================================================================
    6. USER VIEW STYLES
    ========================================================================== */
