@@ -524,7 +524,7 @@ header {
 }
 
 .content h2 {
-    color: #374151;  /* ADD THIS */
+    color: #374151 !important;
 }   
 
 body {
@@ -621,6 +621,11 @@ h1.settings-header {
 }
 
 /* Settings Content */
+.settings-content h2,
+.settings-tab-content h2 {
+    color: #374151 !important;
+}
+
 .settings-content {
     flex: 1;
     padding: 2rem;
