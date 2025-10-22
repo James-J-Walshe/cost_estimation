@@ -540,13 +540,19 @@ body {
 .settings-header {
     background-color: #f8fafc;
     border-bottom: 1px solid #e2e8f0;
-    padding: 1.5rem 2rem;
+    padding: 1.5rem 0; 
     display: flex;
     align-items: center;
     gap: 1rem;
     position: relative;
     margin: 0;
     width: 100%;
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
+}
+
+.settings-header > * {
+    margin-left: 2rem;  /* Add left margin to child elements */
 }
 
 .settings-header h1 {
@@ -565,6 +571,8 @@ h1.settings-header {
     height: calc(100vh - 140px);
     background-color: white;
     width: 100%;
+    margin-left: calc(-50vw + 50%);
+    margin-right: calc(-50vw + 50%);
 
 }
 
