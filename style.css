@@ -521,6 +521,8 @@ header {
 
 .settings-view {
     height: calc(100vh - 80px);
+    padding-left: calc(50vw - 700px); 
+    padding-right: calc(50vw - 700px); 
 }
 
 .content {
