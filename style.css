@@ -1301,6 +1301,7 @@ small {
     background: white;
     border-radius: 6px;
     border: 1px solid #e5e7eb;
+    color: #374151;
 }
 
 .currency-badge-large {
