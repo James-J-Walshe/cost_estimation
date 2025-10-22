@@ -587,6 +587,12 @@ body {
     gap: 0.75rem;
     border-left: 3px solid transparent;
     font-family: inherit;
+    visibility: visible !important; 
+}
+
+.settings-nav-btn[data-settings-tab="currency"] {
+    display: flex !important;
+    visibility: visible !important;
 }
 
 .settings-nav-btn:hover {
@@ -1289,7 +1295,7 @@ small {
     display: inline-block;
     padding: 0.5rem 1rem;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    color: #6b7280;
     border-radius: 6px;
     font-weight: 600;
     margin-left: 0.5rem;
