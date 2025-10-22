@@ -638,6 +638,7 @@ h1.settings-header {
     flex: 1;
     padding: 2rem;
     overflow-y: auto;
+    background-color: white;
 }
 
 .settings-tab-content {
