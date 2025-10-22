@@ -985,6 +985,7 @@ small {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    color: #6b7280;
     padding: 0.75rem 0;
     border-bottom: 1px solid #f3f4f6;
 }
@@ -998,6 +999,7 @@ small {
     border-top: 2px solid #e5e7eb;
     margin-top: 1rem;
     padding-top: 1rem;
+    color: #6b7280;
 }
 
 .breakdown-item.total {
@@ -1011,6 +1013,7 @@ small {
 
 .cost {
     font-weight: 600;
+    color: #6b7280;
 }
 
 /* ==========================================================================
