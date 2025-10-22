@@ -575,6 +575,7 @@ body {
     gap: 1rem;
     max-width: 1400px;
     margin: 0 auto;
+    position: relative; 
 }
 
 .settings-header h1 {
