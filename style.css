@@ -511,6 +511,7 @@ header {
 
 .main-view, .settings-view {
     display: block;
+    background-color: white;
 }
 
 .settings-view {
@@ -533,11 +534,6 @@ body {
     line-height: 1.6;
 }
 
-.main-view {
-    display: block;
-    background-color: white;  /* ADD THIS LINE */
-}
-
 /* Settings Header */
 .settings-header {
     background-color: #f8fafc;
@@ -547,6 +543,8 @@ body {
     align-items: center;
     gap: 1rem;
     position: relative;
+    margin: 0;
+    width: 100%;
 }
 
 .settings-header h1 {
@@ -559,6 +557,9 @@ body {
 .settings-container {
     display: flex;
     height: calc(100vh - 140px);
+    background-color: white;
+    width: 100%;
+
 }
 
 /* Settings Sidebar */
