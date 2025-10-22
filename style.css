@@ -550,7 +550,11 @@ body {
 .settings-header h1 {
     font-size: 1.5rem;
     font-weight: 600;
-    color: #374151;
+    color: #374151 !important; 
+}
+
+h1.settings-header {
+    color: #374151 !important;
 }
 
 /* Settings Container */
