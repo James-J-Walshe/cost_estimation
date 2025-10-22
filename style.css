@@ -1683,6 +1683,78 @@ small {
         transition-duration: 0.01ms !important;
     }
 }
+/* ==========================================================================
+   Bug Fixes 
+   ========================================================================== */
+
+/* ========== FIX ISSUE 1: Table Text Visibility ========== */
+.data-table th,
+.data-table td {
+    color: #374151 !important;  /* Force dark text color */
+    background-color: #f8fafc;
+}
+
+.data-table tbody tr {
+    background-color: white;
+}
+
+.data-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+.data-table tbody td {
+    background-color: white;
+    color: #374151 !important;
+}
+
+/* ========== FIX ISSUE 2: Remove Borders & Full Width Header ========== */
+body {
+    background-color: white;  /* Changed from #f5f7fa */
+    margin: 0;
+    padding: 0;
+}
+
+.app-container {
+    max-width: none;  /* Remove max-width restriction */
+    margin: 0;  /* Remove centering */
+    box-shadow: none;  /* Remove shadow borders */
+}
+
+header {
+    margin: 0;
+    padding: 1rem 2rem;
+    width: 100%;
+}
+
+.main-view {
+    background-color: white;
+}
+
+.content h2 {
+    color: #374151;
+}
+
+/* ========== FIX ISSUE 3: Settings View Formatting ========== */
+.settings-view {
+    background-color: white;
+}
+
+.settings-header {
+    background-color: #f8fafc;
+    width: 100%;
+}
+
+.settings-container {
+    background-color: white;
+}
+
+.settings-content {
+    background-color: white;
+}
+
+.settings-sidebar {
+    background-color: #f8fafc;
+}
 
 /* ==========================================================================
    END OF STYLESHEET
