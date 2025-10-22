@@ -741,6 +741,7 @@ body {
     border: 1px solid #d1d5db;
     border-radius: 6px;
     font-size: 0.875rem;
+    color: #374151 !important;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
     font-family: inherit;
 }
@@ -790,18 +791,24 @@ small {
     padding: 1rem;
     text-align: left;
     font-weight: 600;
-    color: #374151;
+    color: #374151; !important;
     border-bottom: 1px solid #e5e7eb;
     white-space: nowrap;
 }
 
 .data-table td {
     padding: 1rem;
+    color: #374151 !important;
     border-bottom: 1px solid #f3f4f6;
+}
+
+.data-table tbody tr {
+    background-color: white;
 }
 
 .data-table tbody tr:hover {
     background-color: #f9fafb;
+    color: #374151 !important;
 }
 
 .data-table input,
