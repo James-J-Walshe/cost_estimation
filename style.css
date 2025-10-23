@@ -381,7 +381,7 @@ header {
 }
 
 .close-settings-btn {
-    position: absolute;
+    position: relative;
     right: 2rem;
     top: 50%;
     transform: translateY(-50%);
