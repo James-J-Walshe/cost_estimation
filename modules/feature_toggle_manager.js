@@ -801,6 +801,59 @@ class FeatureToggleManager {
         this.applyFeatureToggles();
         console.log('Features refreshed based on user context');
     }
+
+// Add to your existing FeatureToggleManager class:
+
+    showFeatureTogglesFromDropdown() {
+        // Show feature toggles in user settings view
+        const mainApp = document.getElementById('mainApp');
+        const userApp = document.getElementById('userApp');
+        
+        if (mainApp && userApp) {
+            mainApp.style.display = 'none';
+            userApp.style.display = 'block';
+            
+            // Switch to features tab
+            const featuresTab = document.querySelector('[data-user-tab="features"]');
+            if (featuresTab) {
+                featuresTab.click();
+            }
+            
+            // Render toggles in user-friendly format
+            this.renderUserFeatureToggles();
+        }
+    }
+
+    renderUserFeatureToggles() {
+        const container = document.querySelector('.feature-toggles-list');
+        if (!container) return;
+        
+        const currentUser = window.userManager?.getCurrentUser();
+        
+        container.innerHTML = Object.values(this.toggles)
+            .filter(toggle => {
+                // Only show toggles the current user can access
+                return this.isFeatureEnabled(toggle.key) || 
+                       (currentUser && currentUser.role === 'admin');
+            })
+            .map(toggle => this.createUserToggleElement(toggle))
+            .join('');
+    }
+
+    setupDropdownIntegration() {
+        const featureTogglesBtn = document.getElementById('featureTogglesBtn');
+        if (featureTogglesBtn) {
+            featureTogglesBtn.addEventListener('click', () => {
+                const currentUser = window.userManager?.getCurrentUser();
+                if (currentUser && currentUser.role === 'admin') {
+                    this.showAdminUI(); // Your existing admin UI
+                } else {
+                    this.showFeatureTogglesFromDropdown(); // User view
+                }
+            });
+        }
+    }
+
 }
 
 // Create and export singleton

@@ -605,6 +605,41 @@ function showMainView() {
     }
 }
 
+// User Profile Dropdown Toggle
+const userProfileBtn = document.getElementById('userProfileBtn');
+const userProfileDropdown = document.getElementById('userProfileDropdown');
+
+if (userProfileBtn && userProfileDropdown) {
+    userProfileBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userProfileDropdown.style.display = 
+            userProfileDropdown.style.display === 'none' ? 'block' : 'none';
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', () => {
+        userProfileDropdown.style.display = 'none';
+    });
+}
+
+// Account Settings Button
+const accountSettingsBtn = document.getElementById('accountSettingsBtn');
+if (accountSettingsBtn) {
+    accountSettingsBtn.addEventListener('click', () => {
+        // Add your account settings logic here
+        console.log('Account settings clicked');
+    });
+}
+
+// Logout Button
+const logoutBtn = document.getElementById('logoutBtn');
+if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+        // Add your logout logic here
+        console.log('Logout clicked');
+    });
+}
+
 function initializeSettingsNavigation() {
     const settingsNavButtons = document.querySelectorAll('.settings-nav-btn');
     const settingsTabContents = document.querySelectorAll('.settings-tab-content');
