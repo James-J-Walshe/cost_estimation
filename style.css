@@ -389,6 +389,7 @@ header {
     border: none !important;
     color: #374151;
     padding: 0.5rem;
+    flex-shrink: 0;
 }
 
 .close-settings-btn:hover {
@@ -572,6 +573,7 @@ body {
     padding: 1.5rem 2rem;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 1rem;
     max-width: 1400px;
     margin: 0 auto;
@@ -582,7 +584,7 @@ body {
     font-size: 1.5rem;
     font-weight: 600;
     color: #374151 !important;
-    position: relative;
+    flex: 1;
 }
 
 h1.settings-header {
