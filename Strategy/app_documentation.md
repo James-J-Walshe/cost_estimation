@@ -6,9 +6,8 @@
 - [Initialization Manager Pattern](#initialization-manager-pattern)
 - [File Structure](#file-structure)
 - [Development Guidelines](#development-guidelines)
-- [Feature Toggle System](#feature-toggle-system) ⭐ **NEW**
-- [User Management System](#user-management-system) ⭐ **NEW**
 - [Common Patterns](#common-patterns)
+- [UI/UX Styling Guidelines](#uiux-styling-guidelines)
 - [Troubleshooting](#troubleshooting)
 
 ---
@@ -23,9 +22,7 @@ A web-based ICT project estimation tool for calculating and managing project cos
 - Dynamic month-based timeline calculations
 - Vendor, tool, and miscellaneous cost tracking
 - Risk assessment and contingency planning
-- **Currency management with exchange rates**
-- **Feature toggle system for controlled feature rollout** ⭐ NEW
-- **User authentication and role-based access control** ⭐ NEW
+- **Currency management with exchange rates** ⭐ NEW
 - Data persistence via localStorage
 - Export capabilities
 
@@ -87,10 +84,9 @@ window.initManager.initialize();
    - Creates `window.projectData` if it doesn't exist
    - Sets up default rate cards and project structure
    - Initializes currency settings with default primary currency
-   - Initializes feature toggle data structure
 
 2. **Module Detection**
-   - Checks for available modules (DataManager, TableRenderer, CurrencyManager, UserManager, FeatureToggleManager, etc.)
+   - Checks for available modules (DataManager, TableRenderer, CurrencyManager, etc.)
    - Logs which modules are loaded
    - Handles both capitalized and lowercase module naming
 
@@ -109,10 +105,9 @@ window.initManager.initialize();
    Step 7: Load saved data from localStorage
    Step 8: Render all tables
    Step 9: Update UI (summary and month headers)
-   Step 10: Initialize User Manager ⭐ NEW
-   Step 11: Initialize Feature Toggle Manager ⭐ NEW
-   Step 12: Initialize Currency Manager
-   Step 13: Final re-render after 100ms delay
+   Step 10: Initialize New Project Welcome feature
+   Step 11: Initialize Currency Manager ⭐ NEW
+   Step 12: Final re-render after 100ms delay
    ```
 
 5. **Comprehensive Logging**
@@ -134,9 +129,7 @@ class InitializationManager {
             domManager: false,
             tableFixes: false,
             newProjectWelcome: false,
-            currencyManager: false,
-            userManager: false,           // ⭐ NEW
-            featureToggleManager: false   // ⭐ NEW
+            currencyManager: false  // ⭐ NEW
         };
     }
 
@@ -161,9 +154,7 @@ class InitializationManager {
 <script src="modules/dynamic_form_helper.js"></script>
 <script src="modules/table_fixes.js"></script>
 <script src="modules/new_project_welcome.js"></script>
-<script src="modules/currency_manager.js"></script>
-<script src="modules/user_manager.js"></script> <!-- ⭐ NEW -->
-<script src="modules/feature_toggle_manager.js"></script> <!-- ⭐ NEW -->
+<script src="modules/currency_manager.js"></script> <!-- ⭐ NEW -->
 
 <!-- Load main script (contains functions but NO auto-init) -->
 <script src="script.js"></script>
@@ -203,9 +194,7 @@ cost_estimation/
 │   ├── table_fixes.js                 # Table styling fixes
 │   ├── init_manager.js                # ⭐ INITIALIZATION MANAGER (load LAST)
 │   ├── new_project_welcome.js         # New project popup
-│   ├── currency_manager.js            # Currency & exchange rate management
-│   ├── user_manager.js                # ⭐ User authentication & session (NEW)
-│   └── feature_toggle_manager.js      # ⭐ Feature flag management (NEW)
+│   └── currency_manager.js            # ⭐ Currency & exchange rate management (NEW)
 └── Styles/
     └── edit-styles.css                # Edit-specific styles
 ```
@@ -217,27 +206,6 @@ cost_estimation/
 - **When to modify:** Adding new modules, changing startup sequence
 - **Key principle:** This is the ONLY file that should run initialization logic
 - **Global export:** `window.initManager`
-
-#### `modules/user_manager.js` ⭐ **NEW MODULE**
-- **What:** Manages user authentication and sessions
-- **Key features:**
-  - Simple login/logout system
-  - Role-based access (Admin/User/Guest)
-  - Session persistence via localStorage
-  - User display in header
-- **Global export:** `window.userManager`
-- **Must have:** `initialize()` method called by init_manager
-
-#### `modules/feature_toggle_manager.js` ⭐ **NEW MODULE**
-- **What:** Manages feature flags and controlled feature rollout
-- **Key features:**
-  - Define feature toggles with metadata
-  - Role-based feature restrictions
-  - Runtime feature availability checking
-  - Admin UI for toggle management
-  - Persistence via localStorage
-- **Global export:** `window.featureToggleManager`
-- **Must have:** `initialize()` method called by init_manager
 
 #### `script.js`
 - **What:** Core application functions and business logic
@@ -254,7 +222,7 @@ cost_estimation/
   - `window.initializeProjectInfoSaveButton`
   - All calculation functions
 
-#### `modules/currency_manager.js`
+#### `modules/currency_manager.js` ⭐ **NEW MODULE**
 - **What:** Manages currency selection and exchange rates
 - **Key features:**
   - Primary currency selection from 33 global currencies
@@ -264,150 +232,18 @@ cost_estimation/
 - **Global export:** `window.currencyManager`
 - **Must have:** `initialize()` method called by init_manager
 
----
-
-## Feature Toggle System ⭐ **NEW**
-
-### Overview
-The Feature Toggle System allows dynamic control of application features without code deployment, enabling:
-- Controlled feature rollout
-- A/B testing capabilities
-- Role-based feature access
-- Risk mitigation for new features
-- Zero-downtime feature deployment
-
-### Data Structure
-```javascript
-window.projectData.featureToggles = {
-    toggles: {
-        "feature_key": {
-            key: "feature_key",
-            displayName: "Feature Name",
-            description: "Feature description",
-            enabled: true,
-            restrictions: {
-                roles: ["admin"],      // Empty array = all roles
-                userIds: ["user123"]   // Empty array = all users
-            }
-        }
-    },
-    lastUpdated: "2024-10-10T12:00:00Z"
-}
-```
-
-### Using Feature Toggles
-
-#### Checking if a Feature is Enabled
-```javascript
-// Check if a feature is available for the current user
-if (window.featureToggleManager.isFeatureEnabled('export_excel')) {
-    // Feature is enabled and user has access
-    showExportButton();
-} else {
-    // Feature is disabled or user doesn't have access
-    hideExportButton();
-}
-```
-
-#### Admin UI Access
-Admin users will see a "⚡ Feature Toggles" button in the header that opens the management interface where they can:
-- View all feature toggles
-- Enable/disable features globally
-- Set role restrictions
-- Add new feature toggles
-- Edit existing toggles
-- Delete unused toggles
-
-#### Default Feature Toggles
-The system comes with pre-configured toggles:
-- **export_excel**: Excel export functionality
-- **currency_management**: Multi-currency support (Admin only)
-- **risk_assessment**: Risk and contingency planning
-- **advanced_reporting**: Advanced analytics (Admin only, disabled by default)
-- **project_templates**: Template management (disabled by default)
-- **api_integration**: External API support (Admin only, disabled by default)
-
-### Implementation Pattern
-```javascript
-// In any module, wrap feature-specific code
-function renderFeature() {
-    if (!window.featureToggleManager.isFeatureEnabled('my_feature')) {
-        return; // Feature not available
-    }
-    
-    // Feature implementation
-    doFeatureWork();
-}
-
-// For UI elements
-const button = document.getElementById('featureButton');
-if (button) {
-    button.style.display = 
-        window.featureToggleManager.isFeatureEnabled('my_feature') 
-        ? 'block' : 'none';
-}
-```
-
----
-
-## User Management System ⭐ **NEW**
-
-### Overview
-The User Management System provides simple authentication and role-based access control:
-- Login/logout functionality
-- Role-based permissions (Admin/User/Guest)
-- Session persistence
-- Integration with Feature Toggle System
-
-### User Roles
-- **Admin**: Full access to all features and toggle management
-- **User**: Standard access with role-based restrictions
-- **Guest**: No login required, limited feature access
-
-### Login Process
-1. On first load, users see a login prompt
-2. Users can:
-   - Login with username and role
-   - Continue as guest (Cancel button)
-3. Session persists across page refreshes
-
-### API Reference
-
-#### Get Current User
-```javascript
-const user = window.userManager.getCurrentUser();
-if (user) {
-    console.log('Username:', user.username);
-    console.log('Role:', user.role);
-    console.log('Login time:', user.loginTime);
-}
-```
-
-#### Check Authentication
-```javascript
-if (window.userManager.isAuthenticated()) {
-    // User is logged in
-}
-
-if (window.userManager.hasRole('admin')) {
-    // User is an admin
-}
-```
-
-#### Programmatic Login/Logout
-```javascript
-// Login
-window.userManager.login('john_doe', 'admin');
-
-// Logout
-window.userManager.logout();
-```
-
-### Demo Users
-For testing purposes:
-- **Admin**: username: `admin`, role: `Admin`
-- **User**: username: `user1`, role: `User`
-- **Guest**: Click "Cancel" on login prompt
+#### Module Files (`js/*.js` and `modules/*.js`)
+- **What:** Specific functionality modules
+- **Key principle:** Export module to window, but DON'T initialize automatically
+- **Pattern:**
+  ```javascript
+  class MyModule {
+      constructor() { }
+      initialize() { }
+      // ... methods
+  }
+  window.myModule = new MyModule();
+  ```
 
 ---
 
@@ -445,8 +281,8 @@ For testing purposes:
    ```javascript
    this.modules = {
        // ... existing modules
-       featureToggleManager: false,  // ← MUST have comma here
-       myNewModule: false            // ← Add your module (no comma if last)
+       newProjectWelcome: false,  // ← MUST have comma here
+       myNewModule: false         // ← Add your module (no comma if last)
    };
 
    // In checkModules()
@@ -459,35 +295,20 @@ For testing purposes:
    }
    ```
 
-### Adding Feature-Toggled Functionality
+### Adding Global Functions
 
-1. **Define the toggle** (in feature_toggle_manager.js or via Admin UI)
-   ```javascript
-   window.featureToggleManager.toggles['my_feature'] = {
-       key: 'my_feature',
-       displayName: 'My New Feature',
-       description: 'Description of the feature',
-       enabled: false,
-       restrictions: { roles: [], userIds: [] }
-   };
-   ```
+Any function that needs to be called from other modules MUST be exported to window:
 
-2. **Implement with toggle check**
-   ```javascript
-   function myFeatureFunction() {
-       if (!window.featureToggleManager.isFeatureEnabled('my_feature')) {
-           console.log('Feature not available');
-           return;
-       }
-       
-       // Feature implementation
-   }
-   ```
+```javascript
+// In script.js or module file
 
-3. **Apply to UI elements**
-   ```javascript
-   window.featureToggleManager.applyToggleToElement('buttonId', 'my_feature');
-   ```
+function myFunction() {
+    // Function code
+}
+
+// CRITICAL: Export to window
+window.myFunction = myFunction;
+```
 
 ### Event Listener Setup
 
@@ -548,56 +369,42 @@ window.exampleModule = new ExampleModule();
 console.log('Example Module loaded');
 ```
 
-### Pattern 2: Feature Toggle Integration
+### Pattern 2: Checking for Dependencies
 
 ```javascript
-// Check feature availability before rendering
-renderAdvancedFeature() {
-    // Guard clause for feature toggle
-    if (!window.featureToggleManager?.isFeatureEnabled('advanced_feature')) {
-        return;
-    }
-    
-    // Render the feature
-    const container = document.getElementById('advancedContainer');
-    container.innerHTML = '...';
-}
+// In your module
 
-// Apply toggles to multiple elements
-applyFeatureVisibility() {
-    const features = [
-        { elementId: 'exportBtn', toggle: 'export_excel' },
-        { elementId: 'currencyTab', toggle: 'currency_management' },
-        { elementId: 'risksTab', toggle: 'risk_assessment' }
-    ];
-    
-    features.forEach(({ elementId, toggle }) => {
-        const element = document.getElementById(elementId);
-        if (element) {
-            element.style.display = 
-                window.featureToggleManager.isFeatureEnabled(toggle) 
-                ? '' : 'none';
-        }
-    });
+myMethod() {
+    // Check if dependency exists
+    if (window.TableRenderer && typeof window.TableRenderer.renderAllTables === 'function') {
+        window.TableRenderer.renderAllTables();
+    } else if (window.tableRenderer && typeof window.tableRenderer.renderAllTables === 'function') {
+        window.tableRenderer.renderAllTables();
+    } else {
+        console.warn('TableRenderer not available');
+    }
 }
 ```
 
-### Pattern 3: Role-Based Rendering
+### Pattern 3: Fallback Functions
 
 ```javascript
-// Show admin-only features
-if (window.userManager.hasRole('admin')) {
-    document.getElementById('adminPanel').style.display = 'block';
-}
+// Always provide fallbacks for critical operations
 
-// Conditional rendering based on authentication
-const user = window.userManager.getCurrentUser();
-if (user) {
-    // Logged in user features
-    enableUserFeatures();
-} else {
-    // Guest mode limitations
-    showGuestWarning();
+function saveProjectFallback() {
+    if (window.DataManager) {
+        window.DataManager.saveProject();
+    } else if (window.dataManager) {
+        window.dataManager.saveProject();
+    } else {
+        // Basic fallback implementation
+        try {
+            localStorage.setItem('ictProjectData', JSON.stringify(projectData));
+            console.log('Project saved using fallback method');
+        } catch (e) {
+            console.error('Error saving project:', e);
+        }
+    }
 }
 ```
 
@@ -608,71 +415,409 @@ if (user) {
 
 // ✅ CORRECT
 window.projectData.projectInfo.projectName = 'New Project';
-window.projectData.featureToggles.toggles['my_feature'].enabled = true;
 
 // ❌ WRONG (might reference local scope)
 projectData.projectInfo.projectName = 'New Project';
 ```
 
+### Pattern 5: Currency Data Structure ⭐ NEW
+
+```javascript
+// Currency settings are stored in window.projectData.currency
+window.projectData = {
+    projectInfo: { /* ... */ },
+    currency: {
+        primaryCurrency: 'USD',  // ISO 4217 currency code
+        exchangeRates: [
+            {
+                id: 1234567890,
+                currency: 'EUR',
+                rate: 0.85,           // 1 USD = 0.85 EUR
+                lastUpdated: '2024-10-10T12:00:00Z'
+            }
+        ]
+    },
+    internalResources: [],
+    // ... other data
+};
+
+// Using currency utilities
+const symbol = window.currencyManager.getCurrencySymbol('USD');  // Returns '$'
+const converted = window.currencyManager.convertCurrency(100, 'USD', 'EUR');  // Returns 85
+```
+
+---
+
+## UI/UX Styling Guidelines
+
+### Header Redesign (October 2024) ⭐ RECENT UPDATE
+
+**Background:** The application header and section layouts were redesigned to improve visual hierarchy and user experience. This redesign standardized spacing, colors, and layout patterns across all sections.
+
+### Key CSS Classes and Patterns
+
+#### 1. Section Actions
+**Purpose:** Consistent action button placement at the top of each section
+
+```css
+.section-actions {
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+```
+
+**Usage:**
+```html
+<div class="section-actions">
+    <h3>Section Title</h3>
+    <button class="btn btn-primary">Add Item</button>
+</div>
+```
+
+**Developer Notes:**
+- Use this class for ALL section headers with action buttons
+- Maintains consistent spacing (1.5rem bottom margin)
+- Flexbox ensures proper alignment even with multiple buttons
+- Mobile responsive: buttons stack on smaller screens
+
+#### 2. Settings Actions
+**Purpose:** Standardized button layout in settings/configuration areas
+
+```css
+.settings-actions {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+```
+
+**Usage:**
+```html
+<div class="settings-actions">
+    <button id="saveProjectInfoBtn" class="btn btn-primary">Save Changes</button>
+    <button class="btn btn-secondary">Cancel</button>
+</div>
+```
+
+**Developer Notes:**
+- Border-top creates visual separation from form content
+- Gap property handles spacing between buttons (no manual margins needed)
+- Used in Settings tab and modal forms
+- Button order: Primary action first, secondary actions follow
+
+#### 3. Save Button Styling
+**Special styling for primary save buttons:**
+
+```css
+#saveProjectInfoBtn {
+    min-width: 180px;
+}
+```
+
+**Developer Notes:**
+- Ensures save buttons don't appear too narrow
+- Apply `min-width` to primary action buttons for consistency
+- Prevents layout shift when button text changes (e.g., "Saving..." → "Saved!")
+
+#### 4. Forecast Section
+**Purpose:** Dedicated styling for forecasting and projection areas
+
+```css
+.forecast-section {
+    margin-top: 2rem;
+}
+
+.forecast-section h3 {
+    margin-bottom: 1rem;
+    color: #374151;
+}
+```
+
+**Usage:**
+```html
+<div class="forecast-section">
+    <h3>Cost Forecast</h3>
+    <!-- Forecast content -->
+</div>
+```
+
+**Developer Notes:**
+- Increased top margin (2rem) creates clear section breaks
+- Heading color (#374151) is slightly softer than pure black for readability
+- Use for forecast tables, timeline projections, and summary displays
+
+#### 5. Risk Summary Component
+**Purpose:** Highlight important cost and risk information
+
+```css
+.risk-summary {
+    background-color: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.cost-display {
+    font-size: 1.1rem;
+    color: #059669;
+}
+```
+
+**Usage:**
+```html
+<div class="risk-summary">
+    <div>
+        <strong>Total Project Cost:</strong>
+        <span class="cost-display">$1,250,000</span>
+    </div>
+    <div>
+        <strong>Contingency Reserve:</strong>
+        <span class="cost-display">$125,000</span>
+    </div>
+</div>
+```
+
+**Developer Notes:**
+- Light background (#f8fafc) draws attention without being intrusive
+- Border-radius (8px) matches overall application aesthetic
+- Green color (#059669) for cost values indicates positive/financial info
+- Flexbox with gap handles responsive spacing
+- Use for summary cards, important metrics, or alert-style information
+
+#### 6. Rate Cards Container
+**Purpose:** Grid layout for displaying multiple rate card sections
+
+```css
+.rate-cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 2rem;
+}
+
+.rate-card-section {
+    background-color: #f8fafc;
+    padding: 1.5rem;
+    border-radius: 8px;
+}
+
+.rate-card-section h3 {
+    margin-bottom: 1rem;
+    color: #374151;
+}
+```
+
+**Usage:**
+```html
+<div class="rate-cards-container">
+    <div class="rate-card-section">
+        <h3>Internal Rate Card</h3>
+        <!-- Rate card content -->
+    </div>
+    <div class="rate-card-section">
+        <h3>Vendor Rate Card</h3>
+        <!-- Rate card content -->
+    </div>
+</div>
+```
+
+**Developer Notes:**
+- CSS Grid with `auto-fit` creates responsive layouts automatically
+- Minimum column width of 500px prevents cards from becoming too narrow
+- Cards stack vertically on smaller screens (<500px width)
+- Gap (2rem) provides breathing room between cards
+- Consistent with `.risk-summary` background color for visual coherence
+- Use this pattern for any multi-column configuration sections
+
+### Month Header Styling ⭐ IMPORTANT
+
+**Two-tier header system for timeline tables:**
+
+```css
+/* Year headers - Blue theme */
+.year-header-row th {
+    background: #6c7ae0;
+    color: white;
+    font-weight: 700;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 0.9rem;
+    padding: 12px 8px;
+}
+
+/* Month headers - Light grey theme */
+.month-header-row th {
+    background: #e9ecef;
+    color: #495057;
+    font-weight: 600;
+    text-align: center;
+    font-size: 0.8rem;
+    padding: 8px 4px;
+    border: 1px solid #ced4da;
+}
+```
+
+**Developer Notes:**
+- **CRITICAL:** Years use blue (#6c7ae0), months use light grey (#e9ecef)
+- This color scheme is INTENTIONAL for visual hierarchy
+- Do NOT change month headers to match year headers
+- Border styling differs: years use transparent white, months use solid grey
+- Font sizes create hierarchy: years (0.9rem) > months (0.8rem)
+- This pattern was specifically requested and tested with users
+
+**If you need to modify table headers:**
+1. Check if existing classes (`.year-header-row`, `.month-header-row`) apply
+2. Do NOT add inline styles that override these classes
+3. Test with multiple month ranges (4 months, 12 months, 24+ months)
+4. Verify color contrast meets WCAG AA standards
+
+### General Styling Principles
+
+**Spacing System:**
+- Use `1rem` (16px) for base spacing
+- Use `1.5rem` (24px) for section separators
+- Use `2rem` (32px) for major section breaks
+- Gap property preferred over margins between flex/grid items
+
+**Color Palette:**
+- Primary blue: `#6c7ae0` (headers, primary buttons)
+- Success green: `#059669` (cost displays, positive indicators)
+- Light background: `#f8fafc` (cards, sections)
+- Dark text: `#374151` (headings)
+- Mid grey: `#e9ecef` (month headers, dividers)
+- Border grey: `#ced4da` and `#e2e8f0`
+
+**Border Radius:**
+- Standard: `8px` for cards and containers
+- Keep consistent across all components
+
+**Layout Patterns:**
+- Flexbox for single-row layouts (`.section-actions`, `.settings-actions`)
+- CSS Grid for multi-column layouts (`.rate-cards-container`)
+- Always include `gap` property instead of manual margins
+
+### Testing Checklist for New UI Components
+
+When adding new UI components, ensure:
+- [ ] Follows existing color palette
+- [ ] Uses standard spacing values (1rem, 1.5rem, 2rem)
+- [ ] Applies appropriate class (`.section-actions`, `.rate-card-section`, etc.)
+- [ ] Responsive on mobile devices (320px - 768px)
+- [ ] Tested with various content lengths
+- [ ] No inline styles that override base CSS
+- [ ] Consistent with existing components in same section
+- [ ] Accessible (proper contrast ratios, focus states)
+
 ---
 
 ## Troubleshooting
 
-### Feature Toggle Issues
+### Problem: "Timeout waiting for function: updateSummary"
 
-#### Problem: Feature toggles button not visible
-**Cause:** Not logged in as admin or module not initialized
-**Fix:** 
-1. Login as admin user
-2. Check console for initialization errors
-3. Verify feature_toggle_manager.js is loaded
-
-#### Problem: Features not hiding/showing
-**Cause:** Toggle not applied or saved
-**Fix:**
-1. Check if `isFeatureEnabled()` returns expected value
-2. Verify toggles are saved in localStorage
-3. Call `applyFeatureToggles()` after changes
-
-#### Problem: Toggle changes not persisting
-**Cause:** Save not called or localStorage issue
-**Fix:**
-1. Click "Save All Changes" in admin UI
-2. Check localStorage size limits
-3. Verify DataManager is working
-
-### User Management Issues
-
-#### Problem: Login modal doesn't appear
-**Cause:** User manager not initialized
-**Fix:**
-1. Check browser console for errors
-2. Verify user_manager.js is loaded before init_manager.js
-3. Check if localStorage is enabled
-
-#### Problem: Session not persisting
-**Cause:** localStorage disabled or cleared
-**Fix:**
-1. Check browser settings for localStorage
-2. Verify session data in localStorage (`userSession` key)
-3. Check for errors in console
-
-### Module Loading Issues
-
-#### Problem: "Timeout waiting for function: updateSummary"
 **Cause:** The function isn't exported to window
+
 **Fix:** In script.js, ensure:
 ```javascript
 window.updateSummary = updateSummary;
 ```
 
-#### Problem: Module not loading
+### Problem: Tabs/buttons not working
+
+**Cause:** Event listeners not being set up
+
+**Fix:** Ensure `initializeBasicFunctionality()` is:
+1. Defined in script.js
+2. Exported to window: `window.initializeBasicFunctionality = initializeBasicFunctionality;`
+3. Called by init_manager.js in the `initializeDOMManager()` method
+
+### Problem: "Uncaught SyntaxError: Unexpected identifier 'currencyManager'" ⭐ NEW
+
+**Cause:** Missing comma before the new module in the modules object
+
+**Fix:** In init_manager.js, ensure there's a comma after the previous module:
+```javascript
+this.modules = {
+    // ... other modules
+    newProjectWelcome: false,  // ← MUST have comma here
+    currencyManager: false     // ← Last item, no comma
+};
+```
+
+### Problem: "Uncaught SyntaxError: Unexpected end of input"
+
+**Cause:** Missing closing brace `}` somewhere in the file
+
+**Fix:** 
+1. Check your code editor's bracket matching
+2. Look at the line number in the error
+3. Count opening and closing braces in functions
+
+### Problem: Module not loading
+
 **Checklist:**
 1. ✅ Script tag in index.html? (before init_manager.js)
 2. ✅ Module exports to window? (`window.myModule = ...`)
 3. ✅ Module registered in init_manager.js modules list?
 4. ✅ **Comma added after previous module?** ⚠️ Common mistake!
 5. ✅ Check browser console for loading errors
+
+### Problem: Functions not found / undefined errors
+
+**Cause:** Function not exported to window or called before initialization
+
+**Fix:**
+1. Export function: `window.myFunction = myFunction;`
+2. Ensure init_manager has completed before calling
+3. Check function is defined before the export line
+
+### Problem: Currency settings not saving ⭐ NEW
+
+**Cause:** Currency data structure not initialized or localStorage not working
+
+**Fix:**
+1. Check browser console for errors
+2. Verify `window.projectData.currency` exists
+3. Try clearing localStorage: `localStorage.clear()`
+4. Check if DataManager is properly saving
+
+### Problem: Styling not applying to new components ⭐ NEW
+
+**Cause:** Inline styles overriding CSS classes or wrong class names
+
+**Fix:**
+1. Check if you're using the correct CSS class names (`.section-actions`, `.risk-summary`, etc.)
+2. Remove any inline `style=""` attributes that might override
+3. Verify CSS file is loaded (check Network tab in DevTools)
+4. Check CSS specificity - inline styles always win
+5. Clear browser cache and hard refresh (Ctrl+Shift+R / Cmd+Shift+R)
+6. For table headers, ensure you're using `.year-header-row` and `.month-header-row` classes
+
+**Common mistakes:**
+```javascript
+// ❌ WRONG - Inline styles override CSS
+<th class="month-header" style="background: blue;">
+
+// ✅ CORRECT - Let CSS classes handle styling
+<th class="month-header">
+```
+
+### Problem: Month headers showing blue instead of grey
+
+**Cause:** Using wrong CSS class or inline styles overriding
+
+**Fix:**
+1. Ensure month cells use `.month-header-row` class
+2. Remove any inline `style="background: ..."` attributes
+3. Check `table_fixes.js` - older versions may have inline styles
+4. Verify style.css lines 413-433 (or current month header section)
+5. This is a known issue - see "Month Header Styling" section above
 
 ---
 
@@ -681,25 +826,32 @@ window.updateSummary = updateSummary;
 ### DO ✅
 
 - **Use init_manager for all initialization** - Keep startup logic centralized
-- **Check feature toggles before rendering** - Always verify feature availability
-- **Validate user roles for sensitive features** - Don't rely on client-side only
 - **Export critical functions to window** - Make them accessible to all modules
+- **Check dependencies before using them** - Handle missing modules gracefully
 - **Log initialization steps** - Use console.log with ✓ for successful steps
 - **Provide fallback implementations** - Don't break if a module is missing
-- **Test with different user roles** - Verify features work for all user types
 - **Use consistent naming** - Either MyModule or myModule, but be consistent
+- **Comment your code** - Especially initialization and integration points
+- **Test in isolation** - Each module should work independently when possible
 - **Add commas in object literals** - Remember the comma before adding new properties ⚠️
+- **Use existing CSS classes** - Check style.css before creating new styles
+- **Follow spacing conventions** - Use the 1rem/1.5rem/2rem system
+- **Test responsive layouts** - Verify on mobile (320px) to desktop (1920px+)
 
 ### DON'T ❌
 
 - **Don't add DOMContentLoaded listeners in multiple files** - Use init_manager only
-- **Don't hardcode feature availability** - Use feature toggles
-- **Don't trust client-side role checks for security** - Validate on server
 - **Don't initialize on file load** - Wait for init_manager to call initialize()
 - **Don't assume modules are loaded** - Always check before using
+- **Don't use setTimeout for initialization** - Use init_manager's waitForFunction()
+- **Don't hardcode dependencies** - Check for availability at runtime
 - **Don't mix global and local scope** - Always be explicit with window.
+- **Don't duplicate functions** - Check for existing implementations first
 - **Don't skip error handling** - Wrap critical code in try-catch blocks
 - **Don't forget commas in modules object** - This causes syntax errors! ⚠️
+- **Don't use inline styles** - Use CSS classes instead (except for dynamic values)
+- **Don't override month header colors** - Grey is intentional, not blue ⚠️
+- **Don't create duplicate CSS classes** - Search existing styles first
 
 ---
 
@@ -708,7 +860,7 @@ window.updateSummary = updateSummary;
 ```
 Browser Loads Page
       ↓
-All module scripts load (dom_manager, user_manager, feature_toggle_manager, etc.)
+All module scripts load (dom_manager, table_renderer, currency_manager, etc.)
       ↓
 script.js loads (defines functions, NO execution)
       ↓
@@ -718,7 +870,7 @@ DOMContentLoaded fires
       ↓
 init_manager.initialize() called
       ↓
-1. Initialize projectData (including feature toggles)
+1. Initialize projectData (including currency structure)
       ↓
 2. Check which modules are available
       ↓
@@ -740,22 +892,15 @@ init_manager.initialize() called
       ↓
 9. Update UI (summary, month headers)
       ↓
-10. Initialize User Manager ⭐ NEW
-   - Load user session
-   - Setup user interface
-   - Show login if needed
+10. Initialize New Project Welcome
       ↓
-11. Initialize Feature Toggle Manager ⭐ NEW
-   - Load toggle configuration
-   - Apply toggles to UI
-   - Setup admin button if applicable
-      ↓
-12. Initialize Currency Manager
+11. Initialize Currency Manager ⭐ NEW
    - Load currency settings
    - Setup event listeners
    - Render exchange rates table
+   - Update currency display
       ↓
-13. Final re-render after 100ms
+12. Final re-render after 100ms
       ↓
 ✅ Application Ready
 ```
@@ -776,26 +921,102 @@ When creating a new module, ensure:
 - [ ] Registered in init_manager.js modules object
 - [ ] **Comma added after previous module in modules object** ⚠️ Critical!
 - [ ] Initialization code added to init_manager.initialize() if needed
-- [ ] Feature toggle integration if applicable
-- [ ] Role-based access checks if needed
 - [ ] Public methods documented
 - [ ] Dependencies checked before use
 - [ ] Error handling implemented
 - [ ] Tested in isolation and integrated
-- [ ] Tested with different user roles
+- [ ] **UI components use existing CSS classes** ⭐ NEW
+- [ ] **Responsive design tested** ⭐ NEW
+
+---
+
+## Currency Feature Documentation ⭐ NEW
+
+### Overview
+The Currency Manager module provides comprehensive currency management including:
+- Primary currency selection from 33 global currencies
+- Exchange rate management (manual entry)
+- Currency conversion utilities
+- Persistent storage of settings
+
+### Using the Currency Manager
+
+#### Setting Primary Currency
+```javascript
+// Access current primary currency
+const primaryCurrency = window.projectData.currency.primaryCurrency;  // 'USD'
+
+// Change primary currency (through UI or programmatically)
+window.projectData.currency.primaryCurrency = 'EUR';
+window.currencyManager.updateCurrencyDisplay();
+```
+
+#### Managing Exchange Rates
+```javascript
+// Add an exchange rate
+window.currencyManager.addExchangeRate('EUR', 0.85);
+
+// Delete an exchange rate
+window.currencyManager.deleteExchangeRate(rateId);
+
+// Get all exchange rates
+const rates = window.projectData.currency.exchangeRates;
+```
+
+#### Converting Currency
+```javascript
+// Convert 100 USD to EUR
+const converted = window.currencyManager.convertCurrency(100, 'USD', 'EUR');
+
+// Get currency symbol
+const symbol = window.currencyManager.getCurrencySymbol('USD');  // '$'
+const name = window.currencyManager.getCurrencyName('USD');      // 'US Dollar'
+```
+
+### Supported Currencies
+**Top 10 (Priority Display):**
+USD, EUR, GBP, JPY, CNY, AUD, CAD, CHF, INR, SGD
+
+**Additional 23 Currencies:**
+AED, ARS, BRL, CZK, DKK, HKD, HUF, IDR, ILS, KRW, MXN, MYR, NOK, NZD, PHP, PLN, RON, RUB, SEK, THB, TRY, TWD, ZAR
+
+### Data Structure
+```javascript
+{
+  currency: {
+    primaryCurrency: 'USD',           // ISO 4217 code
+    exchangeRates: [
+      {
+        id: 1234567890,              // Timestamp ID
+        currency: 'EUR',              // Target currency
+        rate: 0.85,                   // 1 primary = rate target
+        lastUpdated: '2024-10-10'     // ISO date string
+      }
+    ]
+  }
+}
+```
+
+### Future Enhancements
+- Automatic exchange rate fetching from API
+- Multi-currency cost entry in modals
+- Currency conversion history
+- Real-time rate updates
+- Bulk exchange rate imports
 
 ---
 
 ## Version History
 
-### v3.0 - Feature Toggle & User Management (Current) ⭐ NEW
-- ✅ Added User Manager module for authentication
-- ✅ Added Feature Toggle Manager for controlled rollout
-- ✅ Role-based access control (Admin/User/Guest)
-- ✅ Admin UI for feature toggle management
-- ✅ Session persistence via localStorage
-- ✅ Integration with existing modules
-- ✅ Updated initialization sequence (Steps 10-11)
+### v2.2 - UI/UX Header Redesign (October 2024) ⭐ CURRENT
+- ✅ Redesigned section headers with `.section-actions` class
+- ✅ Standardized settings actions layout
+- ✅ Added risk summary component styling
+- ✅ Implemented rate cards grid layout
+- ✅ Enhanced forecast section styling
+- ✅ Confirmed month header color scheme (grey, not blue)
+- ✅ Improved spacing consistency across application
+- ✅ Documentation updated with styling guidelines
 
 ### v2.1 - Currency Management
 - ✅ Added Currency Manager module
@@ -803,12 +1024,14 @@ When creating a new module, ensure:
 - ✅ Exchange rate management
 - ✅ Currency conversion utilities
 - ✅ Settings page currency tab
+- ✅ Updated initialization sequence (Step 11)
 
 ### v2.0 - Init Manager Pattern
 - ✅ Centralized initialization with init_manager.js
 - ✅ Removed DOMContentLoaded from script.js
 - ✅ Proper module dependency management
 - ✅ Comprehensive error handling and logging
+- ✅ Cleaner code structure
 
 ### v1.0 - Initial Release
 - Multiple DOMContentLoaded listeners (deprecated)
@@ -824,15 +1047,16 @@ When asking for help or suggesting improvements:
 2. **Provide the console log output** (especially initialization messages)
 3. **Reference this README** so context is clear
 4. **Describe which module you're working on**
-5. **Include user role and feature toggle states if relevant**
-6. **Note any deviations from these patterns**
-7. **For feature toggle issues, export toggle configuration**
+5. **Note any deviations from these patterns**
+6. **For currency issues, include the currency data structure**
+7. **For styling issues, specify which CSS classes you're using** ⭐ NEW
+8. **Include screenshots for UI/layout problems** ⭐ NEW
 
 This ensures efficient problem-solving and maintains architectural consistency.
 
 ---
 
-**Last Updated:** November 2024  
+**Last Updated:** October 2024  
 **Maintained By:** Project Development Team  
 **Architecture Pattern:** Centralized Initialization Manager  
-**Latest Features:** Feature Toggle System v3.0, User Management v3.0
+**Latest Version:** v2.2 - UI/UX Header Redesign
