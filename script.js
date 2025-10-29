@@ -1106,13 +1106,25 @@ function handleModalSubmit() {
                 });
                 break;
             case 'toolCost':
+                // Validate using tool costs manager
+                if (window.toolCostsManager) {
+                    const validation = window.toolCostsManager.validateToolCost(data);
+                    if (!validation.valid) {
+                        alert('Validation errors:\n' + validation.errors.join('\n'));
+                        return;
+                    }
+                }
+                
                 projectData.toolCosts.push({
                     id: Date.now(),
                     tool: data.tool,
-                    licenseType: data.licenseType,
-                    users: parseInt(data.users),
-                    monthlyCost: parseFloat(data.monthlyCost),
-                    duration: parseInt(data.duration)
+                    procurementType: data.procurementType,
+                    billingFrequency: data.billingFrequency,
+                    costPerPeriod: parseFloat(data.costPerPeriod),
+                    quantity: parseInt(data.quantity),
+                    startDate: data.startDate,
+                    endDate: data.endDate || null,
+                    isOngoing: data.isOngoing === 'on' || data.isOngoing === true
                 });
                 break;
             case 'miscCost':
@@ -1255,11 +1267,27 @@ function calculateVendorCostsTotal() {
     }, 0);
 }
 
+// Calculate total tool costs using Tool Costs Manager
 function calculateToolCostsTotal() {
+    if (window.toolCostsManager) {
+        return window.toolCostsManager.calculateAllToolCostsTotal();
+    }
+    
+    // Fallback for old data structure
     return projectData.toolCosts.reduce((total, tool) => {
-        return total + (tool.users * tool.monthlyCost * tool.duration);
+        if (tool.costPerPeriod !== undefined) {
+            // New structure - handled by manager
+            return total;
+        } else {
+            // Old structure
+            const toolTotal = (tool.users || 0) * (tool.monthlyCost || 0) * (tool.duration || 0);
+            return total + toolTotal;
+        }
     }, 0);
 }
+
+// Make function available globally
+window.calculateToolCostsTotal = calculateToolCostsTotal;
 
 function calculateMiscCostsTotal() {
     return projectData.miscCosts.reduce((total, misc) => {
