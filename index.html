@@ -264,42 +264,23 @@
                 </div>
 
                 <!-- Resource Plan Tab -->
-                <div id="resource-plan" class="tab-content">
-                    <h2>Resource Plan Overview</h2>
-                    <div class="cost-summary">
-                        <div class="summary-card">
-                            <h3>Total Project Cost</h3>
-                            <div class="cost-amount" id="totalProjectCost">$0</div>
-                        </div>
-                        <div class="summary-card">
-                            <h3>Internal Resources</h3>
-                            <div class="cost-amount" id="totalInternalCost">$0</div>
-                        </div>
-                        <div class="summary-card">
-                            <h3>External Resources</h3>
-                            <div class="cost-amount" id="totalExternalCost">$0</div>
-                        </div>
-                    </div>
-                    
-                    <div class="forecast-section">
-                        <h3>Cost Forecast by Month</h3>
-                        <div class="table-container">
-                            <table class="data-table">
-                                <thead>
-                                    <tr id="forecastTableYearHeader">
-                                        <!-- Year headers will be dynamically generated -->
-                                    </tr>
-                                    <tr id="forecastTableHeader">
+                    <div id="resource-plan" class="tab-content">
+                        <h2>Resource Plan Overview</h2>
+                        
+                        <div class="forecast-section">
+                            <h3>Cost Forecast by Month</h3>
+                            <div class="table-container">
+                                <table class="data-table" id="forecastTable">
+                                    <thead id="forecastTableHead">
                                         <!-- Headers will be dynamically generated -->
-                                    </tr>
-                                </thead>
-                                <tbody id="forecastTable">
-                                    <!-- Populated by JavaScript -->
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody id="forecastTableBody">
+                                        <!-- Data will be dynamically generated -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
-                </div>
 
                 <!-- Internal Resources Tab -->
                 <div id="internal-resources" class="tab-content">
