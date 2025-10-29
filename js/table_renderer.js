@@ -613,56 +613,77 @@ class TableRenderer {
                     // NEW structure
                     const costPerPeriod = parseFloat(tool.costPerPeriod) || 0;
                     const quantity = parseInt(tool.quantity) || 1;
+                    const billingFreq = tool.billingFrequency.toLowerCase();
+                    const fullCharge = costPerPeriod * quantity;
                     
-                    if (tool.billingFrequency === 'Monthly') {
-                        costPerMonth = costPerPeriod * quantity;
-                        console.log(`   💰 Monthly: $${costPerMonth}/month`);
-                        
-                    } else if (tool.billingFrequency === 'Annual') {
-                        costPerMonth = (costPerPeriod * quantity) / 12;
-                        console.log(`   📅 Annual: $${costPerMonth}/month`);
-                        
-                    } else if (tool.billingFrequency === 'One-time') {
-                        const oneTimeCost = costPerPeriod * quantity;
-                        console.log(`   🎯 One-time: $${oneTimeCost} total`);
-                        
-                        if (tool.startDate && projectStart) {
-                            const toolStart = new Date(tool.startDate);
-                            const monthsDiff = Math.floor((toolStart - projectStart) / (1000 * 60 * 60 * 24 * 30));
-                            const targetMonth = Math.max(0, Math.min(monthsDiff, monthInfo.count - 1));
-                            toolMonthly[targetMonth] += oneTimeCost;
-                            console.log(`   ✅ Added $${oneTimeCost} to month ${targetMonth + 1}`);
-                        } else {
-                            toolMonthly[0] += oneTimeCost;
-                            console.log(`   ✅ Added $${oneTimeCost} to month 1`);
-                        }
-                        return; // Skip monthly distribution
+                    // Calculate start month
+                    if (tool.startDate && projectStart) {
+                        const toolStart = new Date(tool.startDate);
+                        startMonthIndex = Math.max(0, Math.floor((toolStart - projectStart) / (1000 * 60 * 60 * 24 * 30)));
                     }
                     
-                    // Calculate month range for recurring costs
+                    // Calculate end month
                     if (tool.isOngoing) {
-                        startMonthIndex = 0;
                         endMonthIndex = monthInfo.count - 1;
-                        console.log(`   ♾️  Ongoing: months 1-${monthInfo.count}`);
-                        
-                    } else if (tool.startDate && tool.endDate && projectStart) {
-                        const toolStart = new Date(tool.startDate);
+                        console.log(`   ♾️  Ongoing: months ${startMonthIndex + 1}-${monthInfo.count}`);
+                    } else if (tool.endDate && projectStart) {
                         const toolEnd = new Date(tool.endDate);
-                        
-                        startMonthIndex = Math.max(0, Math.floor((toolStart - projectStart) / (1000 * 60 * 60 * 24 * 30)));
                         endMonthIndex = Math.min(monthInfo.count - 1, Math.floor((toolEnd - projectStart) / (1000 * 60 * 60 * 24 * 30)));
-                        
                         console.log(`   📆 Date range: months ${startMonthIndex + 1}-${endMonthIndex + 1}`);
+                    }
+                    
+                    if (billingFreq === 'monthly') {
+                        // Monthly: charge every month
+                        costPerMonth = fullCharge;
+                        console.log(`   💰 Monthly: $${costPerMonth}/month`);
+                        
+                    } else if (billingFreq === 'quarterly') {
+                        // Quarterly: charge every 3 months (months 1, 4, 7, 10, etc.)
+                        console.log(`   📅 Quarterly: $${fullCharge} every 3 months`);
+                        let billingMonths = [];
+                        for (let i = startMonthIndex; i <= endMonthIndex; i += 3) {
+                            toolMonthly[i] += fullCharge;
+                            billingMonths.push(i + 1);
+                        }
+                        const totalForTool = fullCharge * billingMonths.length;
+                        console.log(`   ✅ Added $${fullCharge} to months: ${billingMonths.join(', ')} = $${totalForTool} total`);
+                        return; // Already distributed
+                        
+                    } else if (billingFreq === 'annual') {
+                        // Annual: charge every 12 months (months 1, 13, 25, etc.)
+                        console.log(`   📅 Annual: $${fullCharge} every 12 months`);
+                        let billingMonths = [];
+                        for (let i = startMonthIndex; i <= endMonthIndex; i += 12) {
+                            toolMonthly[i] += fullCharge;
+                            billingMonths.push(i + 1);
+                        }
+                        const totalForTool = fullCharge * billingMonths.length;
+                        console.log(`   ✅ Added $${fullCharge} to months: ${billingMonths.join(', ')} = $${totalForTool} total`);
+                        return; // Already distributed
+                        
+                    } else if (billingFreq === 'one-time') {
+                        // One-time: single charge in the start month
+                        console.log(`   🎯 One-time: $${fullCharge} total`);
+                        toolMonthly[startMonthIndex] += fullCharge;
+                        console.log(`   ✅ Added $${fullCharge} to month ${startMonthIndex + 1}`);
+                        return; // Already distributed
+                        
+                    } else {
+                        console.warn(`   ⚠️  Unknown billing frequency: "${tool.billingFrequency}" - skipping this tool`);
+                        return;
                     }
                 }
                 
-                // Distribute recurring costs
+                // Distribute MONTHLY recurring costs only (quarterly/annual/one-time already handled above)
                 if (costPerMonth > 0) {
+                    console.log(`   💵 Monthly cost to distribute: $${costPerMonth}`);
                     for (let i = startMonthIndex; i <= endMonthIndex; i++) {
                         toolMonthly[i] += costPerMonth;
                     }
                     const totalForTool = costPerMonth * (endMonthIndex - startMonthIndex + 1);
                     console.log(`   ✅ Distributed: $${costPerMonth}/month × ${endMonthIndex - startMonthIndex + 1} months = $${totalForTool} total`);
+                } else if (costPerMonth === 0) {
+                    console.warn(`   ⚠️  costPerMonth is $0 - nothing to distribute!`);
                 }
             });
         }
