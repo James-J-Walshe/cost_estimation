@@ -948,30 +948,57 @@ function getModalFields(type) {
         `,
         toolCost: `
             <div class="form-group">
-                <label>Tool/Software:</label>
-                <input type="text" name="tool" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label>License Type:</label>
-                <select name="licenseType" class="form-control" required>
-                    <option value="Per User">Per User</option>
-                    <option value="Per Device">Per Device</option>
-                    <option value="Enterprise">Enterprise</option>
-                    <option value="One-time">One-time</option>
+                <label>Procurement Type:</label>
+                <select name="procurementType" class="form-control" required>
+                    <option value="">-- Select Type --</option>
+                    <option value="Software License">Software License</option>
+                    <option value="Hardware">Hardware</option>
+                    <option value="Cloud Services">Cloud Services</option>
                 </select>
             </div>
             <div class="form-group">
-                <label>Users/Licenses:</label>
-                <input type="number" name="users" class="form-control" min="1" required>
+                <label>Tool/Software Name:</label>
+                <input type="text" name="tool" class="form-control" required>
             </div>
             <div class="form-group">
-                <label>Monthly Cost:</label>
-                <input type="number" name="monthlyCost" class="form-control" min="0" step="0.01" required>
+                <label>Billing Frequency:</label>
+                <select name="billingFrequency" class="form-control" id="billingFrequency" required>
+                    <option value="">-- Select Frequency --</option>
+                    <option value="one-time">One-time</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="quarterly">Quarterly</option>
+                    <option value="annual">Annual</option>
+                </select>
             </div>
             <div class="form-group">
-                <label>Duration (Months):</label>
-                <input type="number" name="duration" class="form-control" min="1" required>
+                <label>Cost Per Period:</label>
+                <input type="number" name="costPerPeriod" class="form-control" id="costPerPeriod" min="0" step="0.01" required>
+                <small class="form-text text-muted">Enter the cost for one billing period</small>
             </div>
+            <div class="form-group">
+                <label>Quantity (Licenses/Units):</label>
+                <input type="number" name="quantity" class="form-control" id="quantity" min="1" step="1" value="1" required>
+            </div>
+            <div class="form-group">
+                <label>Start Date:</label>
+                <input type="date" name="startDate" class="form-control" id="toolStartDate" required>
+            </div>
+            <div class="form-group" id="endDateGroup">
+                <label>End Date:</label>
+                <input type="date" name="endDate" class="form-control" id="toolEndDate">
+            </div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="checkbox" name="isOngoing" id="isOngoing" style="width: auto; margin: 0;">
+                    <span>Ongoing (no end date)</span>
+                </label>
+            </div>
+            <div id="costPreview" class="cost-preview" style="display: none; margin-top: 1rem; padding: 1rem; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 6px;">
+                <strong>Estimated Total Cost:</strong> <span id="previewAmount">$0</span>
+                <br>
+                <small id="previewDetails" class="text-muted"></small>
+            </div>
+        `,
         `,
         miscCost: `
             <div class="form-group">
