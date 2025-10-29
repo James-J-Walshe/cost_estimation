@@ -7,7 +7,8 @@
 - [File Structure](#file-structure)
 - [Development Guidelines](#development-guidelines)
 - [Common Patterns](#common-patterns)
-- [UI/UX Styling Guidelines](#uiux-styling-guidelines)
+- [Tool Costs Feature](#tool-costs-feature)
+- [Resource Plan Enhancements](#resource-plan-enhancements)
 - [Troubleshooting](#troubleshooting)
 
 ---
@@ -21,8 +22,11 @@ A web-based ICT project estimation tool for calculating and managing project cos
 - Internal and external resource planning
 - Dynamic month-based timeline calculations
 - Vendor, tool, and miscellaneous cost tracking
+- **Enhanced tool cost management with recurring costs** ⭐ NEW (v2.2)
+- **Flexible billing frequencies** (monthly, quarterly, annual, one-time) ⭐ NEW
 - Risk assessment and contingency planning
-- **Currency management with exchange rates** ⭐ NEW
+- Currency management with exchange rates
+- **Resource Plan with 5-row forecast table** ⭐ ENHANCED (v2.2)
 - Data persistence via localStorage
 - Export capabilities
 
@@ -84,9 +88,10 @@ window.initManager.initialize();
    - Creates `window.projectData` if it doesn't exist
    - Sets up default rate cards and project structure
    - Initializes currency settings with default primary currency
+   - Initializes tool costs array with enhanced structure
 
 2. **Module Detection**
-   - Checks for available modules (DataManager, TableRenderer, CurrencyManager, etc.)
+   - Checks for available modules (DataManager, TableRenderer, CurrencyManager, ToolCostsManager, etc.)
    - Logs which modules are loaded
    - Handles both capitalized and lowercase module naming
 
@@ -106,8 +111,10 @@ window.initManager.initialize();
    Step 8: Render all tables
    Step 9: Update UI (summary and month headers)
    Step 10: Initialize New Project Welcome feature
-   Step 11: Initialize Currency Manager ⭐ NEW
-   Step 12: Final re-render after 100ms delay
+   Step 11: Initialize Currency Manager
+   Step 12: Initialize Tool Costs Manager ⭐ NEW
+   Step 13: Render Resource Plan forecast ⭐ NEW
+   Step 14: Final re-render after 100ms delay
    ```
 
 5. **Comprehensive Logging**
@@ -129,7 +136,8 @@ class InitializationManager {
             domManager: false,
             tableFixes: false,
             newProjectWelcome: false,
-            currencyManager: false  // ⭐ NEW
+            currencyManager: false,
+            toolCostsManager: false  // ⭐ NEW
         };
     }
 
@@ -154,7 +162,8 @@ class InitializationManager {
 <script src="modules/dynamic_form_helper.js"></script>
 <script src="modules/table_fixes.js"></script>
 <script src="modules/new_project_welcome.js"></script>
-<script src="modules/currency_manager.js"></script> <!-- ⭐ NEW -->
+<script src="modules/currency_manager.js"></script>
+<script src="modules/tool_costs_manager.js"></script> <!-- ⭐ NEW -->
 
 <!-- Load main script (contains functions but NO auto-init) -->
 <script src="script.js"></script>
@@ -186,7 +195,7 @@ cost_estimation/
 ├── README.md                           # This file
 ├── js/
 │   ├── dom_manager.js                 # DOM manipulation utilities
-│   ├── table_renderer.js              # Table rendering logic
+│   ├── table_renderer.js              # Table rendering logic ⭐ ENHANCED
 │   └── data_manager.js                # Data persistence & loading
 ├── modules/
 │   ├── editManager.js                 # Inline editing functionality
@@ -194,7 +203,8 @@ cost_estimation/
 │   ├── table_fixes.js                 # Table styling fixes
 │   ├── init_manager.js                # ⭐ INITIALIZATION MANAGER (load LAST)
 │   ├── new_project_welcome.js         # New project popup
-│   └── currency_manager.js            # ⭐ Currency & exchange rate management (NEW)
+│   ├── currency_manager.js            # Currency & exchange rate management
+│   └── tool_costs_manager.js          # ⭐ Tool costs calculation & management (NEW)
 └── Styles/
     └── edit-styles.css                # Edit-specific styles
 ```
@@ -220,9 +230,31 @@ cost_estimation/
   - `window.deleteItem`
   - `window.initializeBasicFunctionality` ⭐ **CRITICAL**
   - `window.initializeProjectInfoSaveButton`
+  - `window.renderResourcePlanForecast` ⭐ NEW
   - All calculation functions
 
-#### `modules/currency_manager.js` ⭐ **NEW MODULE**
+#### `modules/tool_costs_manager.js` ⭐ **NEW MODULE**
+- **What:** Manages tool cost calculations and validations
+- **Key features:**
+  - Supports multiple billing frequencies (monthly, quarterly, annual, one-time)
+  - Handles start/end dates and ongoing licenses
+  - Calculates monthly breakdowns for Resource Plan
+  - Validates tool cost data
+  - Manages procurement types (Software License, Hardware, Cloud Services)
+- **Global export:** `window.toolCostsManager`
+- **Must have:** `initialize()` method called by init_manager
+
+#### `js/table_renderer.js` ⭐ **ENHANCED**
+- **What:** Renders all data tables including Resource Plan forecast
+- **Key enhancements:**
+  - `renderForecastTable()` - Renders 5-row forecast with all cost categories
+  - Supports dynamic month columns based on project dates
+  - Handles tool costs with different billing frequencies
+  - Displays costs in actual billing months (not smoothed)
+  - Two-row headers (year + month names)
+- **Global export:** `window.tableRenderer` or `window.TableRenderer`
+
+#### `modules/currency_manager.js`
 - **What:** Manages currency selection and exchange rates
 - **Key features:**
   - Primary currency selection from 33 global currencies
@@ -230,7 +262,6 @@ cost_estimation/
   - Currency conversion utilities
   - Currency symbol mapping
 - **Global export:** `window.currencyManager`
-- **Must have:** `initialize()` method called by init_manager
 
 #### Module Files (`js/*.js` and `modules/*.js`)
 - **What:** Specific functionality modules
@@ -281,8 +312,8 @@ cost_estimation/
    ```javascript
    this.modules = {
        // ... existing modules
-       newProjectWelcome: false,  // ← MUST have comma here
-       myNewModule: false         // ← Add your module (no comma if last)
+       toolCostsManager: false,  // ← MUST have comma here
+       myNewModule: false        // ← Add your module (no comma if last)
    };
 
    // In checkModules()
@@ -420,300 +451,313 @@ window.projectData.projectInfo.projectName = 'New Project';
 projectData.projectInfo.projectName = 'New Project';
 ```
 
-### Pattern 5: Currency Data Structure ⭐ NEW
+### Pattern 5: Tool Costs Data Structure ⭐ NEW
 
 ```javascript
-// Currency settings are stored in window.projectData.currency
+// Tool costs are stored in window.projectData.toolCosts
 window.projectData = {
     projectInfo: { /* ... */ },
-    currency: {
-        primaryCurrency: 'USD',  // ISO 4217 currency code
-        exchangeRates: [
-            {
-                id: 1234567890,
-                currency: 'EUR',
-                rate: 0.85,           // 1 USD = 0.85 EUR
-                lastUpdated: '2024-10-10T12:00:00Z'
-            }
-        ]
-    },
+    currency: { /* ... */ },
+    toolCosts: [
+        {
+            id: 1234567890,
+            procurementType: 'Software License',  // or 'Hardware', 'Cloud Services'
+            toolName: 'Test Software',
+            billingFrequency: 'monthly',           // or 'quarterly', 'annual', 'one-time'
+            costPerPeriod: 200,
+            quantity: 5,
+            startDate: '2025-08',                  // YYYY-MM format
+            endDate: '2025-12',                    // YYYY-MM format or null
+            isOngoing: false,                      // true if no end date
+            totalCost: 5000                        // Calculated value
+        }
+    ],
     internalResources: [],
     // ... other data
 };
 
-// Using currency utilities
-const symbol = window.currencyManager.getCurrencySymbol('USD');  // Returns '$'
-const converted = window.currencyManager.convertCurrency(100, 'USD', 'EUR');  // Returns 85
+// Using tool costs utilities
+const monthlyBreakdown = window.toolCostsManager.calculateMonthlyBreakdown(toolCost);
+const isValid = window.toolCostsManager.validateToolCost(toolCost);
+```
+
+### Pattern 6: Billing Frequency Calculations ⭐ NEW
+
+```javascript
+// Tool Costs Manager handles different billing frequencies
+
+// Monthly billing - charged every month
+{
+    billingFrequency: 'monthly',
+    costPerPeriod: 1000,
+    // Result: $1,000 charged every month
+}
+
+// Quarterly billing - charged every 3 months
+{
+    billingFrequency: 'quarterly',
+    costPerPeriod: 3000,
+    startDate: '2025-01',
+    // Result: $3,000 charged in months 1, 4, 7, 10
+}
+
+// Annual billing - charged once per year
+{
+    billingFrequency: 'annual',
+    costPerPeriod: 12000,
+    startDate: '2025-01',
+    // Result: $12,000 charged in month 1, then month 13 if applicable
+}
+
+// One-time - charged once in start month
+{
+    billingFrequency: 'one-time',
+    costPerPeriod: 15439,
+    startDate: '2025-10',
+    // Result: $15,439 charged in month 10 only
+}
 ```
 
 ---
 
-## UI/UX Styling Guidelines
+## Tool Costs Feature
 
-### Header Redesign (October 2024) ⭐ RECENT UPDATE
+### Overview ⭐ NEW (v2.2)
+The Tool Costs Manager module provides comprehensive tool cost management including:
+- Multiple procurement types (Software License, Hardware, Cloud Services)
+- Flexible billing frequencies (monthly, quarterly, annual, one-time)
+- Start/end date tracking with ongoing option
+- Automatic monthly breakdown calculations
+- Integration with Resource Plan forecast
 
-**Background:** The application header and section layouts were redesigned to improve visual hierarchy and user experience. This redesign standardized spacing, colors, and layout patterns across all sections.
+### Using the Tool Costs Manager
 
-### Key CSS Classes and Patterns
+#### Adding Tool Costs
+```javascript
+// Tool costs are added through the modal form
+// Access through "Add Tool Cost" button in the Tool Costs tab
 
-#### 1. Section Actions
-**Purpose:** Consistent action button placement at the top of each section
+// The form provides:
+// - Procurement Type dropdown
+// - Tool Name input
+// - Billing Frequency selector
+// - Cost Per Period input
+// - Quantity input
+// - Start Date picker (YYYY-MM format)
+// - End Date picker or "Ongoing" checkbox
+```
 
-```css
-.section-actions {
-    margin-bottom: 1.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+#### Calculating Monthly Breakdown
+```javascript
+// Get monthly breakdown for a tool cost
+const toolCost = {
+    procurementType: 'Software License',
+    toolName: 'Test Software',
+    billingFrequency: 'monthly',
+    costPerPeriod: 200,
+    quantity: 5,
+    startDate: '2025-02',
+    endDate: '2025-12',
+    isOngoing: false
+};
+
+const breakdown = window.toolCostsManager.calculateMonthlyBreakdown(
+    toolCost,
+    '2025-02-01',  // Project start date
+    '2025-12-31'   // Project end date
+);
+
+// Returns object with monthly costs:
+// {
+//     '2025-02': 1000,
+//     '2025-03': 1000,
+//     ...
+//     '2025-12': 1000
+// }
+```
+
+#### Validating Tool Costs
+```javascript
+// Validate a tool cost entry
+const isValid = window.toolCostsManager.validateToolCost(toolCost);
+// Returns true if valid, shows alert if invalid
+```
+
+#### Calculating Total Cost
+```javascript
+// Get total cost for a tool
+const total = window.toolCostsManager.calculateTotalCost(toolCost);
+// Returns total cost considering billing frequency and duration
+```
+
+### Data Structure
+```javascript
+{
+  toolCosts: [
+    {
+      id: 1234567890,                   // Timestamp ID
+      procurementType: 'Software License', // Type of tool
+      toolName: 'Test Software',        // Name/description
+      billingFrequency: 'monthly',      // How often charged
+      costPerPeriod: 200,               // Cost per billing period
+      quantity: 5,                      // Number of licenses/units
+      startDate: '2025-02',             // YYYY-MM format
+      endDate: '2025-12',               // YYYY-MM format or null
+      isOngoing: false,                 // True if perpetual
+      totalCost: 5000                   // Calculated total
+    }
+  ]
 }
 ```
 
-**Usage:**
+### Supported Billing Frequencies
+
+1. **Monthly** - Charges appear every month
+   - Example: $1,000/month for 11 months = $11,000 total
+   
+2. **Quarterly** - Charges appear every 3 months
+   - Example: $3,000/quarter starting in month 1 → charges in months 1, 4, 7, 10
+   
+3. **Annual** - Charges appear once per year
+   - Example: $12,000/year → charges in month 1 only (or month 13 if project spans 2 years)
+   
+4. **One-time** - Single charge in start month
+   - Example: $15,439 hardware purchase → charges in month 9 only
+
+### Resource Plan Integration
+Tool costs automatically appear in the Resource Plan forecast table as a dedicated row:
+- Monthly costs display in their billing months (not smoothed)
+- Allows visibility into spending spikes
+- Essential for cash flow planning
+
+---
+
+## Resource Plan Enhancements
+
+### Overview ⭐ ENHANCED (v2.2)
+The Resource Plan tab has been significantly enhanced to provide comprehensive cost forecasting.
+
+### Five-Row Forecast Table
+The Resource Plan now displays a complete forecast with:
+
+1. **Internal Resources** - Daily rate costs for internal staff
+2. **Vendor Costs** - External vendor and contractor costs
+3. **Tool Costs** ⭐ NEW - Software licenses, hardware, and tool costs
+4. **Miscellaneous** - Other project costs
+5. **Total Monthly Cost** - Sum of all categories
+
+### Dynamic Month Columns
+- Columns automatically adjust based on project start/end dates
+- Two-row headers display year and month names (e.g., "2025" / "Feb")
+- Supports projects from 1 month to multiple years
+
+### HTML Structure
 ```html
-<div class="section-actions">
-    <h3>Section Title</h3>
-    <button class="btn btn-primary">Add Item</button>
-</div>
-```
-
-**Developer Notes:**
-- Use this class for ALL section headers with action buttons
-- Maintains consistent spacing (1.5rem bottom margin)
-- Flexbox ensures proper alignment even with multiple buttons
-- Mobile responsive: buttons stack on smaller screens
-
-#### 2. Settings Actions
-**Purpose:** Standardized button layout in settings/configuration areas
-
-```css
-.settings-actions {
-    margin-top: 20px;
-    padding-top: 20px;
-    border-top: 1px solid #e2e8f0;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-```
-
-**Usage:**
-```html
-<div class="settings-actions">
-    <button id="saveProjectInfoBtn" class="btn btn-primary">Save Changes</button>
-    <button class="btn btn-secondary">Cancel</button>
-</div>
-```
-
-**Developer Notes:**
-- Border-top creates visual separation from form content
-- Gap property handles spacing between buttons (no manual margins needed)
-- Used in Settings tab and modal forms
-- Button order: Primary action first, secondary actions follow
-
-#### 3. Save Button Styling
-**Special styling for primary save buttons:**
-
-```css
-#saveProjectInfoBtn {
-    min-width: 180px;
-}
-```
-
-**Developer Notes:**
-- Ensures save buttons don't appear too narrow
-- Apply `min-width` to primary action buttons for consistency
-- Prevents layout shift when button text changes (e.g., "Saving..." → "Saved!")
-
-#### 4. Forecast Section
-**Purpose:** Dedicated styling for forecasting and projection areas
-
-```css
-.forecast-section {
-    margin-top: 2rem;
-}
-
-.forecast-section h3 {
-    margin-bottom: 1rem;
-    color: #374151;
-}
-```
-
-**Usage:**
-```html
-<div class="forecast-section">
-    <h3>Cost Forecast</h3>
-    <!-- Forecast content -->
-</div>
-```
-
-**Developer Notes:**
-- Increased top margin (2rem) creates clear section breaks
-- Heading color (#374151) is slightly softer than pure black for readability
-- Use for forecast tables, timeline projections, and summary displays
-
-#### 5. Risk Summary Component
-**Purpose:** Highlight important cost and risk information
-
-```css
-.risk-summary {
-    background-color: #f8fafc;
-    padding: 1.5rem;
-    border-radius: 8px;
-    margin-bottom: 2rem;
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-}
-
-.cost-display {
-    font-size: 1.1rem;
-    color: #059669;
-}
-```
-
-**Usage:**
-```html
-<div class="risk-summary">
-    <div>
-        <strong>Total Project Cost:</strong>
-        <span class="cost-display">$1,250,000</span>
-    </div>
-    <div>
-        <strong>Contingency Reserve:</strong>
-        <span class="cost-display">$125,000</span>
-    </div>
-</div>
-```
-
-**Developer Notes:**
-- Light background (#f8fafc) draws attention without being intrusive
-- Border-radius (8px) matches overall application aesthetic
-- Green color (#059669) for cost values indicates positive/financial info
-- Flexbox with gap handles responsive spacing
-- Use for summary cards, important metrics, or alert-style information
-
-#### 6. Rate Cards Container
-**Purpose:** Grid layout for displaying multiple rate card sections
-
-```css
-.rate-cards-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-    gap: 2rem;
-}
-
-.rate-card-section {
-    background-color: #f8fafc;
-    padding: 1.5rem;
-    border-radius: 8px;
-}
-
-.rate-card-section h3 {
-    margin-bottom: 1rem;
-    color: #374151;
-}
-```
-
-**Usage:**
-```html
-<div class="rate-cards-container">
-    <div class="rate-card-section">
-        <h3>Internal Rate Card</h3>
-        <!-- Rate card content -->
-    </div>
-    <div class="rate-card-section">
-        <h3>Vendor Rate Card</h3>
-        <!-- Rate card content -->
+<div id="resource-plan" class="tab-content">
+    <h2>Resource Plan Overview</h2>
+    
+    <div class="forecast-section">
+        <h3>Cost Forecast by Month</h3>
+        <div class="table-container">
+            <table class="data-table" id="forecastTable">
+                <thead id="forecastTableHead">
+                    <!-- Year row and month row generated dynamically -->
+                </thead>
+                <tbody id="forecastTableBody">
+                    <!-- 5 rows: Internal, Vendor, Tool, Misc, Total -->
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 ```
 
-**Developer Notes:**
-- CSS Grid with `auto-fit` creates responsive layouts automatically
-- Minimum column width of 500px prevents cards from becoming too narrow
-- Cards stack vertically on smaller screens (<500px width)
-- Gap (2rem) provides breathing room between cards
-- Consistent with `.risk-summary` background color for visual coherence
-- Use this pattern for any multi-column configuration sections
+### Key Functions
 
-### Month Header Styling ⭐ IMPORTANT
+#### `renderResourcePlanForecast()` (script.js)
+Main function for rendering the Resource Plan forecast table. Called by init_manager after all modules load.
 
-**Two-tier header system for timeline tables:**
-
-```css
-/* Year headers - Blue theme */
-.year-header-row th {
-    background: #6c7ae0;
-    color: white;
-    font-weight: 700;
-    text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    font-size: 0.9rem;
-    padding: 12px 8px;
-}
-
-/* Month headers - Light grey theme */
-.month-header-row th {
-    background: #e9ecef;
-    color: #495057;
-    font-weight: 600;
-    text-align: center;
-    font-size: 0.8rem;
-    padding: 8px 4px;
-    border: 1px solid #ced4da;
+```javascript
+function renderResourcePlanForecast() {
+    const head = document.getElementById('forecastTableHead');
+    const body = document.getElementById('forecastTableBody');
+    
+    // Validates project dates
+    // Calculates month span
+    // Renders headers (year + month)
+    // Renders 5 data rows
+    // Handles all cost categories
 }
 ```
 
-**Developer Notes:**
-- **CRITICAL:** Years use blue (#6c7ae0), months use light grey (#e9ecef)
-- This color scheme is INTENTIONAL for visual hierarchy
-- Do NOT change month headers to match year headers
-- Border styling differs: years use transparent white, months use solid grey
-- Font sizes create hierarchy: years (0.9rem) > months (0.8rem)
-- This pattern was specifically requested and tested with users
+#### `renderForecastTable()` (table_renderer.js)
+Enhanced version that renders all 5 rows with proper calculations:
 
-**If you need to modify table headers:**
-1. Check if existing classes (`.year-header-row`, `.month-header-row`) apply
-2. Do NOT add inline styles that override these classes
-3. Test with multiple month ranges (4 months, 12 months, 24+ months)
-4. Verify color contrast meets WCAG AA standards
+```javascript
+renderForecastTable() {
+    // Calculates internal resource costs
+    // Calculates vendor costs
+    // Calculates tool costs with billing frequency support ⭐ NEW
+    // Calculates miscellaneous costs
+    // Renders all rows with monthly totals
+    // Properly formats currency
+    // Styles total row
+}
+```
 
-### General Styling Principles
+### Tool Cost Calculation in Forecast
 
-**Spacing System:**
-- Use `1rem` (16px) for base spacing
-- Use `1.5rem` (24px) for section separators
-- Use `2rem` (32px) for major section breaks
-- Gap property preferred over margins between flex/grid items
+The forecast table handles tool costs intelligently:
 
-**Color Palette:**
-- Primary blue: `#6c7ae0` (headers, primary buttons)
-- Success green: `#059669` (cost displays, positive indicators)
-- Light background: `#f8fafc` (cards, sections)
-- Dark text: `#374151` (headings)
-- Mid grey: `#e9ecef` (month headers, dividers)
-- Border grey: `#ced4da` and `#e2e8f0`
+**Monthly Billing:**
+```javascript
+// $1,000 per month for 11 months
+// Shows: $1,000 in each month from start to end
+```
 
-**Border Radius:**
-- Standard: `8px` for cards and containers
-- Keep consistent across all components
+**Quarterly Billing:**
+```javascript
+// $3,000 per quarter starting in month 1
+// Shows: $3,000 in months 1, 4, 7, 10 (not smoothed!)
+```
 
-**Layout Patterns:**
-- Flexbox for single-row layouts (`.section-actions`, `.settings-actions`)
-- CSS Grid for multi-column layouts (`.rate-cards-container`)
-- Always include `gap` property instead of manual margins
+**One-time Purchase:**
+```javascript
+// $15,439 hardware purchase in month 9
+// Shows: $15,439 in month 9 only
+```
 
-### Testing Checklist for New UI Components
+**Annual Billing:**
+```javascript
+// $12,000 per year starting in month 1
+// Shows: $12,000 in month 1, then month 13 if project spans 2 years
+```
 
-When adding new UI components, ensure:
-- [ ] Follows existing color palette
-- [ ] Uses standard spacing values (1rem, 1.5rem, 2rem)
-- [ ] Applies appropriate class (`.section-actions`, `.rate-card-section`, etc.)
-- [ ] Responsive on mobile devices (320px - 768px)
-- [ ] Tested with various content lengths
-- [ ] No inline styles that override base CSS
-- [ ] Consistent with existing components in same section
-- [ ] Accessible (proper contrast ratios, focus states)
+### Debugging Resource Plan
+
+If the Resource Plan doesn't render correctly:
+
+1. **Check project dates are set:**
+   ```javascript
+   console.log('Start:', window.projectData.projectInfo.startDate);
+   console.log('End:', window.projectData.projectInfo.endDate);
+   ```
+
+2. **Check HTML IDs exist:**
+   ```javascript
+   console.log('Head:', document.getElementById('forecastTableHead'));
+   console.log('Body:', document.getElementById('forecastTableBody'));
+   ```
+
+3. **Manually trigger rendering:**
+   ```javascript
+   renderResourcePlanForecast();
+   ```
+
+4. **Check for conflicting renderers:**
+   - Look for old `renderForecastTable()` in table_renderer.js
+   - Ensure it's updated to handle 5 rows
+   - Verify it's not overwriting the new table
 
 ---
 
@@ -737,17 +781,28 @@ window.updateSummary = updateSummary;
 2. Exported to window: `window.initializeBasicFunctionality = initializeBasicFunctionality;`
 3. Called by init_manager.js in the `initializeDOMManager()` method
 
-### Problem: "Uncaught SyntaxError: Unexpected identifier 'currencyManager'" ⭐ NEW
+### Problem: "Uncaught SyntaxError: Unexpected identifier"
 
-**Cause:** Missing comma before the new module in the modules object
+**Cause:** Missing comma in modules object or duplicate backtick in template literal
 
-**Fix:** In init_manager.js, ensure there's a comma after the previous module:
+**Fix 1:** In init_manager.js, ensure there's a comma after each module except the last:
 ```javascript
 this.modules = {
     // ... other modules
-    newProjectWelcome: false,  // ← MUST have comma here
-    currencyManager: false     // ← Last item, no comma
+    currencyManager: false,  // ← MUST have comma here
+    toolCostsManager: false  // ← Last item, no comma
 };
+```
+
+**Fix 2:** In script.js, check for duplicate closing backticks:
+```javascript
+// WRONG:
+        `,
+        `,  // ❌ Duplicate backtick and comma
+
+// CORRECT:
+        `,
+        miscCost: `  // ✓ Only one closing
 ```
 
 ### Problem: "Uncaught SyntaxError: Unexpected end of input"
@@ -777,7 +832,103 @@ this.modules = {
 2. Ensure init_manager has completed before calling
 3. Check function is defined before the export line
 
-### Problem: Currency settings not saving ⭐ NEW
+### Problem: Tool Costs showing $0 in Resource Plan ⭐ NEW
+
+**Cause:** Billing frequency case mismatch or unsupported billing type
+
+**Fix:**
+1. Check console for tool cost debug logs (look for 🎯📦💰 emojis)
+2. Verify billing frequency is lowercase: 'monthly', 'quarterly', 'annual', 'one-time'
+3. Check tool start/end dates are within project date range
+4. Verify `renderForecastTable()` includes tool cost calculation logic
+5. Look for "✅ Distributed" messages in console to confirm costs are being calculated
+
+**Debug commands:**
+```javascript
+// Check tool costs data
+console.log('Tool costs:', window.projectData.toolCosts);
+
+// Check tool costs manager
+console.log('Manager:', window.toolCostsManager);
+
+// Test calculation manually
+const tool = window.projectData.toolCosts[0];
+const breakdown = window.toolCostsManager.calculateMonthlyBreakdown(
+    tool,
+    window.projectData.projectInfo.startDate,
+    window.projectData.projectInfo.endDate
+);
+console.log('Breakdown:', breakdown);
+```
+
+### Problem: Resource Plan table missing headers or rows ⭐ NEW
+
+**Cause:** HTML structure doesn't match expected IDs or old rendering function is overwriting
+
+**Fix:**
+1. **Check HTML structure** in index.html:
+   ```html
+   <table class="data-table" id="forecastTable">
+       <thead id="forecastTableHead"></thead>
+       <tbody id="forecastTableBody"></tbody>
+   </table>
+   ```
+
+2. **Check for conflicting renderers** in table_renderer.js:
+   - Look for old `renderForecastTable()` method
+   - Ensure it handles all 5 rows (Internal, Vendor, Tool, Misc, Total)
+   - Verify it includes tool cost calculation logic
+
+3. **Manually test:**
+   ```javascript
+   // Run function manually
+   renderResourcePlanForecast();
+   
+   // Check what was rendered
+   const head = document.getElementById('forecastTableHead');
+   const body = document.getElementById('forecastTableBody');
+   console.log('Head HTML:', head.innerHTML);
+   console.log('Body HTML:', body.innerHTML);
+   ```
+
+### Problem: Quarterly costs are smoothed instead of showing in billing months ⭐ NEW
+
+**Cause:** Calculation logic is dividing quarterly costs by 3 instead of showing them in actual billing months
+
+**Fix:** Update `renderForecastTable()` in table_renderer.js to use the correct billing logic:
+```javascript
+// Calculate tool costs with proper billing logic
+if (projectData.toolCosts) {
+    projectData.toolCosts.forEach(tool => {
+        const costPerPeriod = tool.costPerPeriod || 0;
+        const qty = tool.quantity || 1;
+        const billingFreq = (tool.billingFrequency || 'one-time').toLowerCase();
+        
+        if (billingFreq === 'monthly') {
+            // Charge every month
+            for (let i = 0; i < monthInfo.count; i++) {
+                toolMonthly[i] += costPerPeriod * qty;
+            }
+        } else if (billingFreq === 'quarterly') {
+            // Charge every 3 months (1, 4, 7, 10...)
+            for (let i = 0; i < monthInfo.count; i += 3) {
+                toolMonthly[i] += costPerPeriod * qty;
+            }
+        } else if (billingFreq === 'annual') {
+            // Charge once per year
+            toolMonthly[0] += costPerPeriod * qty;
+            if (monthInfo.count > 12) {
+                toolMonthly[12] += costPerPeriod * qty;
+            }
+        } else if (billingFreq === 'one-time') {
+            // Charge in first month only
+            toolMonthly[0] += costPerPeriod * qty;
+        }
+    });
+}
+```
+
+### Problem: Currency settings not saving
 
 **Cause:** Currency data structure not initialized or localStorage not working
 
@@ -786,38 +937,6 @@ this.modules = {
 2. Verify `window.projectData.currency` exists
 3. Try clearing localStorage: `localStorage.clear()`
 4. Check if DataManager is properly saving
-
-### Problem: Styling not applying to new components ⭐ NEW
-
-**Cause:** Inline styles overriding CSS classes or wrong class names
-
-**Fix:**
-1. Check if you're using the correct CSS class names (`.section-actions`, `.risk-summary`, etc.)
-2. Remove any inline `style=""` attributes that might override
-3. Verify CSS file is loaded (check Network tab in DevTools)
-4. Check CSS specificity - inline styles always win
-5. Clear browser cache and hard refresh (Ctrl+Shift+R / Cmd+Shift+R)
-6. For table headers, ensure you're using `.year-header-row` and `.month-header-row` classes
-
-**Common mistakes:**
-```javascript
-// ❌ WRONG - Inline styles override CSS
-<th class="month-header" style="background: blue;">
-
-// ✅ CORRECT - Let CSS classes handle styling
-<th class="month-header">
-```
-
-### Problem: Month headers showing blue instead of grey
-
-**Cause:** Using wrong CSS class or inline styles overriding
-
-**Fix:**
-1. Ensure month cells use `.month-header-row` class
-2. Remove any inline `style="background: ..."` attributes
-3. Check `table_fixes.js` - older versions may have inline styles
-4. Verify style.css lines 413-433 (or current month header section)
-5. This is a known issue - see "Month Header Styling" section above
 
 ---
 
@@ -834,9 +953,11 @@ this.modules = {
 - **Comment your code** - Especially initialization and integration points
 - **Test in isolation** - Each module should work independently when possible
 - **Add commas in object literals** - Remember the comma before adding new properties ⚠️
-- **Use existing CSS classes** - Check style.css before creating new styles
-- **Follow spacing conventions** - Use the 1rem/1.5rem/2rem system
-- **Test responsive layouts** - Verify on mobile (320px) to desktop (1920px+)
+- **Use lowercase for billing frequencies** - 'monthly', 'quarterly', 'annual', 'one-time'
+- **Show costs in actual billing months** - Don't smooth quarterly/annual costs
+- **Validate dates** - Ensure end date is after start date
+- **Export functions before calling them** - Always export to window first
+- **Check console logs during debugging** - Look for emoji indicators (🎯📦💰)
 
 ### DON'T ❌
 
@@ -849,9 +970,10 @@ this.modules = {
 - **Don't duplicate functions** - Check for existing implementations first
 - **Don't skip error handling** - Wrap critical code in try-catch blocks
 - **Don't forget commas in modules object** - This causes syntax errors! ⚠️
-- **Don't use inline styles** - Use CSS classes instead (except for dynamic values)
-- **Don't override month header colors** - Grey is intentional, not blue ⚠️
-- **Don't create duplicate CSS classes** - Search existing styles first
+- **Don't smooth billing frequency costs** - Show charges in actual billing months
+- **Don't use capital letters in billing frequency** - Always lowercase
+- **Don't add code after return statements** - It will never execute
+- **Don't create template literal syntax errors** - Check for duplicate backticks
 
 ---
 
@@ -860,7 +982,7 @@ this.modules = {
 ```
 Browser Loads Page
       ↓
-All module scripts load (dom_manager, table_renderer, currency_manager, etc.)
+All module scripts load (dom_manager, table_renderer, tool_costs_manager, etc.)
       ↓
 script.js loads (defines functions, NO execution)
       ↓
@@ -870,7 +992,7 @@ DOMContentLoaded fires
       ↓
 init_manager.initialize() called
       ↓
-1. Initialize projectData (including currency structure)
+1. Initialize projectData (including currency and toolCosts structures)
       ↓
 2. Check which modules are available
       ↓
@@ -894,13 +1016,20 @@ init_manager.initialize() called
       ↓
 10. Initialize New Project Welcome
       ↓
-11. Initialize Currency Manager ⭐ NEW
-   - Load currency settings
-   - Setup event listeners
-   - Render exchange rates table
-   - Update currency display
+11. Initialize Currency Manager
       ↓
-12. Final re-render after 100ms
+12. Initialize Tool Costs Manager ⭐ NEW
+   - Load tool costs settings
+   - Setup validation rules
+   - Initialize calculation engine
+      ↓
+13. Render Resource Plan forecast ⭐ NEW
+   - Check project dates
+   - Calculate month span
+   - Render 5-row forecast table
+   - Include tool costs with billing frequencies
+      ↓
+14. Final re-render after 100ms
       ↓
 ✅ Application Ready
 ```
@@ -925,98 +1054,60 @@ When creating a new module, ensure:
 - [ ] Dependencies checked before use
 - [ ] Error handling implemented
 - [ ] Tested in isolation and integrated
-- [ ] **UI components use existing CSS classes** ⭐ NEW
-- [ ] **Responsive design tested** ⭐ NEW
 
 ---
 
-## Currency Feature Documentation ⭐ NEW
+## Testing Scenarios ⭐ NEW
 
-### Overview
-The Currency Manager module provides comprehensive currency management including:
-- Primary currency selection from 33 global currencies
-- Exchange rate management (manual entry)
-- Currency conversion utilities
-- Persistent storage of settings
+### Manual Testing for Tool Costs
 
-### Using the Currency Manager
+#### Test 1: Monthly Billing
+1. Add tool cost: Software License, Monthly, $1,000, Qty 1, Feb 2025 - Dec 2025
+2. Expected: $11,000 total (11 months × $1,000)
+3. Resource Plan: $1,000 in each month from Feb to Dec
 
-#### Setting Primary Currency
-```javascript
-// Access current primary currency
-const primaryCurrency = window.projectData.currency.primaryCurrency;  // 'USD'
+#### Test 2: Quarterly Billing
+1. Add tool cost: Software License, Quarterly, $3,000, Qty 1, Jan 2025 - Dec 2025
+2. Expected: $12,000 total (4 quarters × $3,000)
+3. Resource Plan: $3,000 in months 1, 4, 7, 10 only
 
-// Change primary currency (through UI or programmatically)
-window.projectData.currency.primaryCurrency = 'EUR';
-window.currencyManager.updateCurrencyDisplay();
-```
+#### Test 3: One-time Purchase
+1. Add tool cost: Hardware, One-time, $15,439, Qty 1, Oct 2025
+2. Expected: $15,439 total
+3. Resource Plan: $15,439 in Oct 2025 only
 
-#### Managing Exchange Rates
-```javascript
-// Add an exchange rate
-window.currencyManager.addExchangeRate('EUR', 0.85);
+#### Test 4: Ongoing License
+1. Add tool cost: Software License, Monthly, $500, Qty 2, Check "Ongoing"
+2. Expected: Costs continue through project end
+3. Resource Plan: $1,000 every month (no end date)
 
-// Delete an exchange rate
-window.currencyManager.deleteExchangeRate(rateId);
+#### Test 5: Date Validation
+1. Try to add tool cost with End Date before Start Date
+2. Expected: Error message "End date cannot be before start date"
+3. Modal should not close
 
-// Get all exchange rates
-const rates = window.projectData.currency.exchangeRates;
-```
-
-#### Converting Currency
-```javascript
-// Convert 100 USD to EUR
-const converted = window.currencyManager.convertCurrency(100, 'USD', 'EUR');
-
-// Get currency symbol
-const symbol = window.currencyManager.getCurrencySymbol('USD');  // '$'
-const name = window.currencyManager.getCurrencyName('USD');      // 'US Dollar'
-```
-
-### Supported Currencies
-**Top 10 (Priority Display):**
-USD, EUR, GBP, JPY, CNY, AUD, CAD, CHF, INR, SGD
-
-**Additional 23 Currencies:**
-AED, ARS, BRL, CZK, DKK, HKD, HUF, IDR, ILS, KRW, MXN, MYR, NOK, NZD, PHP, PLN, RON, RUB, SEK, THB, TRY, TWD, ZAR
-
-### Data Structure
-```javascript
-{
-  currency: {
-    primaryCurrency: 'USD',           // ISO 4217 code
-    exchangeRates: [
-      {
-        id: 1234567890,              // Timestamp ID
-        currency: 'EUR',              // Target currency
-        rate: 0.85,                   // 1 primary = rate target
-        lastUpdated: '2024-10-10'     // ISO date string
-      }
-    ]
-  }
-}
-```
-
-### Future Enhancements
-- Automatic exchange rate fetching from API
-- Multi-currency cost entry in modals
-- Currency conversion history
-- Real-time rate updates
-- Bulk exchange rate imports
+#### Test 6: Resource Plan Integration
+1. Add multiple tool costs with different billing frequencies
+2. Navigate to Resource Plan tab
+3. Expected: See "Tool Costs" row with monthly breakdown
+4. Expected: See spending spikes in appropriate months
+5. Expected: Total Monthly Cost row includes tool costs
 
 ---
 
 ## Version History
 
-### v2.2 - UI/UX Header Redesign (October 2024) ⭐ CURRENT
-- ✅ Redesigned section headers with `.section-actions` class
-- ✅ Standardized settings actions layout
-- ✅ Added risk summary component styling
-- ✅ Implemented rate cards grid layout
-- ✅ Enhanced forecast section styling
-- ✅ Confirmed month header color scheme (grey, not blue)
-- ✅ Improved spacing consistency across application
-- ✅ Documentation updated with styling guidelines
+### v2.2 - Tool Costs Enhancement (Current) ⭐ NEW
+- ✅ Added Tool Costs Manager module
+- ✅ Multiple billing frequencies (monthly, quarterly, annual, one-time)
+- ✅ Enhanced tool cost data structure with start/end dates
+- ✅ Procurement types (Software License, Hardware, Cloud Services)
+- ✅ Resource Plan integration with 5-row forecast table
+- ✅ Dynamic month columns based on project dates
+- ✅ Cost display in actual billing months (not smoothed)
+- ✅ Ongoing license support
+- ✅ Enhanced validation and error handling
+- ✅ Updated initialization sequence (Steps 12-13)
 
 ### v2.1 - Currency Management
 - ✅ Added Currency Manager module
@@ -1048,15 +1139,15 @@ When asking for help or suggesting improvements:
 3. **Reference this README** so context is clear
 4. **Describe which module you're working on**
 5. **Note any deviations from these patterns**
-6. **For currency issues, include the currency data structure**
-7. **For styling issues, specify which CSS classes you're using** ⭐ NEW
-8. **Include screenshots for UI/layout problems** ⭐ NEW
+6. **For tool cost issues, include the billing frequency and dates**
+7. **For Resource Plan issues, check HTML structure and rendering functions**
+8. **Look for emoji debug logs** (🎯📦💰) in the console
 
 This ensures efficient problem-solving and maintains architectural consistency.
 
 ---
 
-**Last Updated:** October 2024  
+**Last Updated:** October 2025  
 **Maintained By:** Project Development Team  
 **Architecture Pattern:** Centralized Initialization Manager  
-**Latest Version:** v2.2 - UI/UX Header Redesign
+**Latest Feature:** Tool Costs Enhancement v2.2
