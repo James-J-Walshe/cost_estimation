@@ -362,37 +362,55 @@ class TableRenderer {
             tbody.appendChild(row);
         });
     }
-
+  
     // Tool costs table
-    renderToolCostsTable() {
-        const tbody = document.getElementById('toolCostsTable');
-        if (!tbody) return;
-        
-        tbody.innerHTML = '';
-        
-        const projectData = window.projectData || {};
-        if (!projectData.toolCosts || projectData.toolCosts.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No tool costs added yet</td></tr>';
-            return;
-        }
-        
-        projectData.toolCosts.forEach(tool => {
-            const totalCost = tool.users * tool.monthlyCost * tool.duration;
+        renderToolCostsTable() {
+            const tbody = document.getElementById('toolCostsTable');
+            if (!tbody) return;
             
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${tool.tool}</td>
-                <td>${tool.licenseType}</td>
-                <td>${tool.monthlyCost.toLocaleString()}</td>
-                <td>${tool.users}</td>
-                <td>${tool.duration}</td>
-                <td>${totalCost.toLocaleString()}</td>
-                <td>${this.createActionButtons(tool.id, 'tool-cost')}</td>
-            `;
-            tbody.appendChild(row);
-        });
-    }
-
+            tbody.innerHTML = '';
+            
+            const projectData = window.projectData || {};
+            if (!projectData.toolCosts || projectData.toolCosts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No tool costs added yet</td></tr>';
+                return;
+            }
+            
+            projectData.toolCosts.forEach(tool => {
+                const row = document.createElement('tr');
+                
+                // Use Tool Costs Manager for formatting if available
+                if (window.toolCostsManager) {
+                    const formatted = window.toolCostsManager.formatToolCostForDisplay(tool);
+                    
+                    row.innerHTML = `
+                        <td>${formatted.tool}</td>
+                        <td>${formatted.procurementType}</td>
+                        <td>${formatted.billingFrequency}</td>
+                        <td>$${formatted.costPerPeriod.toLocaleString()}</td>
+                        <td>${formatted.quantity}</td>
+                        <td>${formatted.startDate}</td>
+                        <td>${formatted.endDate}${formatted.isOngoing ? ' <span style="color: #059669;">♾️</span>' : ''}</td>
+                        <td>$${formatted.totalCost.toLocaleString()}</td>
+                        <td>${this.createActionButtons(tool.id, 'tool-cost')}</td>
+                    `;
+                } else {
+                    // Fallback for old structure
+                    const totalCost = tool.users * tool.monthlyCost * tool.duration;
+                    row.innerHTML = `
+                        <td>${tool.tool}</td>
+                        <td>${tool.licenseType || '-'}</td>
+                        <td>${tool.monthlyCost.toLocaleString()}</td>
+                        <td>${tool.users}</td>
+                        <td>${tool.duration}</td>
+                        <td>${totalCost.toLocaleString()}</td>
+                        <td>${this.createActionButtons(tool.id, 'tool-cost')}</td>
+                    `;
+                }
+                
+                tbody.appendChild(row);
+            });
+        }
     // Miscellaneous costs table
     renderMiscCostsTable() {
         const tbody = document.getElementById('miscCostsTable');
