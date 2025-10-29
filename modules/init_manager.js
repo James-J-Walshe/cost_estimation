@@ -86,6 +86,9 @@ class InitializationManager {
         // Check for User Manager
         this.modules.userManager = !!(window.userManager || window.UserManager);
 
+        // Check for tool costs manager
+        this.modules.toolCostsManager = !!(window.toolCostsManager || window.ToolCostsManager);
+
         // Check for Feature Toggle Manager  
         this.modules.featureToggleManager = !!(window.featureToggleManager || window.FeatureToggleManager);
 
@@ -550,7 +553,13 @@ class InitializationManager {
                 console.log('✓ Tables rendered');
             }
 
-            // Step 8: Update UI
+            // Step8: Render Resource Plan forecast
+            if (window.renderResourcePlanForecast) {
+                window.renderResourcePlanForecast();
+                console.log('✓ Resource Plan forecast rendered');
+            }
+            
+            // Step 9: Update UI
             if (typeof window.updateSummary === 'function') {
                 window.updateSummary();
             }
@@ -559,43 +568,55 @@ class InitializationManager {
             }
             console.log('✓ UI updated');
 
-            // Step 9: Initialize New Project Welcome if available
+            // Step 10: Initialize New Project Welcome if available
             if (this.modules.newProjectWelcome && typeof window.newProjectWelcome.initialize === 'function') {
                 window.newProjectWelcome.initialize();
                 console.log('✓ Step 9: New Project Welcome initialized');
             }
 
-            // Step 10: Initialize User Manager
+            // Step 11: Initialize User Manager
             if (this.modules.userManager && typeof window.userManager.initialize === 'function') {
                 window.userManager.initialize();
                 console.log('✓ Step 10: User Manager initialized');
             }
 
-            // Step 11: Initialize Feature Toggle Manager
+            // Step 12: Initialize Feature Toggle Manager
             if (this.modules.featureToggleManager && typeof window.featureToggleManager.initialize === 'function') {
                 window.featureToggleManager.initialize();
                 console.log('✓ Step 11: Feature Toggle Manager initialized');
             }
 
-            // Step 12: Initialize Currency Manager
+            // Step 13: Initialize Currency Manager
             if (this.modules.currencyManager && typeof window.currencyManager.initialize === 'function') {
                 window.currencyManager.initialize();
                 console.log('✓ Step 12: Currency Manager initialized');
             }
 
-            // Step 13: Initialize Header Dropdowns (NEW)
+            // Step 14: Initialize Tool Costs Manager
+            if (this.modules.toolCostsManager) {
+                try {
+                    if (window.toolCostsManager && window.toolCostsManager.initialize) {
+                        window.toolCostsManager.initialize();
+                        console.log('✓ Step 12: Tool Costs Manager initialized');
+                    }
+                } catch (error) {
+                    console.error('Error initializing Tool Costs Manager:', error);
+                }
+            }
+            
+            // Step 15: Initialize Header Dropdowns (NEW)
             this.initializeHeaderDropdowns();
             console.log('✓ Step 13: Header dropdowns initialized');
 
-            // Step 14: Setup User View Navigation (NEW)
+            // Step 16: Setup User View Navigation (NEW)
             this.setupUserViewNavigation();
             console.log('✓ Step 14: User view navigation initialized');
 
-            // Step 15: Update User Display in Header (NEW)
+            // Step 17: Update User Display in Header (NEW)
             this.updateUserDisplayInHeader();
             console.log('✓ Step 15: User display updated in header');
             
-            // Step 16: Re-render after short delay for loaded data
+            // Step 18: Re-render after short delay for loaded data
             setTimeout(() => {
                 if (this.modules.tableRenderer) {
                     if (window.TableRenderer && typeof window.TableRenderer.renderAllTables === 'function') {
