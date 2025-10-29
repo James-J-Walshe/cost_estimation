@@ -534,20 +534,20 @@ class TableRenderer {
         });
     }
 
-    // FIXED: Forecast table with ALL 5 ROWS (Internal, Vendor, Tool, Misc, Total) and dynamic months
-    renderForecastTable() {
-        console.log('Starting renderForecastTable with COMPLETE 5-row structure...');
+    // Forecast table with ALL 5 ROWS (Internal, Vendor, Tool, Misc, Total) and dynamic months
+        renderForecastTable() {
+        console.log('🎯 Starting renderForecastTable with COMPLETE 5-row structure...');
         
         const tbody = document.getElementById('forecastTable');
         const projectData = window.projectData || {};
         
         if (!tbody) {
-            console.error('forecastTable tbody not found!');
+            console.error('❌ forecastTable tbody not found!');
             return;
         }
         
         if (!projectData) {
-            console.warn('No projectData available');
+            console.warn('⚠️  No projectData available');
             tbody.innerHTML = '<tr><td colspan="13" class="empty-state">No project data available</td></tr>';
             return;
         }
@@ -558,7 +558,10 @@ class TableRenderer {
         tbody.innerHTML = '';
         
         const monthInfo = this.calculateProjectMonths();
-        console.log('Rendering forecast with month info:', monthInfo);
+        const projectStart = projectData.projectInfo?.startDate ? new Date(projectData.projectInfo.startDate) : null;
+        
+        console.log('📅 Rendering forecast with month info:', monthInfo);
+        console.log('🗓️ Project start date:', projectStart);
         
         // Initialize arrays for each month for ALL categories
         const internalMonthly = new Array(monthInfo.count).fill(0);
@@ -566,9 +569,9 @@ class TableRenderer {
         const toolMonthly = new Array(monthInfo.count).fill(0);
         const miscMonthly = new Array(monthInfo.count).fill(0);
         
-        // Calculate Internal Resources costs
+        // ========== Calculate Internal Resources costs ==========
         if (projectData.internalResources && projectData.internalResources.length > 0) {
-            console.log(`Processing ${projectData.internalResources.length} internal resources`);
+            console.log(`👥 Processing ${projectData.internalResources.length} internal resources`);
             projectData.internalResources.forEach(resource => {
                 monthInfo.monthKeys.forEach((monthKey, index) => {
                     const days = this.getMonthValue(resource, monthKey, 'q');
@@ -577,9 +580,9 @@ class TableRenderer {
             });
         }
         
-        // Calculate Vendor Costs
+        // ========== Calculate Vendor Costs ==========
         if (projectData.vendorCosts && projectData.vendorCosts.length > 0) {
-            console.log(`Processing ${projectData.vendorCosts.length} vendor costs`);
+            console.log(`🏢 Processing ${projectData.vendorCosts.length} vendor costs`);
             projectData.vendorCosts.forEach(vendor => {
                 monthInfo.monthKeys.forEach((monthKey, index) => {
                     const cost = this.getMonthValue(vendor, monthKey, 'q');
@@ -588,53 +591,100 @@ class TableRenderer {
             });
         }
         
-        // Calculate Tool Costs - distribute across project months
+        // ========== Calculate Tool Costs - FIXED VERSION ==========
         if (projectData.toolCosts && projectData.toolCosts.length > 0) {
-            console.log(`Processing ${projectData.toolCosts.length} tool costs`);
-            projectData.toolCosts.forEach(tool => {
-                // Handle both old and new tool cost structures
+            console.log(`🔧 Processing ${projectData.toolCosts.length} tool costs`);
+            
+            projectData.toolCosts.forEach((tool, toolIndex) => {
+                console.log(`\n📦 Tool ${toolIndex + 1}: ${tool.tool}`);
+                console.log('   Data:', {
+                    costPerPeriod: tool.costPerPeriod,
+                    quantity: tool.quantity,
+                    billingFrequency: tool.billingFrequency,
+                    isOngoing: tool.isOngoing,
+                    startDate: tool.startDate,
+                    endDate: tool.endDate
+                });
+                
+                // Handle different tool cost structures
                 let costPerMonth = 0;
-                let toolDuration = 0;
+                let startMonthIndex = 0;
+                let endMonthIndex = monthInfo.count - 1;
                 
                 if (tool.users && tool.monthlyCost) {
-                    // Old structure: users * monthlyCost
+                    // OLD structure: users * monthlyCost
                     costPerMonth = (tool.users || 0) * (tool.monthlyCost || 0);
-                    toolDuration = tool.duration || 0;
-                } else if (tool.costPerPeriod && tool.billingFrequency) {
-                    // New structure with billing frequency
-                    const cost = tool.costPerPeriod || 0;
-                    const quantity = tool.quantity || 1;
+                    const toolDuration = tool.duration || 0;
+                    endMonthIndex = Math.min(toolDuration - 1, monthInfo.count - 1);
+                    console.log(`   📊 Old structure: $${costPerMonth}/month for ${toolDuration} months`);
                     
-                    // Convert to monthly cost based on billing frequency
+                } else if (tool.costPerPeriod !== undefined && tool.billingFrequency) {
+                    // NEW structure with billing frequency
+                    const costPerPeriod = parseFloat(tool.costPerPeriod) || 0;
+                    const quantity = parseInt(tool.quantity) || 1;
+                    
+                    // Handle billing frequency
                     if (tool.billingFrequency === 'Monthly') {
-                        costPerMonth = cost * quantity;
+                        costPerMonth = costPerPeriod * quantity;
+                        console.log(`   💰 Monthly: $${costPerMonth}/month (${costPerPeriod} × ${quantity})`);
+                        
                     } else if (tool.billingFrequency === 'Annual') {
-                        costPerMonth = (cost * quantity) / 12;
+                        costPerMonth = (costPerPeriod * quantity) / 12;
+                        console.log(`   📅 Annual: $${costPerMonth}/month (${costPerPeriod} × ${quantity} ÷ 12)`);
+                        
                     } else if (tool.billingFrequency === 'One-time') {
-                        costPerMonth = 0; // One-time costs are distributed differently
+                        // ONE-TIME COST: add to first month only
+                        const oneTimeCost = costPerPeriod * quantity;
+                        console.log(`   🎯 One-time: $${oneTimeCost} total`);
+                        
+                        // Calculate which month this cost belongs to
+                        if (tool.startDate && projectStart) {
+                            const toolStart = new Date(tool.startDate);
+                            const monthsDiff = Math.floor((toolStart - projectStart) / (1000 * 60 * 60 * 24 * 30));
+                            const targetMonth = Math.max(0, Math.min(monthsDiff, monthInfo.count - 1));
+                            toolMonthly[targetMonth] += oneTimeCost;
+                            console.log(`   ✅ Added $${oneTimeCost} to month ${targetMonth + 1}`);
+                        } else {
+                            // No date info - add to first month
+                            toolMonthly[0] += oneTimeCost;
+                            console.log(`   ✅ Added $${oneTimeCost} to month 1 (no date info)`);
+                        }
+                        return; // Skip monthly distribution
                     }
                     
-                    // Calculate duration in months
-                    if (tool.startDate && tool.endDate && !tool.isOngoing) {
-                        const start = new Date(tool.startDate);
-                        const end = new Date(tool.endDate);
-                        toolDuration = Math.ceil((end - start) / (1000 * 60 * 60 * 24 * 30));
-                    } else if (tool.isOngoing) {
-                        toolDuration = monthInfo.count; // Ongoing costs span entire project
+                    // Calculate which months recurring costs apply to
+                    if (tool.isOngoing) {
+                        // Ongoing costs span entire project
+                        startMonthIndex = 0;
+                        endMonthIndex = monthInfo.count - 1;
+                        console.log(`   ♾️  Ongoing: months 1-${monthInfo.count}`);
+                        
+                    } else if (tool.startDate && tool.endDate && projectStart) {
+                        // Calculate month range based on dates
+                        const toolStart = new Date(tool.startDate);
+                        const toolEnd = new Date(tool.endDate);
+                        
+                        startMonthIndex = Math.max(0, Math.floor((toolStart - projectStart) / (1000 * 60 * 60 * 24 * 30)));
+                        endMonthIndex = Math.min(monthInfo.count - 1, Math.floor((toolEnd - projectStart) / (1000 * 60 * 60 * 24 * 30)));
+                        
+                        console.log(`   📆 Date range: months ${startMonthIndex + 1}-${endMonthIndex + 1}`);
                     }
                 }
                 
-                // Distribute cost across the appropriate months
-                const monthsToDistribute = Math.min(toolDuration, monthInfo.count);
-                for (let i = 0; i < monthsToDistribute; i++) {
-                    toolMonthly[i] += costPerMonth;
+                // Distribute RECURRING cost across months
+                if (costPerMonth > 0) {
+                    for (let i = startMonthIndex; i <= endMonthIndex; i++) {
+                        toolMonthly[i] += costPerMonth;
+                    }
+                    const totalForTool = costPerMonth * (endMonthIndex - startMonthIndex + 1);
+                    console.log(`   ✅ Distributed: $${costPerMonth}/month × ${endMonthIndex - startMonthIndex + 1} months = $${totalForTool} total`);
                 }
             });
         }
         
-        // Calculate Miscellaneous Costs - distribute evenly across all months
+        // ========== Calculate Miscellaneous Costs ==========
         if (projectData.miscCosts && projectData.miscCosts.length > 0) {
-            console.log(`Processing ${projectData.miscCosts.length} miscellaneous costs`);
+            console.log(`📋 Processing ${projectData.miscCosts.length} miscellaneous costs`);
             projectData.miscCosts.forEach(misc => {
                 const costPerMonth = (misc.cost || 0) / monthInfo.count;
                 for (let i = 0; i < monthInfo.count; i++) {
@@ -643,50 +693,52 @@ class TableRenderer {
             });
         }
         
-        // Calculate totals
+        // ========== Calculate Totals ==========
         const internalTotal = internalMonthly.reduce((sum, val) => sum + val, 0);
         const vendorTotal = vendorMonthly.reduce((sum, val) => sum + val, 0);
         const toolTotal = toolMonthly.reduce((sum, val) => sum + val, 0);
         const miscTotal = miscMonthly.reduce((sum, val) => sum + val, 0);
         const grandTotal = internalTotal + vendorTotal + toolTotal + miscTotal;
         
-        console.log('Forecast totals:', {
-            internal: internalTotal,
-            vendor: vendorTotal,
-            tool: toolTotal,
-            misc: miscTotal,
-            grand: grandTotal
+        console.log('\n💰 Forecast totals:', {
+            internal: `$${Math.round(internalTotal).toLocaleString()}`,
+            vendor: `$${Math.round(vendorTotal).toLocaleString()}`,
+            tool: `$${Math.round(toolTotal).toLocaleString()}`,
+            misc: `$${Math.round(miscTotal).toLocaleString()}`,
+            grand: `$${Math.round(grandTotal).toLocaleString()}`
         });
         
-        // Create Internal Resources row
+        // ========== Build HTML Rows ==========
+        
+        // ROW 1: Internal Resources
         let internalRowHTML = '<td><strong>Internal Resources</strong></td>';
         internalMonthly.forEach(cost => {
             internalRowHTML += `<td>$${Math.round(cost).toLocaleString()}</td>`;
         });
         internalRowHTML += `<td><strong>$${Math.round(internalTotal).toLocaleString()}</strong></td>`;
         
-        // Create Vendor Costs row
+        // ROW 2: Vendor Costs
         let vendorRowHTML = '<td><strong>Vendor Costs</strong></td>';
         vendorMonthly.forEach(cost => {
             vendorRowHTML += `<td>$${Math.round(cost).toLocaleString()}</td>`;
         });
         vendorRowHTML += `<td><strong>$${Math.round(vendorTotal).toLocaleString()}</strong></td>`;
         
-        // Create Tool Costs row
+        // ROW 3: Tool Costs
         let toolRowHTML = '<td><strong>Tool Costs</strong></td>';
         toolMonthly.forEach(cost => {
             toolRowHTML += `<td>$${Math.round(cost).toLocaleString()}</td>`;
         });
         toolRowHTML += `<td><strong>$${Math.round(toolTotal).toLocaleString()}</strong></td>`;
         
-        // Create Miscellaneous row
+        // ROW 4: Miscellaneous
         let miscRowHTML = '<td><strong>Miscellaneous</strong></td>';
         miscMonthly.forEach(cost => {
             miscRowHTML += `<td>$${Math.round(cost).toLocaleString()}</td>`;
         });
         miscRowHTML += `<td><strong>$${Math.round(miscTotal).toLocaleString()}</strong></td>`;
         
-        // Create Total row with enhanced styling
+        // ROW 5: Total
         let totalRowHTML = '<td><strong style="font-size: 1.1em;">Total</strong></td>';
         for (let i = 0; i < monthInfo.count; i++) {
             const monthTotal = internalMonthly[i] + vendorMonthly[i] + toolMonthly[i] + miscMonthly[i];
@@ -694,7 +746,7 @@ class TableRenderer {
         }
         totalRowHTML += `<td><strong style="font-size: 1.1em;">$${Math.round(grandTotal).toLocaleString()}</strong></td>`;
         
-        // Render ALL 5 ROWS
+        // ========== Render ALL 5 ROWS ==========
         tbody.innerHTML = `
             <tr>${internalRowHTML}</tr>
             <tr>${vendorRowHTML}</tr>
@@ -703,9 +755,8 @@ class TableRenderer {
             <tr class="total-row" style="background-color: #f3f4f6; font-weight: bold; border-top: 2px solid #d1d5db;">${totalRowHTML}</tr>
         `;
         
-        console.log('Forecast table rendered successfully with ALL 5 ROWS');
+        console.log('✅ Forecast table rendered successfully with ALL 5 ROWS\n');
     }
-}
 
 // Data update integration for edit functionality
 function updateItemById(itemId, newData, itemType) {
