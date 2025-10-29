@@ -860,6 +860,185 @@ function updateMonthHeaders() {
     }
 }
 
+// Generate Resource Plan forecast table
+function renderResourcePlanForecast() {
+    const table = document.getElementById('forecastTable');
+    const thead = document.getElementById('forecastTableHead');
+    const tbody = document.getElementById('forecastTableBody');
+    
+    if (!table || !thead || !tbody) return;
+    
+    // Get project date range
+    const startDate = projectData.projectInfo?.startDate;
+    const endDate = projectData.projectInfo?.endDate;
+    
+    if (!startDate) {
+        thead.innerHTML = '<tr><th>Cost Category</th><th colspan="6">Please set project start date in Project Settings</th></tr>';
+        tbody.innerHTML = '';
+        return;
+    }
+    
+    // Calculate months to display
+    const months = calculateProjectMonthsArray(startDate, endDate);
+    
+    // Build header row
+    let headerHTML = '<tr class="month-header-row"><th>Cost Category</th>';
+    months.forEach(month => {
+        headerHTML += `<th>${month.label}</th>`;
+    });
+    headerHTML += '<th>Total</th></tr>';
+    thead.innerHTML = headerHTML;
+    
+    // Get cost data
+    const internalCosts = getInternalResourcesMonthlyCosts(months);
+    const vendorCosts = getVendorMonthlyCosts(months);
+    const toolCosts = getToolCostsMonthlyCosts(months);
+    const miscCosts = getMiscMonthlyCosts(months);
+    
+    // Build body rows
+    let bodyHTML = '';
+    
+    // Internal Resources row
+    bodyHTML += '<tr><td><strong>Internal Resources</strong></td>';
+    let internalTotal = 0;
+    months.forEach(month => {
+        const cost = internalCosts[month.key] || 0;
+        internalTotal += cost;
+        bodyHTML += `<td>$${cost.toLocaleString()}</td>`;
+    });
+    bodyHTML += `<td><strong>$${internalTotal.toLocaleString()}</strong></td></tr>`;
+    
+    // Vendor Costs row
+    bodyHTML += '<tr><td><strong>Vendor Costs</strong></td>';
+    let vendorTotal = 0;
+    months.forEach(month => {
+        const cost = vendorCosts[month.key] || 0;
+        vendorTotal += cost;
+        bodyHTML += `<td>$${cost.toLocaleString()}</td>`;
+    });
+    bodyHTML += `<td><strong>$${vendorTotal.toLocaleString()}</strong></td></tr>`;
+    
+    // Tool Costs row (NEW)
+    bodyHTML += '<tr><td><strong>Tool Costs</strong></td>';
+    let toolTotal = 0;
+    months.forEach(month => {
+        const cost = toolCosts[month.key] || 0;
+        toolTotal += cost;
+        bodyHTML += `<td>$${cost.toLocaleString()}</td>`;
+    });
+    bodyHTML += `<td><strong>$${toolTotal.toLocaleString()}</strong></td></tr>`;
+    
+    // Miscellaneous row
+    bodyHTML += '<tr><td><strong>Miscellaneous</strong></td>';
+    let miscTotal = 0;
+    months.forEach(month => {
+        const cost = miscCosts[month.key] || 0;
+        miscTotal += cost;
+        bodyHTML += `<td>$${cost.toLocaleString()}</td>`;
+    });
+    bodyHTML += `<td><strong>$${miscTotal.toLocaleString()}</strong></td></tr>`;
+    
+    // Total row
+    bodyHTML += '<tr class="total-row" style="background: #f0f9ff; font-weight: bold;"><td><strong>Total Monthly Cost</strong></td>';
+    let grandTotal = 0;
+    months.forEach(month => {
+        const monthTotal = (internalCosts[month.key] || 0) + 
+                          (vendorCosts[month.key] || 0) + 
+                          (toolCosts[month.key] || 0) + 
+                          (miscCosts[month.key] || 0);
+        grandTotal += monthTotal;
+        bodyHTML += `<td><strong>$${monthTotal.toLocaleString()}</strong></td>`;
+    });
+    bodyHTML += `<td><strong>$${grandTotal.toLocaleString()}</strong></td></tr>`;
+    
+    tbody.innerHTML = bodyHTML;
+}
+
+// Calculate months array from start to end date
+function calculateProjectMonthsArray(startDate, endDate) {
+    const months = [];
+    const start = new Date(startDate);
+    let end;
+    
+    if (endDate) {
+        end = new Date(endDate);
+    } else {
+        // Default to 12 months if no end date
+        end = new Date(start);
+        end.setMonth(end.getMonth() + 11);
+    }
+    
+    let current = new Date(start);
+    while (current <= end) {
+        const key = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`;
+        const label = current.toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+        months.push({ key, label });
+        current.setMonth(current.getMonth() + 1);
+    }
+    
+    return months;
+}
+
+// Get internal resources costs by month
+function getInternalResourcesMonthlyCosts(months) {
+    const costs = {};
+    const resources = projectData.internalResources || [];
+    
+    // This is simplified - assumes 4 months currently
+    // You may need to enhance this based on your existing logic
+    resources.forEach(resource => {
+        const dailyRate = resource.dailyRate || 0;
+        if (months[0]) costs[months[0].key] = (costs[months[0].key] || 0) + (resource.month1Days || 0) * dailyRate;
+        if (months[1]) costs[months[1].key] = (costs[months[1].key] || 0) + (resource.month2Days || 0) * dailyRate;
+        if (months[2]) costs[months[2].key] = (costs[months[2].key] || 0) + (resource.month3Days || 0) * dailyRate;
+        if (months[3]) costs[months[3].key] = (costs[months[3].key] || 0) + (resource.month4Days || 0) * dailyRate;
+    });
+    
+    return costs;
+}
+
+// Get vendor costs by month
+function getVendorMonthlyCosts(months) {
+    const costs = {};
+    const vendors = projectData.vendorCosts || [];
+    
+    // Simplified - assumes 4 months currently
+    vendors.forEach(vendor => {
+        if (months[0]) costs[months[0].key] = (costs[months[0].key] || 0) + (vendor.month1Cost || 0);
+        if (months[1]) costs[months[1].key] = (costs[months[1].key] || 0) + (vendor.month2Cost || 0);
+        if (months[2]) costs[months[2].key] = (costs[months[2].key] || 0) + (vendor.month3Cost || 0);
+        if (months[3]) costs[months[3].key] = (costs[months[3].key] || 0) + (vendor.month4Cost || 0);
+    });
+    
+    return costs;
+}
+
+// Get tool costs by month using Tool Costs Manager
+function getToolCostsMonthlyCosts(months) {
+    if (window.toolCostsManager) {
+        return window.toolCostsManager.getAllToolCostsMonthlyBreakdown();
+    }
+    return {};
+}
+
+// Get miscellaneous costs by month (spread evenly)
+function getMiscMonthlyCosts(months) {
+    const costs = {};
+    const misc = projectData.miscCosts || [];
+    const totalMisc = misc.reduce((sum, item) => sum + (item.cost || 0), 0);
+    
+    // Spread misc costs evenly across all months
+    const costPerMonth = months.length > 0 ? totalMisc / months.length : 0;
+    months.forEach(month => {
+        costs[month.key] = costPerMonth;
+    });
+    
+    return costs;
+}
+
+// Export functions
+window.renderResourcePlanForecast = renderResourcePlanForecast;
+
 // Modal Management
 function openModal(title, type) {
     try {
