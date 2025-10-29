@@ -15,7 +15,8 @@ class InitializationManager {
             newProjectWelcome: false,
             currencyManager: false,
             userManager: false,
-            featureToggleManager: false
+            featureToggleManager: false,
+            toolCostsManager: false 
         };
     }
 
