@@ -2,6 +2,7 @@
 // Handles all table rendering functionality with edit capabilities and dynamic month columns
 // Compatible with existing dynamic_form_helper.js
 // Enhanced with two-row headers (year + month)
+// FIXED VERSION: All 5 forecast rows + proper tool cost calculation
 
 class TableRenderer {
     constructor() {
@@ -168,7 +169,6 @@ class TableRenderer {
 
     // Update table headers dynamically with two-row structure
     updateTableHeaders() {
-        console.log('Updating table headers with two-row structure...');
         const monthInfo = this.calculateProjectMonths();
         
         // Update Internal Resources table header
@@ -178,7 +178,6 @@ class TableRenderer {
             const headers = this.createTwoRowHeaders(['Role', 'Rate Card', 'Daily Rate'], monthInfo, true);
             internalYearHeader.innerHTML = headers.yearRowHTML;
             internalHeader.innerHTML = headers.monthRowHTML;
-            console.log('Internal Resources headers updated');
         }
 
         // Update Vendor Costs table header
@@ -188,7 +187,6 @@ class TableRenderer {
             const headers = this.createTwoRowHeaders(['Vendor', 'Category', 'Description'], monthInfo, true);
             vendorYearHeader.innerHTML = headers.yearRowHTML;
             vendorHeader.innerHTML = headers.monthRowHTML;
-            console.log('Vendor Costs headers updated');
         }
 
         // Update Forecast table header
@@ -198,12 +196,6 @@ class TableRenderer {
             const headers = this.createTwoRowHeaders(['Category'], monthInfo, false);
             forecastYearHeader.innerHTML = headers.yearRowHTML;
             forecastHeader.innerHTML = headers.monthRowHTML;
-            console.log('Forecast table headers updated with year/month structure');
-        } else {
-            console.warn('Forecast table header elements not found:', {
-                forecastYearHeader: !!forecastYearHeader,
-                forecastHeader: !!forecastHeader
-            });
         }
 
         console.log('Two-row table headers updated with dynamic months:', monthInfo.months);
@@ -382,7 +374,7 @@ class TableRenderer {
         
         const projectData = window.projectData || {};
         if (!projectData.toolCosts || projectData.toolCosts.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No tool costs added yet</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No tool costs added yet</td></tr>';
             return;
         }
         
@@ -534,8 +526,8 @@ class TableRenderer {
         });
     }
 
-    // Forecast table with ALL 5 ROWS (Internal, Vendor, Tool, Misc, Total) and dynamic months
-        renderForecastTable() {
+    // ============= FIXED FORECAST TABLE WITH ALL 5 ROWS =============
+    renderForecastTable() {
         console.log('🎯 Starting renderForecastTable with COMPLETE 5-row structure...');
         
         const tbody = document.getElementById('forecastTable');
@@ -552,7 +544,7 @@ class TableRenderer {
             return;
         }
         
-        // Update headers first to ensure they match the data
+        // Update headers first
         this.updateTableHeaders();
         
         tbody.innerHTML = '';
@@ -563,13 +555,13 @@ class TableRenderer {
         console.log('📅 Rendering forecast with month info:', monthInfo);
         console.log('🗓️ Project start date:', projectStart);
         
-        // Initialize arrays for each month for ALL categories
+        // Initialize arrays for ALL categories
         const internalMonthly = new Array(monthInfo.count).fill(0);
         const vendorMonthly = new Array(monthInfo.count).fill(0);
         const toolMonthly = new Array(monthInfo.count).fill(0);
         const miscMonthly = new Array(monthInfo.count).fill(0);
         
-        // ========== Calculate Internal Resources costs ==========
+        // Calculate Internal Resources
         if (projectData.internalResources && projectData.internalResources.length > 0) {
             console.log(`👥 Processing ${projectData.internalResources.length} internal resources`);
             projectData.internalResources.forEach(resource => {
@@ -580,7 +572,7 @@ class TableRenderer {
             });
         }
         
-        // ========== Calculate Vendor Costs ==========
+        // Calculate Vendor Costs
         if (projectData.vendorCosts && projectData.vendorCosts.length > 0) {
             console.log(`🏢 Processing ${projectData.vendorCosts.length} vendor costs`);
             projectData.vendorCosts.forEach(vendor => {
@@ -591,7 +583,7 @@ class TableRenderer {
             });
         }
         
-        // ========== Calculate Tool Costs - FIXED VERSION ==========
+        // Calculate Tool Costs - FIXED VERSION
         if (projectData.toolCosts && projectData.toolCosts.length > 0) {
             console.log(`🔧 Processing ${projectData.toolCosts.length} tool costs`);
             
@@ -606,38 +598,34 @@ class TableRenderer {
                     endDate: tool.endDate
                 });
                 
-                // Handle different tool cost structures
                 let costPerMonth = 0;
                 let startMonthIndex = 0;
                 let endMonthIndex = monthInfo.count - 1;
                 
                 if (tool.users && tool.monthlyCost) {
-                    // OLD structure: users * monthlyCost
+                    // OLD structure
                     costPerMonth = (tool.users || 0) * (tool.monthlyCost || 0);
                     const toolDuration = tool.duration || 0;
                     endMonthIndex = Math.min(toolDuration - 1, monthInfo.count - 1);
                     console.log(`   📊 Old structure: $${costPerMonth}/month for ${toolDuration} months`);
                     
                 } else if (tool.costPerPeriod !== undefined && tool.billingFrequency) {
-                    // NEW structure with billing frequency
+                    // NEW structure
                     const costPerPeriod = parseFloat(tool.costPerPeriod) || 0;
                     const quantity = parseInt(tool.quantity) || 1;
                     
-                    // Handle billing frequency
                     if (tool.billingFrequency === 'Monthly') {
                         costPerMonth = costPerPeriod * quantity;
-                        console.log(`   💰 Monthly: $${costPerMonth}/month (${costPerPeriod} × ${quantity})`);
+                        console.log(`   💰 Monthly: $${costPerMonth}/month`);
                         
                     } else if (tool.billingFrequency === 'Annual') {
                         costPerMonth = (costPerPeriod * quantity) / 12;
-                        console.log(`   📅 Annual: $${costPerMonth}/month (${costPerPeriod} × ${quantity} ÷ 12)`);
+                        console.log(`   📅 Annual: $${costPerMonth}/month`);
                         
                     } else if (tool.billingFrequency === 'One-time') {
-                        // ONE-TIME COST: add to first month only
                         const oneTimeCost = costPerPeriod * quantity;
                         console.log(`   🎯 One-time: $${oneTimeCost} total`);
                         
-                        // Calculate which month this cost belongs to
                         if (tool.startDate && projectStart) {
                             const toolStart = new Date(tool.startDate);
                             const monthsDiff = Math.floor((toolStart - projectStart) / (1000 * 60 * 60 * 24 * 30));
@@ -645,22 +633,19 @@ class TableRenderer {
                             toolMonthly[targetMonth] += oneTimeCost;
                             console.log(`   ✅ Added $${oneTimeCost} to month ${targetMonth + 1}`);
                         } else {
-                            // No date info - add to first month
                             toolMonthly[0] += oneTimeCost;
-                            console.log(`   ✅ Added $${oneTimeCost} to month 1 (no date info)`);
+                            console.log(`   ✅ Added $${oneTimeCost} to month 1`);
                         }
                         return; // Skip monthly distribution
                     }
                     
-                    // Calculate which months recurring costs apply to
+                    // Calculate month range for recurring costs
                     if (tool.isOngoing) {
-                        // Ongoing costs span entire project
                         startMonthIndex = 0;
                         endMonthIndex = monthInfo.count - 1;
                         console.log(`   ♾️  Ongoing: months 1-${monthInfo.count}`);
                         
                     } else if (tool.startDate && tool.endDate && projectStart) {
-                        // Calculate month range based on dates
                         const toolStart = new Date(tool.startDate);
                         const toolEnd = new Date(tool.endDate);
                         
@@ -671,7 +656,7 @@ class TableRenderer {
                     }
                 }
                 
-                // Distribute RECURRING cost across months
+                // Distribute recurring costs
                 if (costPerMonth > 0) {
                     for (let i = startMonthIndex; i <= endMonthIndex; i++) {
                         toolMonthly[i] += costPerMonth;
@@ -682,7 +667,7 @@ class TableRenderer {
             });
         }
         
-        // ========== Calculate Miscellaneous Costs ==========
+        // Calculate Miscellaneous
         if (projectData.miscCosts && projectData.miscCosts.length > 0) {
             console.log(`📋 Processing ${projectData.miscCosts.length} miscellaneous costs`);
             projectData.miscCosts.forEach(misc => {
@@ -693,7 +678,7 @@ class TableRenderer {
             });
         }
         
-        // ========== Calculate Totals ==========
+        // Calculate totals
         const internalTotal = internalMonthly.reduce((sum, val) => sum + val, 0);
         const vendorTotal = vendorMonthly.reduce((sum, val) => sum + val, 0);
         const toolTotal = toolMonthly.reduce((sum, val) => sum + val, 0);
@@ -708,37 +693,31 @@ class TableRenderer {
             grand: `$${Math.round(grandTotal).toLocaleString()}`
         });
         
-        // ========== Build HTML Rows ==========
-        
-        // ROW 1: Internal Resources
+        // Build HTML rows
         let internalRowHTML = '<td><strong>Internal Resources</strong></td>';
         internalMonthly.forEach(cost => {
             internalRowHTML += `<td>$${Math.round(cost).toLocaleString()}</td>`;
         });
         internalRowHTML += `<td><strong>$${Math.round(internalTotal).toLocaleString()}</strong></td>`;
         
-        // ROW 2: Vendor Costs
         let vendorRowHTML = '<td><strong>Vendor Costs</strong></td>';
         vendorMonthly.forEach(cost => {
             vendorRowHTML += `<td>$${Math.round(cost).toLocaleString()}</td>`;
         });
         vendorRowHTML += `<td><strong>$${Math.round(vendorTotal).toLocaleString()}</strong></td>`;
         
-        // ROW 3: Tool Costs
         let toolRowHTML = '<td><strong>Tool Costs</strong></td>';
         toolMonthly.forEach(cost => {
             toolRowHTML += `<td>$${Math.round(cost).toLocaleString()}</td>`;
         });
         toolRowHTML += `<td><strong>$${Math.round(toolTotal).toLocaleString()}</strong></td>`;
         
-        // ROW 4: Miscellaneous
         let miscRowHTML = '<td><strong>Miscellaneous</strong></td>';
         miscMonthly.forEach(cost => {
             miscRowHTML += `<td>$${Math.round(cost).toLocaleString()}</td>`;
         });
         miscRowHTML += `<td><strong>$${Math.round(miscTotal).toLocaleString()}</strong></td>`;
         
-        // ROW 5: Total
         let totalRowHTML = '<td><strong style="font-size: 1.1em;">Total</strong></td>';
         for (let i = 0; i < monthInfo.count; i++) {
             const monthTotal = internalMonthly[i] + vendorMonthly[i] + toolMonthly[i] + miscMonthly[i];
@@ -746,7 +725,7 @@ class TableRenderer {
         }
         totalRowHTML += `<td><strong style="font-size: 1.1em;">$${Math.round(grandTotal).toLocaleString()}</strong></td>`;
         
-        // ========== Render ALL 5 ROWS ==========
+        // Render ALL 5 ROWS
         tbody.innerHTML = `
             <tr>${internalRowHTML}</tr>
             <tr>${vendorRowHTML}</tr>
@@ -757,6 +736,7 @@ class TableRenderer {
         
         console.log('✅ Forecast table rendered successfully with ALL 5 ROWS\n');
     }
+}
 
 // Data update integration for edit functionality
 function updateItemById(itemId, newData, itemType) {
@@ -766,10 +746,7 @@ function updateItemById(itemId, newData, itemType) {
         case 'internal-resource':
             const resourceIndex = projectData.internalResources.findIndex(r => r.id === itemId);
             if (resourceIndex !== -1) {
-                // Update the resource with new data
                 Object.assign(projectData.internalResources[resourceIndex], newData);
-                
-                // Update rate if role changed
                 const rate = projectData.rateCards.find(r => r.role === newData.role);
                 if (rate) {
                     projectData.internalResources[resourceIndex].dailyRate = rate.rate;
@@ -813,7 +790,6 @@ function updateItemById(itemId, newData, itemType) {
             if (rateIndex !== -1) {
                 Object.assign(projectData.rateCards[rateIndex], newData);
                 
-                // Also update old arrays for backward compatibility
                 if (newData.category === 'Internal') {
                     const internalIndex = projectData.internalRates?.findIndex(r => 
                         (r.id && r.id === itemId) || r.role === itemId
@@ -839,7 +815,6 @@ function updateItemById(itemId, newData, itemType) {
             break;
     }
     
-    // Save to localStorage if available
     if (window.DataManager && window.DataManager.saveToLocalStorage) {
         window.DataManager.saveToLocalStorage();
     }
@@ -850,7 +825,7 @@ const tableRenderer = new TableRenderer();
 
 // Make it globally available
 window.tableRenderer = tableRenderer;
-window.TableRenderer = tableRenderer; // For backward compatibility with your existing code
+window.TableRenderer = tableRenderer;
 
 // Export individual functions for backward compatibility
 window.renderAllTables = () => tableRenderer.renderAllTables();
@@ -864,8 +839,6 @@ window.renderInternalRatesTable = () => tableRenderer.renderInternalRatesTable()
 window.renderExternalRatesTable = () => tableRenderer.renderExternalRatesTable();
 window.renderForecastTable = () => tableRenderer.renderForecastTable();
 window.updateTableHeaders = () => tableRenderer.updateTableHeaders();
-
-// Export the update function for edit functionality
 window.updateItemById = updateItemById;
 
-console.log('Enhanced Table Renderer module loaded with COMPLETE 5-row forecast table support - Compatible with dynamic_form_helper.js');
+console.log('✅ Enhanced Table Renderer module loaded - COMPLETE with 5-row forecast and tool cost fixes');
