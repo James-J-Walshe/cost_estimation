@@ -1178,7 +1178,6 @@ function getModalFields(type) {
                 <small id="previewDetails" class="text-muted"></small>
             </div>
         `,
-        `,
         miscCost: `
             <div class="form-group">
                 <label>Item:</label>
