@@ -21,7 +21,8 @@ class DataManager {
                     console.log('Data loaded from localStorage:', {
                         vendorCosts: parsed.vendorCosts?.length || 0,
                         toolCosts: parsed.toolCosts?.length || 0,
-                        internalResources: parsed.internalResources?.length || 0
+                        internalResources: parsed.internalResources?.length || 0,
+                        hasCurrency: !!parsed.currency 
                     });
                     
                     // Update the global projectData - merge arrays properly
@@ -34,6 +35,21 @@ class DataManager {
                         window.projectData.miscCosts = parsed.miscCosts || [];
                         window.projectData.risks = parsed.risks || [];
                         window.projectData.contingencyPercentage = parsed.contingencyPercentage || 10;
+                        
+                        // Load currency settings
+                        if (parsed.currency) {
+                            window.projectData.currency = parsed.currency;
+                            console.log('✓ Currency data loaded:', parsed.currency.primaryCurrency);
+                        } else {
+                            // Ensure currency structure exists for old projects
+                            if (!window.projectData.currency) {
+                                window.projectData.currency = {
+                                    primaryCurrency: 'USD',
+                                    exchangeRates: []
+                                };
+                                console.log('⚠ No currency in saved data, initialized with defaults');
+                            }
+                        }
                         
                         // Handle rate cards properly
                         if (parsed.rateCards) {
@@ -84,7 +100,8 @@ class DataManager {
                         vendorCosts: window.projectData.vendorCosts?.length || 0,
                         toolCosts: window.projectData.toolCosts?.length || 0,
                         internalResources: window.projectData.internalResources?.length || 0,
-                        projectData: window.projectData
+                        projectData: window.projectData,
+                        currency: window.projectData.currency?.primaryCurrency || 'Not set'
                     });
                     
                     console.log('Data loaded and populated successfully');
