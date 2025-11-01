@@ -628,7 +628,10 @@ class MergeManager {
             window.tableRenderer.renderToolCostsTable();
             window.tableRenderer.renderMiscCostsTable();
             window.tableRenderer.renderRisksTable();
+            window.tableRenderer.renderForecastTable();
         }
+
+        if (window.updateSummary) window.updateSummary();
         
         // Close modal
         const modal = document.getElementById('mergeModal');
