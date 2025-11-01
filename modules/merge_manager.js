@@ -620,18 +620,37 @@ class MergeManager {
         }
         
         // Refresh all displays
-        if (window.updateMonthHeaders) window.updateMonthHeaders();
-        if (window.updateSummary) window.updateSummary();
-        if (window.tableRenderer) {
-            window.tableRenderer.renderInternalResourcesTable();
-            window.tableRenderer.renderVendorCostsTable();
-            window.tableRenderer.renderToolCostsTable();
-            window.tableRenderer.renderMiscCostsTable();
-            window.tableRenderer.renderRisksTable();
-            window.tableRenderer.renderForecastTable();
-        }
-
-        if (window.updateSummary) window.updateSummary();
+            // Replace current project data with merged version
+            window.projectData = mergedProject;
+            
+            // Save to localStorage
+            if (window.dataManager && window.dataManager.saveToLocalStorage) {
+                window.dataManager.saveToLocalStorage();
+            }
+            
+            // Refresh month headers first
+            if (window.updateMonthHeaders) {
+                window.updateMonthHeaders();
+            }
+            
+            // Render all tables with updated data
+            if (window.tableRenderer) {
+                window.tableRenderer.renderInternalResourcesTable();
+                window.tableRenderer.renderVendorCostsTable();
+                window.tableRenderer.renderToolCostsTable();
+                window.tableRenderer.renderMiscCostsTable();
+                window.tableRenderer.renderRisksTable();
+                window.tableRenderer.renderForecastTable();
+            }
+            
+            // ONLY NOW update the summary, after all tables are rendered
+            // Use setTimeout to ensure all rendering is complete
+            setTimeout(() => {
+                if (window.updateSummary) {
+                    window.updateSummary();
+                    console.log('Summary updated after merge');
+                }
+            }, 100);
         
         // Close modal
         const modal = document.getElementById('mergeModal');
