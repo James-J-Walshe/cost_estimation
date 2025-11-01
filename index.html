@@ -62,6 +62,9 @@
                                         </svg>
                                         <span>Export Excel</span>
                                     </button>
+                                    <button id="mergeFileBtn" class="btn btn-secondary">
+                                        <span class="btn-icon">🔄</span> Merge File
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -665,6 +668,37 @@
         </div>
     </div>
 
+    <!-- Merge Modal -->
+    <div id="mergeModal" class="modal">
+        <div class="modal-content merge-modal-content">
+            <span class="close" onclick="document.getElementById('mergeModal').style.display='none'">&times;</span>
+            <h2>Merge Specialist Team Estimate</h2>
+            
+            <!-- Step 1: File Upload -->
+            <div id="mergeStep1" class="merge-step">
+                <h3>Step 1: Select and Validate File</h3>
+                <div class="form-group">
+                    <label>Upload Specialist Team Project File (.json):</label>
+                    <input type="file" id="specialistFileInput" accept=".json" class="form-control" 
+                           onchange="window.mergeManager.handleFileUpload(event)">
+                    <p class="help-text">Select a project estimate file exported from this tool</p>
+                </div>
+                <div id="validationResult"></div>
+            </div>
+            
+            <!-- Step 2: Date Comparison -->
+            <div id="mergeStep2" class="merge-step" style="display: none;">
+                <h3>Step 2: Compare Project Timelines</h3>
+                <div id="dateComparisonResult"></div>
+            </div>
+            
+            <!-- Step 3: Date Selection & Merge -->
+            <div id="mergeStep3" class="merge-step" style="display: none;">
+                <h3>Step 3: Select Timeline and Complete Merge</h3>
+                <div id="dateSelectionPanel"></div>
+            </div>
+        </div>
+    </div>
     <!-- Modal for adding items -->
     <div id="modal" class="modal">
         <div class="modal-content">
@@ -694,6 +728,7 @@
     <script src="modules/user_manager.js"></script>
     <script src="modules/feature_toggle_manager.js"></script>
     <script src="modules/tool_costs_manager.js"></script>
+    <script src="modules/merge_manager.js"></script>
     
     <!-- Load main script (contains functions but no auto-init) -->
     <script src="script.js"></script>
