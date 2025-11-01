@@ -16,7 +16,8 @@ class InitializationManager {
             currencyManager: false,
             userManager: false,
             featureToggleManager: false,
-            toolCostsManager: false 
+            toolCostsManager: false,
+            mergeManager: false
         };
     }
 
@@ -88,6 +89,9 @@ class InitializationManager {
 
         // Check for tool costs manager
         this.modules.toolCostsManager = !!(window.toolCostsManager || window.ToolCostsManager);
+
+        // Check for merge manager
+        this.modules.mergeManager = !!(window.mergeManager || window.MergeManager);
 
         // Check for Feature Toggle Manager  
         this.modules.featureToggleManager = !!(window.featureToggleManager || window.FeatureToggleManager);
@@ -615,8 +619,18 @@ class InitializationManager {
             // Step 17: Update User Display in Header (NEW)
             this.updateUserDisplayInHeader();
             console.log('✓ Step 15: User display updated in header');
+
+            // Step 18: Initialize Merge Manager
+            if (this.modules.mergeManager && typeof window.mergeManager.initialize === 'function') {
+                window.mergeManager.initialize();
+                console.log('✓ Merge Manager initialized');
+            } else if (this.modules.mergeManager) {
+                console.warn('⚠ Merge Manager loaded but has no initialize method');
+            } else {
+                console.log('ℹ Merge Manager not available');
+            }
             
-            // Step 18: Re-render after short delay for loaded data
+            // Step 19: Re-render after short delay for loaded data
             setTimeout(() => {
                 if (this.modules.tableRenderer) {
                     if (window.TableRenderer && typeof window.TableRenderer.renderAllTables === 'function') {
