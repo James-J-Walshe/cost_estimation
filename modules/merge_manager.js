@@ -641,6 +641,7 @@ class MergeManager {
                 window.tableRenderer.renderMiscCostsTable();
                 window.tableRenderer.renderRisksTable();
                 window.tableRenderer.renderForecastTable();
+                window.tableRenderer.renderUnifiedRateCardsTable();
             }
             
             // ONLY NOW update the summary, after all tables are rendered
