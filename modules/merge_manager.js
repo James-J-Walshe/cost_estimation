@@ -628,12 +628,12 @@ class MergeManager {
                 window.dataManager.saveToLocalStorage();
             }
             
-            // Refresh month headers first
+            // Refresh all displays
             if (window.updateMonthHeaders) {
                 window.updateMonthHeaders();
             }
             
-            // Render all tables with updated data
+            // Render all tables including forecast AND rate cards
             if (window.tableRenderer) {
                 window.tableRenderer.renderInternalResourcesTable();
                 window.tableRenderer.renderVendorCostsTable();
@@ -641,17 +641,41 @@ class MergeManager {
                 window.tableRenderer.renderMiscCostsTable();
                 window.tableRenderer.renderRisksTable();
                 window.tableRenderer.renderForecastTable();
-                window.tableRenderer.renderUnifiedRateCardsTable();
+                
+                // Check if rate cards method exists before calling
+                if (typeof window.tableRenderer.renderUnifiedRateCardsTable === 'function') {
+                    window.tableRenderer.renderUnifiedRateCardsTable();
+                }
             }
             
-            // ONLY NOW update the summary, after all tables are rendered
-            // Use setTimeout to ensure all rendering is complete
+            // CRITICAL: Use longer delay and ensure DOM is fully updated
+            // Update summary AFTER all rendering is complete
             setTimeout(() => {
+                console.log('🔄 Starting post-merge summary update...');
+                
+                // Force a re-render of all tables one more time to ensure data is loaded
+                if (window.tableRenderer) {
+                    window.tableRenderer.renderInternalResourcesTable();
+                    window.tableRenderer.renderVendorCostsTable();
+                    window.tableRenderer.renderToolCostsTable();
+                    window.tableRenderer.renderMiscCostsTable();
+                }
+                
+                // Now update the summary
                 if (window.updateSummary) {
                     window.updateSummary();
-                    console.log('Summary updated after merge');
+                    console.log('✅ Summary updated after merge');
                 }
-            }, 100);
+                
+                // Double-check summary after another short delay
+                setTimeout(() => {
+                    if (window.updateSummary) {
+                        window.updateSummary();
+                        console.log('✅ Summary double-checked');
+                    }
+                }, 200);
+                
+            }, 300); // Increased from 100ms to 300ms
         
         // Close modal
         const modal = document.getElementById('mergeModal');
