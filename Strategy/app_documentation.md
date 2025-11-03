@@ -9,6 +9,7 @@
 - [Common Patterns](#common-patterns)
 - [Tool Costs Feature](#tool-costs-feature)
 - [Resource Plan Enhancements](#resource-plan-enhancements)
+- [Merge File Feature](#merge-file-feature) ⭐ NEW
 - [Troubleshooting](#troubleshooting)
 
 ---
@@ -22,11 +23,12 @@ A web-based ICT project estimation tool for calculating and managing project cos
 - Internal and external resource planning
 - Dynamic month-based timeline calculations
 - Vendor, tool, and miscellaneous cost tracking
-- **Enhanced tool cost management with recurring costs** ⭐ NEW (v2.2)
-- **Flexible billing frequencies** (monthly, quarterly, annual, one-time) ⭐ NEW
+- **Enhanced tool cost management with recurring costs** ⭐ (v2.2)
+- **Flexible billing frequencies** (monthly, quarterly, annual, one-time) ⭐ (v2.2)
 - Risk assessment and contingency planning
 - Currency management with exchange rates
-- **Resource Plan with 5-row forecast table** ⭐ ENHANCED (v2.2)
+- **Resource Plan with 5-row forecast table** ⭐ (v2.2)
+- **File Merge functionality for specialist team estimates** ⭐ NEW (v2.3)
 - Data persistence via localStorage
 - Export capabilities
 
@@ -91,7 +93,7 @@ window.initManager.initialize();
    - Initializes tool costs array with enhanced structure
 
 2. **Module Detection**
-   - Checks for available modules (DataManager, TableRenderer, CurrencyManager, ToolCostsManager, etc.)
+   - Checks for available modules (DataManager, TableRenderer, CurrencyManager, ToolCostsManager, MergeManager, etc.)
    - Logs which modules are loaded
    - Handles both capitalized and lowercase module naming
 
@@ -112,9 +114,10 @@ window.initManager.initialize();
    Step 9: Update UI (summary and month headers)
    Step 10: Initialize New Project Welcome feature
    Step 11: Initialize Currency Manager
-   Step 12: Initialize Tool Costs Manager ⭐ NEW
-   Step 13: Render Resource Plan forecast ⭐ NEW
-   Step 14: Final re-render after 100ms delay
+   Step 12: Initialize Tool Costs Manager
+   Step 13: Render Resource Plan forecast
+   Step 14: Initialize Merge Manager ⭐ NEW
+   Step 15: Final re-render after 100ms delay
    ```
 
 5. **Comprehensive Logging**
@@ -137,7 +140,8 @@ class InitializationManager {
             tableFixes: false,
             newProjectWelcome: false,
             currencyManager: false,
-            toolCostsManager: false  // ⭐ NEW
+            toolCostsManager: false,
+            mergeManager: false  // ⭐ NEW (v2.3)
         };
     }
 
@@ -163,7 +167,8 @@ class InitializationManager {
 <script src="modules/table_fixes.js"></script>
 <script src="modules/new_project_welcome.js"></script>
 <script src="modules/currency_manager.js"></script>
-<script src="modules/tool_costs_manager.js"></script> <!-- ⭐ NEW -->
+<script src="modules/tool_costs_manager.js"></script>
+<script src="modules/merge_manager.js"></script> <!-- ⭐ NEW -->
 
 <!-- Load main script (contains functions but NO auto-init) -->
 <script src="script.js"></script>
@@ -204,7 +209,8 @@ cost_estimation/
 │   ├── init_manager.js                # ⭐ INITIALIZATION MANAGER (load LAST)
 │   ├── new_project_welcome.js         # New project popup
 │   ├── currency_manager.js            # Currency & exchange rate management
-│   └── tool_costs_manager.js          # ⭐ Tool costs calculation & management (NEW)
+│   ├── tool_costs_manager.js          # Tool costs calculation & management
+│   └── merge_manager.js               # ⭐ Merge specialist team estimates (NEW v2.3)
 └── Styles/
     └── edit-styles.css                # Edit-specific styles
 ```
@@ -230,10 +236,24 @@ cost_estimation/
   - `window.deleteItem`
   - `window.initializeBasicFunctionality` ⭐ **CRITICAL**
   - `window.initializeProjectInfoSaveButton`
-  - `window.renderResourcePlanForecast` ⭐ NEW
+  - `window.renderResourcePlanForecast`
   - All calculation functions
 
-#### `modules/tool_costs_manager.js` ⭐ **NEW MODULE**
+#### `modules/merge_manager.js` ⭐ **NEW MODULE (v2.3)**
+- **What:** Manages merging specialist team estimates into master project
+- **Key features:**
+  - Three-step merge workflow (File Selection, Date Comparison, Date Selection)
+  - JSON file validation against expected schema
+  - Project date alignment with three options (keep master, adopt specialist, custom dates)
+  - Automatic merge of all cost categories (Internal Resources, Vendor Costs, Tool Costs, Misc Costs, Risks)
+  - Rate card consolidation (avoids duplicates)
+  - Specialist team tagging for merged items
+  - Comprehensive error handling and user feedback
+- **Global export:** `window.mergeManager`
+- **Must have:** `initialize()` method called by init_manager
+- **Access:** Via "Merge File" button in project functions menu
+
+#### `modules/tool_costs_manager.js`
 - **What:** Manages tool cost calculations and validations
 - **Key features:**
   - Supports multiple billing frequencies (monthly, quarterly, annual, one-time)
@@ -248,6 +268,7 @@ cost_estimation/
 - **What:** Renders all data tables including Resource Plan forecast
 - **Key enhancements:**
   - `renderForecastTable()` - Renders 5-row forecast with all cost categories
+  - `renderUnifiedRateCardsTable()` - Renders rate cards table in Settings
   - Supports dynamic month columns based on project dates
   - Handles tool costs with different billing frequencies
   - Displays costs in actual billing months (not smoothed)
@@ -312,8 +333,8 @@ cost_estimation/
    ```javascript
    this.modules = {
        // ... existing modules
-       toolCostsManager: false,  // ← MUST have comma here
-       myNewModule: false        // ← Add your module (no comma if last)
+       mergeManager: false,  // ← MUST have comma here
+       myNewModule: false    // ← Add your module (no comma if last)
    };
 
    // In checkModules()
@@ -451,7 +472,7 @@ window.projectData.projectInfo.projectName = 'New Project';
 projectData.projectInfo.projectName = 'New Project';
 ```
 
-### Pattern 5: Tool Costs Data Structure ⭐ NEW
+### Pattern 5: Tool Costs Data Structure
 
 ```javascript
 // Tool costs are stored in window.projectData.toolCosts
@@ -481,7 +502,7 @@ const monthlyBreakdown = window.toolCostsManager.calculateMonthlyBreakdown(toolC
 const isValid = window.toolCostsManager.validateToolCost(toolCost);
 ```
 
-### Pattern 6: Billing Frequency Calculations ⭐ NEW
+### Pattern 6: Billing Frequency Calculations
 
 ```javascript
 // Tool Costs Manager handles different billing frequencies
@@ -518,11 +539,30 @@ const isValid = window.toolCostsManager.validateToolCost(toolCost);
 }
 ```
 
+### Pattern 7: Merge Workflow ⭐ NEW
+
+```javascript
+// Merge Manager handles three-step workflow
+
+// Step 1: File Selection and Validation
+mergeManager.handleFileUpload(event);
+mergeManager.validateFile(fileContent);
+// Result: File validated, metadata displayed
+
+// Step 2: Date Comparison
+mergeManager.compareDates();
+// Result: Shows date differences, variance calculations
+
+// Step 3: Date Selection and Merge
+mergeManager.executeMerge();
+// Result: All cost items merged, tables refreshed, success message shown
+```
+
 ---
 
 ## Tool Costs Feature
 
-### Overview ⭐ NEW (v2.2)
+### Overview (v2.2)
 The Tool Costs Manager module provides comprehensive tool cost management including:
 - Multiple procurement types (Software License, Hardware, Cloud Services)
 - Flexible billing frequencies (monthly, quarterly, annual, one-time)
@@ -634,7 +674,7 @@ Tool costs automatically appear in the Resource Plan forecast table as a dedicat
 
 ## Resource Plan Enhancements
 
-### Overview ⭐ ENHANCED (v2.2)
+### Overview (v2.2)
 The Resource Plan tab has been significantly enhanced to provide comprehensive cost forecasting.
 
 ### Five-Row Forecast Table
@@ -642,7 +682,7 @@ The Resource Plan now displays a complete forecast with:
 
 1. **Internal Resources** - Daily rate costs for internal staff
 2. **Vendor Costs** - External vendor and contractor costs
-3. **Tool Costs** ⭐ NEW - Software licenses, hardware, and tool costs
+3. **Tool Costs** - Software licenses, hardware, and tool costs
 4. **Miscellaneous** - Other project costs
 5. **Total Monthly Cost** - Sum of all categories
 
@@ -697,7 +737,7 @@ Enhanced version that renders all 5 rows with proper calculations:
 renderForecastTable() {
     // Calculates internal resource costs
     // Calculates vendor costs
-    // Calculates tool costs with billing frequency support ⭐ NEW
+    // Calculates tool costs with billing frequency support
     // Calculates miscellaneous costs
     // Renders all rows with monthly totals
     // Properly formats currency
@@ -718,7 +758,7 @@ The forecast table handles tool costs intelligently:
 **Quarterly Billing:**
 ```javascript
 // $3,000 per quarter starting in month 1
-// Shows: $3,000 in months 1, 4, 7, 10 (not smoothed!)
+// Shows: $3,000 in months 1, 4, 7, 10 only (not smoothed!)
 ```
 
 **One-time Purchase:**
@@ -761,6 +801,449 @@ If the Resource Plan doesn't render correctly:
 
 ---
 
+## Merge File Feature
+
+### Overview ⭐ NEW (v2.3)
+The Merge Manager module enables combining specialist team estimates into a master project file. This is essential for distributed estimation workflows where different teams (e.g., Security, Cloud, Network specialists) create estimates independently that need to be consolidated.
+
+**Key Benefits:**
+- ✅ Combine estimates from multiple teams
+- ✅ Automatic date alignment with flexible options
+- ✅ Validates file compatibility before merging
+- ✅ Tags merged items for easy identification
+- ✅ Preserves both master and specialist data integrity
+- ✅ Consolidates rate cards intelligently
+
+### Three-Step Merge Workflow
+
+#### Step 1: File Selection and Validation (MERGE-001)
+
+**Purpose:** Upload and validate specialist team estimate files
+
+**Features:**
+- File upload interface with .json file restriction
+- Comprehensive JSON validation
+- Schema compatibility checking
+- Metadata preview (project name, dates, resource counts)
+- Warning messages for missing or incomplete data
+- Clear error reporting
+
+**Validation Checks:**
+```javascript
+// Required fields validation
+const requiredFields = [
+    'projectInfo',
+    'internalResources',
+    'vendorCosts',
+    'toolCosts',
+    'miscCosts',
+    'risks',
+    'rateCards'
+];
+
+// Date validation
+if (!project.projectInfo.startDate || !project.projectInfo.endDate) {
+    warnings.push('Project dates are missing');
+}
+```
+
+**User Experience:**
+1. Click "Merge File" button in project functions menu
+2. Modal opens showing Step 1
+3. Upload .json file from specialist team
+4. System validates file structure and data
+5. If valid: Metadata displayed with "Next: Compare Dates" button
+6. If invalid: Clear error messages shown with reasons
+
+#### Step 2: Project Date Alignment - Comparison (MERGE-002)
+
+**Purpose:** Compare project timelines and identify differences
+
+**Features:**
+- Side-by-side date comparison (Master vs. Specialist)
+- Timeline variance calculations in days
+- Visual highlighting of differences (green for match, yellow for differ)
+- Duration comparison
+- Impact assessment messaging
+
+**Date Comparison Display:**
+```javascript
+// Calculates variances
+const startVariance = Math.round((specialistStart - masterStart) / (1000 * 60 * 60 * 24));
+const endVariance = Math.round((masterEnd - specialistEnd) / (1000 * 60 * 60 * 24));
+const durationVariance = specialistDuration - masterDuration;
+
+// Visual comparison grid shows:
+// - Master Project dates and duration
+// - Specialist Project dates and duration
+// - Variance indicators (±X days difference)
+// - Match/differ highlighting
+```
+
+**User Experience:**
+1. Automatically triggered after successful file validation
+2. Shows two-column comparison grid
+3. Highlights differences in yellow with variance indicators
+4. Shows green checkmarks for matching dates
+5. Displays impact message if differences detected
+6. Provides "Next: Select Timeline" button
+
+#### Step 3: Project Date Alignment - Selection (MERGE-003)
+
+**Purpose:** Choose timeline strategy and execute merge
+
+**Three Timeline Options:**
+
+1. **Keep Master Dates**
+   - Uses existing master project dates
+   - Adjusts specialist cost items to align with master timeline
+   - Best when: Master project dates are confirmed/locked
+
+2. **Adopt Specialist Dates**
+   - Updates master project to use specialist dates
+   - Useful when specialist team has more accurate dates
+   - Best when: Specialist timeline is more recent/accurate
+
+3. **Enter Custom Dates**
+   - Manual date entry for both start and end
+   - Full control over final timeline
+   - Best when: Neither timeline is ideal, need different dates
+
+**Merge Preview:**
+Shows what will be merged:
+- Count of internal resource entries
+- Count of vendor cost entries
+- Count of tool cost entries
+- Count of miscellaneous cost entries
+- Count of risk entries
+- Note about specialist team tagging
+
+**Merge Execution:**
+```javascript
+// Creates merged project
+const mergedProject = {
+    ...masterProject,
+    projectInfo: {
+        ...masterProject.projectInfo,
+        startDate: targetStart,
+        endDate: targetEnd,
+        projectDescription: masterProject.projectInfo.projectDescription + 
+            `\n\n[Merged with "${specialistProject.projectInfo.projectName}" on ${date}]`
+    }
+};
+
+// Merges all cost categories
+// - Internal Resources
+// - Vendor Costs
+// - Tool Costs
+// - Miscellaneous Costs
+// - Risks
+// - Rate Cards (consolidates, avoids duplicates)
+
+// Tags merged items
+// Each merged item tagged as "(Specialist Team)" for identification
+```
+
+**User Experience:**
+1. Select one of three timeline options (radio buttons)
+2. View merge preview with item counts
+3. Click "Complete Merge" button
+4. System executes merge:
+   - Combines all cost categories
+   - Tags merged items
+   - Consolidates rate cards
+   - Refreshes all tables and views
+   - Saves to localStorage
+5. Success message confirms completion with item count
+6. Modal closes automatically
+7. All views updated with merged data
+
+### Accessing the Merge Feature
+
+**Location:** Project Functions Menu (alongside Save, Load, Export, Download)
+
+**Button:** "Merge File" with merge icon (🔄)
+
+**HTML Structure:**
+```html
+<button class="grid-menu-item" id="mergeFileBtn">
+    <svg viewBox="0 0 24 24">
+        <!-- Merge icon SVG path -->
+    </svg>
+    <span>Merge File</span>
+</button>
+```
+
+### Modal Structure
+
+```html
+<div id="mergeModal" class="modal">
+    <div class="modal-content merge-modal-content">
+        <span class="close" onclick="document.getElementById('mergeModal').style.display='none'">&times;</span>
+        <h2>Merge Specialist Team Estimate</h2>
+        
+        <!-- Step 1: File Upload -->
+        <div id="mergeStep1" class="merge-step">
+            <h3>Step 1: Select and Validate File</h3>
+            <!-- File upload interface -->
+        </div>
+        
+        <!-- Step 2: Date Comparison -->
+        <div id="mergeStep2" class="merge-step" style="display: none;">
+            <h3>Step 2: Compare Project Timelines</h3>
+            <!-- Date comparison grid -->
+        </div>
+        
+        <!-- Step 3: Date Selection & Merge -->
+        <div id="mergeStep3" class="merge-step" style="display: none;">
+            <h3>Step 3: Select Timeline and Complete Merge</h3>
+            <!-- Date selection options and merge preview -->
+        </div>
+    </div>
+</div>
+```
+
+### Data Handling
+
+**Specialist Item Tagging:**
+All merged items are tagged for easy identification:
+
+```javascript
+// Internal Resources
+mergedItem.role = `${resource.role} (Specialist Team)`;
+
+// Vendor Costs
+mergedItem.vendor = `${vendor.vendor} (Specialist Team)`;
+
+// Tool Costs
+mergedItem.tool = `${tool.tool} (Specialist Team)`;
+
+// Miscellaneous Costs
+mergedItem.item = `${misc.item} (Specialist Team)`;
+
+// Risks
+mergedItem.description = `${risk.description} (Specialist Team)`;
+```
+
+**Rate Card Consolidation:**
+```javascript
+// Avoids duplicate rate cards
+this.specialistProject.rateCards.forEach(rateCard => {
+    const exists = mergedProject.rateCards.find(
+        r => r.role === rateCard.role && r.category === rateCard.category
+    );
+    if (!exists) {
+        mergedProject.rateCards.push(rateCard);
+    }
+});
+```
+
+**Project Description Update:**
+```javascript
+projectDescription = (masterProject.projectInfo.projectDescription || '') + 
+    `\n\n[Merged with specialist team estimate "${specialistProject.projectInfo.projectName}" on ${date}]`;
+```
+
+### Post-Merge Refresh Sequence
+
+After merge execution, the system refreshes:
+
+1. **Month Headers** - `window.updateMonthHeaders()`
+2. **All Cost Tables:**
+   - Internal Resources Table
+   - Vendor Costs Table
+   - Tool Costs Table
+   - Miscellaneous Costs Table
+   - Risks Table
+   - **Resource Plan Forecast** (includes merged tool costs)
+   - **Rate Cards Table** ⭐ Important: Shows merged rate cards
+3. **Summary Tab** - `window.updateSummary()` (with 100ms delay)
+4. **LocalStorage** - Saves merged project data
+
+### Integration with Existing Features
+
+**Rate Cards Integration:**
+Merged rate cards automatically appear in the Settings > Rate Cards table:
+- Editable like manually added rate cards
+- Deletable like manually added rate cards
+- Properly rendered by `renderUnifiedRateCardsTable()`
+
+**Resource Plan Integration:**
+Merged costs automatically appear in Resource Plan forecast:
+- Internal Resources row includes merged resources
+- Tool Costs row includes merged tool costs
+- Vendor Costs row includes merged vendor costs
+- Monthly breakdown respects billing frequencies
+
+**Summary Tab Integration:**
+Merged costs automatically included in summary calculations:
+- Project Scope counts include merged items
+- Cost totals include merged amounts
+- All categories properly summed
+
+### Merge Manager Class Structure
+
+```javascript
+class MergeManager {
+    constructor() {
+        this.masterProject = null;
+        this.specialistProject = null;
+        this.mergeState = 'idle'; // idle, validated, dates-compared, ready-to-merge
+    }
+
+    initialize() {
+        // Setup event listeners for merge button
+    }
+
+    openMergeModal() {
+        // Store current project as master
+        // Show merge modal
+        // Reset to Step 1
+    }
+
+    handleFileUpload(event) {
+        // Read uploaded file
+        // Validate JSON
+        // Display results
+    }
+
+    validateFile(fileContent) {
+        // Parse JSON
+        // Check required fields
+        // Return validation result with metadata
+    }
+
+    compareDates() {
+        // Calculate date variances
+        // Return comparison object
+    }
+
+    displayDateComparison(comparison) {
+        // Render date comparison grid
+        // Show variances and differences
+    }
+
+    executeMerge() {
+        // Get selected date option
+        // Merge all cost categories
+        // Tag specialist items
+        // Consolidate rate cards
+        // Update projectData
+        // Refresh all views
+        // Show success message
+    }
+}
+
+window.mergeManager = new MergeManager();
+```
+
+### Error Handling
+
+**File Validation Errors:**
+- Missing required fields → Shows specific fields missing
+- Invalid JSON format → Shows JSON parsing error
+- Missing dates → Shows warning, allows merge with master dates
+
+**Date Selection Errors:**
+- No option selected → Alert message
+- Custom dates missing → Alert message
+- End date before start date → Alert message
+
+**Merge Errors:**
+- Caught and logged
+- User-friendly error messages
+- Doesn't crash application
+
+### User Feedback
+
+**Success Messages:**
+```javascript
+`Successfully merged specialist team estimate "${specialistProject.projectInfo.projectName}". Added ${totalItemsMerged} cost items.`
+```
+
+**Validation Success:**
+- Green checkmark (✓)
+- Metadata display with project details
+- Resource counts preview
+- "Next" button enabled
+
+**Validation Failure:**
+- Red X (✗)
+- Clear error list
+- Specific reasons shown
+- File upload remains available
+
+### Styling
+
+**Modal Styling:**
+- Wider than standard modals (900px max-width)
+- 85vh max height for scrolling
+- Three-step progress indicators
+- Responsive design for mobile
+
+**Date Comparison:**
+- Two-column grid layout
+- Visual highlighting (green/yellow)
+- Variance badges in red
+- Clean, professional appearance
+
+**Date Selection:**
+- Radio button options with visual cards
+- Hover effects for interactivity
+- Selected state highlighting (blue border, light blue background)
+- Preview section with blue background
+
+### Best Practices for Merging
+
+**DO ✅:**
+- Validate files before merging
+- Review date comparison carefully
+- Choose appropriate timeline option
+- Check merged items in tables after merge
+- Save project after successful merge
+- Review rate cards for duplicates
+
+**DON'T ❌:**
+- Don't merge without validating file first
+- Don't ignore date differences
+- Don't merge files with incompatible schemas
+- Don't merge without reviewing item counts
+- Don't forget to save after merge
+
+### Troubleshooting Merge Issues
+
+**Problem: Merge button doesn't work**
+- Check console for errors
+- Verify mergeManager is initialized
+- Check button ID matches event listener
+- Ensure button has correct class: `grid-menu-item`
+
+**Problem: File validation fails on valid file**
+- Check JSON structure matches expected schema
+- Verify all required fields present
+- Check for proper field naming (camelCase)
+- Review console for specific validation errors
+
+**Problem: Merged items don't appear**
+- Check if table refresh functions were called
+- Verify renderUnifiedRateCardsTable() exists for rate cards
+- Check console for rendering errors
+- Manually trigger table renders
+
+**Problem: Summary shows wrong totals**
+- Ensure updateSummary() is called after merge
+- Check 100ms delay is sufficient for rendering
+- Verify projectData was updated correctly
+- Manually call updateSummary()
+
+**Problem: Rate cards not editable after merge**
+- Ensure renderUnifiedRateCardsTable() is called
+- Check if rate cards have proper IDs
+- Verify edit functionality is working
+- Check browser console for errors
+
+---
+
 ## Troubleshooting
 
 ### Problem: "Timeout waiting for function: updateSummary"
@@ -789,8 +1272,8 @@ window.updateSummary = updateSummary;
 ```javascript
 this.modules = {
     // ... other modules
-    currencyManager: false,  // ← MUST have comma here
-    toolCostsManager: false  // ← Last item, no comma
+    toolCostsManager: false,  // ← MUST have comma here
+    mergeManager: false       // ← Last item, no comma
 };
 ```
 
@@ -832,7 +1315,7 @@ this.modules = {
 2. Ensure init_manager has completed before calling
 3. Check function is defined before the export line
 
-### Problem: Tool Costs showing $0 in Resource Plan ⭐ NEW
+### Problem: Tool Costs showing $0 in Resource Plan
 
 **Cause:** Billing frequency case mismatch or unsupported billing type
 
@@ -861,7 +1344,7 @@ const breakdown = window.toolCostsManager.calculateMonthlyBreakdown(
 console.log('Breakdown:', breakdown);
 ```
 
-### Problem: Resource Plan table missing headers or rows ⭐ NEW
+### Problem: Resource Plan table missing headers or rows
 
 **Cause:** HTML structure doesn't match expected IDs or old rendering function is overwriting
 
@@ -891,7 +1374,7 @@ console.log('Breakdown:', breakdown);
    console.log('Body HTML:', body.innerHTML);
    ```
 
-### Problem: Quarterly costs are smoothed instead of showing in billing months ⭐ NEW
+### Problem: Quarterly costs are smoothed instead of showing in billing months
 
 **Cause:** Calculation logic is dividing quarterly costs by 3 instead of showing them in actual billing months
 
@@ -938,6 +1421,67 @@ if (projectData.toolCosts) {
 3. Try clearing localStorage: `localStorage.clear()`
 4. Check if DataManager is properly saving
 
+### Problem: Merge modal doesn't open ⭐ NEW
+
+**Cause:** Event listener not attached or button ID mismatch
+
+**Fix:**
+1. Check merge button has correct ID: `id="mergeFileBtn"`
+2. Verify mergeManager is initialized:
+   ```javascript
+   console.log('Merge Manager:', window.mergeManager);
+   ```
+3. Check console for "✓ Merge button listener attached"
+4. Manually test:
+   ```javascript
+   window.mergeManager.openMergeModal();
+   ```
+
+### Problem: Merged items show incorrect data ⭐ NEW
+
+**Cause:** Data not properly copied or tagged
+
+**Fix:**
+1. Check console logs during merge for errors
+2. Verify specialist file structure matches expected format
+3. Check merged items in projectData:
+   ```javascript
+   console.log('Internal Resources:', window.projectData.internalResources);
+   console.log('Rate Cards:', window.projectData.rateCards);
+   ```
+4. Verify tagging is applied correctly (look for "Specialist Team" in item names)
+
+### Problem: Summary doesn't update after merge ⭐ NEW
+
+**Cause:** UpdateSummary() not called or called too early
+
+**Fix:**
+1. Check if updateSummary() is called with setTimeout in executeMerge()
+2. Verify 100ms delay is sufficient
+3. Manually trigger:
+   ```javascript
+   setTimeout(() => {
+       if (window.updateSummary) window.updateSummary();
+   }, 200);
+   ```
+
+### Problem: Rate cards not appearing after merge ⭐ NEW
+
+**Cause:** renderUnifiedRateCardsTable() not called
+
+**Fix:**
+1. Verify the function call exists in executeMerge():
+   ```javascript
+   window.tableRenderer.renderUnifiedRateCardsTable();
+   ```
+2. Check if rate cards table exists in DOM
+3. Manually trigger:
+   ```javascript
+   if (window.tableRenderer) {
+       window.tableRenderer.renderUnifiedRateCardsTable();
+   }
+   ```
+
 ---
 
 ## Best Practices
@@ -958,6 +1502,10 @@ if (projectData.toolCosts) {
 - **Validate dates** - Ensure end date is after start date
 - **Export functions before calling them** - Always export to window first
 - **Check console logs during debugging** - Look for emoji indicators (🎯📦💰)
+- **Validate files before merging** ⭐ NEW - Use merge manager validation
+- **Review merge preview** ⭐ NEW - Check item counts before completing merge
+- **Save after merge** ⭐ NEW - Ensure merged data is persisted
+- **Test merge with known-good files** ⭐ NEW - Use exported project files
 
 ### DON'T ❌
 
@@ -974,6 +1522,10 @@ if (projectData.toolCosts) {
 - **Don't use capital letters in billing frequency** - Always lowercase
 - **Don't add code after return statements** - It will never execute
 - **Don't create template literal syntax errors** - Check for duplicate backticks
+- **Don't merge without validation** ⭐ NEW - Always validate files first
+- **Don't ignore date differences** ⭐ NEW - Review date comparison carefully
+- **Don't skip merge preview** ⭐ NEW - Review what will be merged
+- **Don't merge incompatible schemas** ⭐ NEW - Ensure file structure matches
 
 ---
 
@@ -982,7 +1534,7 @@ if (projectData.toolCosts) {
 ```
 Browser Loads Page
       ↓
-All module scripts load (dom_manager, table_renderer, tool_costs_manager, etc.)
+All module scripts load (dom_manager, table_renderer, tool_costs_manager, merge_manager, etc.)
       ↓
 script.js loads (defines functions, NO execution)
       ↓
@@ -1018,18 +1570,23 @@ init_manager.initialize() called
       ↓
 11. Initialize Currency Manager
       ↓
-12. Initialize Tool Costs Manager ⭐ NEW
+12. Initialize Tool Costs Manager
    - Load tool costs settings
    - Setup validation rules
    - Initialize calculation engine
       ↓
-13. Render Resource Plan forecast ⭐ NEW
+13. Render Resource Plan forecast
    - Check project dates
    - Calculate month span
    - Render 5-row forecast table
    - Include tool costs with billing frequencies
       ↓
-14. Final re-render after 100ms
+14. Initialize Merge Manager ⭐ NEW (v2.3)
+   - Setup merge button event listener
+   - Initialize merge state
+   - Prepare modal handlers
+      ↓
+15. Final re-render after 100ms
       ↓
 ✅ Application Ready
 ```
@@ -1057,7 +1614,7 @@ When creating a new module, ensure:
 
 ---
 
-## Testing Scenarios ⭐ NEW
+## Testing Scenarios
 
 ### Manual Testing for Tool Costs
 
@@ -1093,11 +1650,123 @@ When creating a new module, ensure:
 4. Expected: See spending spikes in appropriate months
 5. Expected: Total Monthly Cost row includes tool costs
 
+### Manual Testing for Merge File ⭐ NEW
+
+#### Test 1: Valid File Upload
+1. Export current project as .json file
+2. Click "Merge File" button
+3. Upload the exported file
+4. Expected: Validation success with metadata display
+5. Expected: Show project name, dates, resource counts
+6. Expected: "Next: Compare Dates" button enabled
+
+#### Test 2: Invalid File Upload
+1. Create a text file with random JSON
+2. Upload via Merge File modal
+3. Expected: Validation error with specific reasons
+4. Expected: Clear error messages
+5. Expected: Modal stays open for retry
+
+#### Test 3: Date Comparison - Matching Dates
+1. Create specialist file with same dates as master
+2. Upload and proceed to date comparison
+3. Expected: Green "Timelines Match" message
+4. Expected: No variance indicators
+5. Expected: Seamless merge message
+
+#### Test 4: Date Comparison - Different Dates
+1. Create specialist file with different dates
+2. Upload and proceed to date comparison
+3. Expected: Yellow highlighting on different dates
+4. Expected: Variance shown (±X days)
+5. Expected: Impact warning about adjustment
+
+#### Test 5: Keep Master Dates
+1. Upload specialist file with different dates
+2. Proceed through comparison
+3. Select "Keep Master Dates" option
+4. Complete merge
+5. Expected: Project dates unchanged
+6. Expected: All items merged and tagged
+7. Expected: Summary totals updated
+
+#### Test 6: Adopt Specialist Dates
+1. Upload specialist file with different dates
+2. Proceed through comparison
+3. Select "Adopt Specialist Dates" option
+4. Complete merge
+5. Expected: Project dates updated to specialist dates
+6. Expected: All items merged and tagged
+7. Expected: Month headers reflect new dates
+
+#### Test 7: Custom Dates
+1. Upload specialist file
+2. Proceed through comparison
+3. Select "Enter Custom Dates" option
+4. Enter new start and end dates
+5. Complete merge
+6. Expected: Project uses custom dates
+7. Expected: All items merged correctly
+
+#### Test 8: Rate Card Consolidation
+1. Create specialist file with overlapping rate cards
+2. Upload and merge
+3. Navigate to Settings > Rate Cards
+4. Expected: No duplicate rate cards
+5. Expected: Merged rate cards are editable
+6. Expected: Merged rate cards are deletable
+
+#### Test 9: Specialist Tagging
+1. Complete a merge with any specialist file
+2. Check all cost tabs (Internal Resources, Vendor Costs, etc.)
+3. Expected: Merged items tagged with "(Specialist Team)"
+4. Expected: Easy to identify merged vs. original items
+5. Expected: All tagged items are editable/deletable
+
+#### Test 10: Post-Merge Data Persistence
+1. Complete a successful merge
+2. Refresh browser
+3. Expected: Merged data persists
+4. Expected: All tables show merged items
+5. Expected: Summary totals remain correct
+6. Expected: Project description includes merge note
+
+#### Test 11: Multiple Sequential Merges
+1. Complete first merge successfully
+2. Immediately merge another specialist file
+3. Complete second merge
+4. Expected: Both merges successfully applied
+5. Expected: All items from both merges present
+6. Expected: Cumulative totals correct
+
+#### Test 12: Merge Preview Accuracy
+1. Upload specialist file with known item counts
+2. Proceed to Step 3 (Date Selection)
+3. Review merge preview section
+4. Expected: Item counts match uploaded file
+5. Expected: Preview shows all categories
+6. Expected: Informative note about tagging
+
 ---
 
 ## Version History
 
-### v2.2 - Tool Costs Enhancement (Current) ⭐ NEW
+### v2.3 - Merge File Enhancement (Current) ⭐ NEW
+- ✅ Added Merge Manager module
+- ✅ Three-step merge workflow (File Selection, Date Comparison, Date Selection)
+- ✅ Comprehensive JSON validation
+- ✅ Side-by-side date comparison with variance calculations
+- ✅ Flexible timeline options (keep master, adopt specialist, custom dates)
+- ✅ Automatic merging of all cost categories
+- ✅ Specialist team tagging for merged items
+- ✅ Rate card consolidation (avoids duplicates)
+- ✅ Complete table refresh after merge
+- ✅ Rate cards integration - merged cards editable in Settings
+- ✅ Modal-based UI with step progression
+- ✅ Comprehensive error handling and user feedback
+- ✅ Updated initialization sequence (Step 14)
+
+### v2.2 - Tool Costs Enhancement
 - ✅ Added Tool Costs Manager module
 - ✅ Multiple billing frequencies (monthly, quarterly, annual, one-time)
 - ✅ Enhanced tool cost data structure with start/end dates
@@ -1142,12 +1811,15 @@ When asking for help or suggesting improvements:
 6. **For tool cost issues, include the billing frequency and dates**
 7. **For Resource Plan issues, check HTML structure and rendering functions**
 8. **Look for emoji debug logs** (🎯📦💰) in the console
+9. **For merge issues, include validation errors and file structure** ⭐ NEW
+10. **Provide merge preview item counts if merge fails** ⭐ NEW
+11. **Check console during merge for error messages** ⭐ NEW
 
 This ensures efficient problem-solving and maintains architectural consistency.
 
 ---
 
-**Last Updated:** October 2025  
+**Last Updated:** November 2025  
 **Maintained By:** Project Development Team  
 **Architecture Pattern:** Centralized Initialization Manager  
-**Latest Feature:** Tool Costs Enhancement v2.2
+**Latest Feature:** Merge File Enhancement v2.3
