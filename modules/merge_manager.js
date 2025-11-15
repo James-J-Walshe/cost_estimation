@@ -1,12 +1,14 @@
 // modules/merge_manager.js
 // Merge Manager - Handles merging specialist team estimates into master project
-// Version: 1.1 - Syntax Errors Fixed
+// Version: 1.2 - Rate Card Merge Integration
 
 class MergeManager {
     constructor() {
         this.masterProject = null;
         this.specialistProject = null;
-        this.mergeState = 'idle'; // idle, validated, dates-compared, ready-to-merge
+        this.mergeState = 'idle'; // idle, validated, dates-compared, rate-cards-reviewed, ready-to-merge
+        this.rateCardAnalysis = null;
+        this.selectedDateOption = null;
         console.log('Merge Manager initialized');
     }
 
@@ -44,10 +46,12 @@ class MergeManager {
         const step1 = document.getElementById('mergeStep1');
         const step2 = document.getElementById('mergeStep2');
         const step3 = document.getElementById('mergeStep3');
+        const step4 = document.getElementById('mergeStep4'); // Rate card step
         
         if (step1) step1.style.display = 'block';
         if (step2) step2.style.display = 'none';
         if (step3) step3.style.display = 'none';
+        if (step4) step4.style.display = 'none';
         
         // Reset file input
         const fileInput = document.getElementById('specialistFileInput');
@@ -62,6 +66,8 @@ class MergeManager {
         }
         
         this.specialistProject = null;
+        this.rateCardAnalysis = null;
+        this.selectedDateOption = null;
         this.mergeState = 'idle';
     }
 
@@ -298,8 +304,8 @@ class MergeManager {
                         <button class="btn btn-secondary" onclick="window.mergeManager.goBackToFileSelection()">
                             ← Back
                         </button>
-                        <button class="btn btn-primary" onclick="window.mergeManager.proceedToDateSelection()">
-                            Next: Complete Merge →
+                        <button class="btn btn-primary" onclick="window.mergeManager.proceedToRateCardReview()">
+                            Next: Review Rate Cards →
                         </button>
                     </div>
                 </div>
@@ -366,8 +372,8 @@ class MergeManager {
                     <button class="btn btn-secondary" onclick="window.mergeManager.goBackToFileSelection()">
                         ← Back
                     </button>
-                    <button class="btn btn-primary" onclick="window.mergeManager.proceedToDateSelection()">
-                        Next: Select Timeline →
+                    <button class="btn btn-primary" onclick="window.mergeManager.proceedToRateCardReview()">
+                        Next: Review Rate Cards →
                     </button>
                 </div>
             </div>
@@ -383,128 +389,62 @@ class MergeManager {
         this.mergeState = 'validated';
     }
 
-    proceedToDateSelection() {
+    // NEW: Proceed to rate card review step
+    proceedToRateCardReview() {
+        console.log('🔍 Analyzing rate cards...');
+        
+        // Analyze rate cards using the RateCardMerger
+        if (window.RateCardMerger) {
+            this.rateCardAnalysis = window.RateCardMerger.analyzeRateCards(
+                this.masterProject,
+                this.specialistProject
+            );
+            
+            console.log('📊 Rate card analysis:', this.rateCardAnalysis);
+            
+            // Check if we need to show the rate card review step
+            if (this.rateCardAnalysis.hasConflicts || this.rateCardAnalysis.hasNewCards) {
+                // Show step 4 (rate card review)
+                this.showRateCardReviewStep();
+            } else {
+                // Skip to date selection if no rate card issues
+                console.log('✓ No rate card conflicts - proceeding to date selection');
+                this.proceedToDateSelection();
+            }
+        } else {
+            console.warn('⚠ RateCardMerger not available - skipping rate card review');
+            this.proceedToDateSelection();
+        }
+    }
+
+    // NEW: Show rate card review step
+    showRateCardReviewStep() {
         const step2 = document.getElementById('mergeStep2');
-        const step3 = document.getElementById('mergeStep3');
+        const step4 = document.getElementById('mergeStep4');
         
         if (step2) step2.style.display = 'none';
-        if (step3) step3.style.display = 'block';
-        
-        const comparison = this.compareDates();
-        this.displayDateSelection(comparison);
-    }
-
-    displayDateSelection(comparison) {
-        const container = document.getElementById('dateSelectionPanel');
-        if (!container) return;
-        
-        container.innerHTML = `
-            <div class="date-selection-panel">
-                <h3>Choose Project Timeline</h3>
-                
-                <div class="date-options">
-                    <div class="date-option">
-                        <input type="radio" id="keepMaster" name="dateOption" value="master" checked>
-                        <label for="keepMaster">
-                            <strong>Keep Master Dates</strong>
-                            <p>${comparison.masterStart} to ${comparison.masterEnd} (${comparison.masterDuration} days)</p>
-                            ${comparison.hasDifferences ? 
-                                '<p class="impact">Specialist cost items will be adjusted to align with these dates.</p>' 
-                                : ''}
-                        </label>
-                    </div>
-                    
-                    ${!comparison.missingDates ? `
-                        <div class="date-option">
-                            <input type="radio" id="adoptSpecialist" name="dateOption" value="specialist">
-                            <label for="adoptSpecialist">
-                                <strong>Adopt Specialist Dates</strong>
-                                <p>${comparison.specialistStart} to ${comparison.specialistEnd} (${comparison.specialistDuration} days)</p>
-                                ${comparison.hasDifferences ? 
-                                    '<p class="impact">Master project timeline will be updated to match specialist dates.</p>' 
-                                    : ''}
-                            </label>
-                        </div>
-                    ` : ''}
-                    
-                    <div class="date-option">
-                        <input type="radio" id="manualEntry" name="dateOption" value="manual">
-                        <label for="manualEntry">
-                            <strong>Enter Custom Dates</strong>
-                            <p class="impact">Set your own timeline for the merged project.</p>
-                            <div class="manual-dates" id="manualDatesInputs" style="display: none;">
-                                <div class="form-group">
-                                    <label>Start Date:</label>
-                                    <input type="date" id="manualStartDate" class="form-control" value="${comparison.masterStart}">
-                                </div>
-                                <div class="form-group">
-                                    <label>End Date:</label>
-                                    <input type="date" id="manualEndDate" class="form-control" value="${comparison.masterEnd}">
-                                </div>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-                
-                <div class="merge-preview-section">
-                    <h4>What will be merged:</h4>
-                    <ul>
-                        <li><strong>${this.specialistProject.internalResources.length}</strong> internal resource entries</li>
-                        <li><strong>${this.specialistProject.vendorCosts.length}</strong> vendor cost entries</li>
-                        <li><strong>${this.specialistProject.toolCosts.length}</strong> tool cost entries</li>
-                        <li><strong>${this.specialistProject.miscCosts.length}</strong> miscellaneous cost entries</li>
-                        <li><strong>${this.specialistProject.risks.length}</strong> risk entries</li>
-                    </ul>
-                    <p class="info-note">All items will be added to your current project with a "Specialist Team" source tag for easy identification.</p>
-                </div>
-                
-                <div class="merge-actions">
-                    <button class="btn btn-secondary" onclick="window.mergeManager.goBackToComparison()">
-                        ← Back
-                    </button>
-                    <button class="btn btn-primary" onclick="window.mergeManager.executeMerge()">
-                        Complete Merge
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        // Add event listener for manual date option
-        const manualEntry = document.getElementById('manualEntry');
-        const manualDatesInputs = document.getElementById('manualDatesInputs');
-        
-        if (manualEntry && manualDatesInputs) {
-            manualEntry.addEventListener('change', (e) => {
-                manualDatesInputs.style.display = e.target.checked ? 'block' : 'none';
-            });
+        if (step4) {
+            step4.style.display = 'block';
+            const container = document.getElementById('rateCardReviewPanel');
+            if (container) {
+                container.innerHTML = this.createRateCardReviewStep(this.rateCardAnalysis);
+            }
+        } else {
+            // If step4 doesn't exist in HTML, skip to date selection
+            console.warn('⚠ Step 4 element not found - skipping to date selection');
+            this.proceedToDateSelection();
         }
         
-        // Hide manual dates when other options selected
-        ['keepMaster', 'adoptSpecialist'].forEach(id => {
-            const element = document.getElementById(id);
-            if (element && manualDatesInputs) {
-                element.addEventListener('change', () => {
-                    manualDatesInputs.style.display = 'none';
-                });
-            }
-        });
+        this.mergeState = 'rate-cards-reviewed';
     }
 
-    goBackToComparison() {
-        const step2 = document.getElementById('mergeStep2');
-        const step3 = document.getElementById('mergeStep3');
-        
-        if (step3) step3.style.display = 'none';
-        if (step2) step2.style.display = 'block';
-    }
-
-    // Merging Rate Card Information for Specialist Team
+    // Rate card review HTML generation
     createRateCardReviewStep(analysis) {
         const { conflicts, newCards, hasConflicts, hasNewCards } = analysis;
         
         let html = `
             <div class="rate-card-review">
-                <h3 style="margin-bottom: 1rem;">Step 4: Review Rate Cards</h3>
+                <h3 style="margin-bottom: 1rem;">Step 3: Review Rate Cards</h3>
                 <p style="color: #6b7280; margin-bottom: 1.5rem;">
                     Review and resolve rate card differences between the files.
                 </p>
@@ -595,7 +535,17 @@ class MergeManager {
             `;
         }
         
-        html += `</div>`;
+        html += `
+                <div class="merge-actions" style="margin-top: 2rem;">
+                    <button class="btn btn-secondary" onclick="window.mergeManager.goBackToComparison()">
+                        ← Back
+                    </button>
+                    <button class="btn btn-primary" onclick="window.mergeManager.proceedToDateSelection()">
+                        Next: Select Timeline →
+                    </button>
+                </div>
+            </div>
+        `;
         
         return html;
     }
@@ -610,97 +560,159 @@ class MergeManager {
             const action = select.value;
             
             // Find the conflict data
-            const conflict = window.RateCardMerger.conflicts.find(c => c.role === role);
-            
-            if (conflict) {
-                resolutions.push({
-                    role: role,
-                    action: action,
-                    masterRate: conflict.master.rate,
-                    specialistRate: conflict.specialist.rate,
-                    masterCategory: conflict.master.category,
-                    specialistCategory: conflict.specialist.category
-                });
+            if (this.rateCardAnalysis && this.rateCardAnalysis.conflicts) {
+                const conflict = this.rateCardAnalysis.conflicts.find(c => c.role === role);
+                
+                if (conflict) {
+                    resolutions.push({
+                        role: role,
+                        action: action,
+                        masterRate: conflict.master.rate,
+                        specialistRate: conflict.specialist.rate,
+                        masterCategory: conflict.master.category,
+                        specialistCategory: conflict.specialist.category
+                    });
+                }
             }
         });
         
+        console.log('📋 Collected rate card resolutions:', resolutions);
         return resolutions;
     }
-    
-    // Modified merge execution function to include the rate card merge steps
-    executeMergeWithRateCards(masterData, specialistData, dateAlignment, rateCardResolutions) {
-        try {
-            // Step 1: Create full backup
-            const fullBackup = JSON.parse(JSON.stringify(masterData));
-            
-            // Step 2: Merge timeline data (existing)
-            this.mergeTimelineData(masterData, specialistData, dateAlignment);
-            
-            // Step 3: Merge rate cards (new)
-            const rateCardResult = window.RateCardMerger.executeMerge(masterData, rateCardResolutions);
-            
-            // Step 4: Merge cost data (existing)
-            this.mergeResourceData(masterData, specialistData);
-            
-            // Step 5: Save to localStorage
-            if (window.DataManager) {
-                window.DataManager.saveToLocalStorage();
-            }
-            
-            // Step 6: Re-render tables
-            if (window.TableRenderer) {
-                window.TableRenderer.renderAllTables();
-            }
-            
-            // Step 7: Update summary
-            if (window.updateSummary) {
-                window.updateSummary();
-            }
-            
-            // Success message
-            const summary = window.RateCardMerger.getMergeSummary(rateCardResolutions);
-            this.showMergeSuccessMessage(summary);
-            
-            return true;
-            
-        } catch (error) {
-            console.error('Merge failed:', error);
-            // Rollback everything
-            Object.assign(masterData, fullBackup);
-            this.showMergeErrorMessage(error.message);
-            return false;
-        }
+
+    goBackToComparison() {
+        const step2 = document.getElementById('mergeStep2');
+        const step4 = document.getElementById('mergeStep4');
+        
+        if (step4) step4.style.display = 'none';
+        if (step2) step2.style.display = 'block';
     }
-    
-    // Success message display
-    showMergeSuccessMessage(summary) {
-        const message = `
-            <div style="background: #d1fae5; color: #065f46; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
-                <h4 style="margin-bottom: 0.5rem;">✅ Merge Completed Successfully!</h4>
-                <ul style="margin: 0.5rem 0 0 1.5rem;">
-                    <li>${summary.newCardsAdded} new rate cards added</li>
-                    <li>${summary.cardsUpdated} rate cards updated</li>
-                    <li>${summary.cardsKept} rate cards kept unchanged</li>
-                </ul>
+
+    proceedToDateSelection() {
+        const step2 = document.getElementById('mergeStep2');
+        const step3 = document.getElementById('mergeStep3');
+        const step4 = document.getElementById('mergeStep4');
+        
+        if (step2) step2.style.display = 'none';
+        if (step4) step4.style.display = 'none';
+        if (step3) step3.style.display = 'block';
+        
+        const comparison = this.compareDates();
+        this.displayDateSelection(comparison);
+    }
+
+    displayDateSelection(comparison) {
+        const container = document.getElementById('dateSelectionPanel');
+        if (!container) return;
+        
+        container.innerHTML = `
+            <div class="date-selection-panel">
+                <h3>Choose Project Timeline</h3>
+                
+                <div class="date-options">
+                    <div class="date-option">
+                        <input type="radio" id="keepMaster" name="dateOption" value="master" checked>
+                        <label for="keepMaster">
+                            <strong>Keep Master Dates</strong>
+                            <p>${comparison.masterStart} to ${comparison.masterEnd} (${comparison.masterDuration} days)</p>
+                            ${comparison.hasDifferences ? 
+                                '<p class="impact">Specialist cost items will be adjusted to align with these dates.</p>' 
+                                : ''}
+                        </label>
+                    </div>
+                    
+                    ${!comparison.missingDates ? `
+                        <div class="date-option">
+                            <input type="radio" id="adoptSpecialist" name="dateOption" value="specialist">
+                            <label for="adoptSpecialist">
+                                <strong>Adopt Specialist Dates</strong>
+                                <p>${comparison.specialistStart} to ${comparison.specialistEnd} (${comparison.specialistDuration} days)</p>
+                                ${comparison.hasDifferences ? 
+                                    '<p class="impact">Master project timeline will be updated to match specialist dates.</p>' 
+                                    : ''}
+                            </label>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="date-option">
+                        <input type="radio" id="manualEntry" name="dateOption" value="manual">
+                        <label for="manualEntry">
+                            <strong>Enter Custom Dates</strong>
+                            <p class="impact">Set your own timeline for the merged project.</p>
+                            <div class="manual-dates" id="manualDatesInputs" style="display: none;">
+                                <div class="form-group">
+                                    <label>Start Date:</label>
+                                    <input type="date" id="manualStartDate" class="form-control" value="${comparison.masterStart}">
+                                </div>
+                                <div class="form-group">
+                                    <label>End Date:</label>
+                                    <input type="date" id="manualEndDate" class="form-control" value="${comparison.masterEnd}">
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="merge-preview-section">
+                    <h4>What will be merged:</h4>
+                    <ul>
+                        <li><strong>${this.specialistProject.internalResources.length}</strong> internal resource entries</li>
+                        <li><strong>${this.specialistProject.vendorCosts.length}</strong> vendor cost entries</li>
+                        <li><strong>${this.specialistProject.toolCosts.length}</strong> tool cost entries</li>
+                        <li><strong>${this.specialistProject.miscCosts.length}</strong> miscellaneous cost entries</li>
+                        <li><strong>${this.specialistProject.risks.length}</strong> risk entries</li>
+                    </ul>
+                    <p class="info-note">All items will be added to your current project with a "Specialist Team" source tag for easy identification.</p>
+                </div>
+                
+                <div class="merge-actions">
+                    <button class="btn btn-secondary" onclick="window.mergeManager.goBackFromDateSelection()">
+                        ← Back
+                    </button>
+                    <button class="btn btn-primary" onclick="window.mergeManager.executeMerge()">
+                        Complete Merge
+                    </button>
+                </div>
             </div>
         `;
         
-        // Display in your modal or notification area
-        if (window.showAlert) {
-            window.showAlert(message, 'success');
+        // Add event listener for manual date option
+        const manualEntry = document.getElementById('manualEntry');
+        const manualDatesInputs = document.getElementById('manualDatesInputs');
+        
+        if (manualEntry && manualDatesInputs) {
+            manualEntry.addEventListener('change', (e) => {
+                manualDatesInputs.style.display = e.target.checked ? 'block' : 'none';
+            });
         }
+        
+        // Hide manual dates when other options selected
+        ['keepMaster', 'adoptSpecialist'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element && manualDatesInputs) {
+                element.addEventListener('change', () => {
+                    manualDatesInputs.style.display = 'none';
+                });
+            }
+        });
     }
-    
-    // Error message display
-    showMergeErrorMessage(message) {
-        if (window.showAlert) {
-            window.showAlert(`Merge failed: ${message}`, 'error');
+
+    goBackFromDateSelection() {
+        // Check if we showed rate card review step
+        if (this.rateCardAnalysis && (this.rateCardAnalysis.hasConflicts || this.rateCardAnalysis.hasNewCards)) {
+            // Go back to rate card review
+            this.showRateCardReviewStep();
         } else {
-            alert(`Merge failed: ${message}`);
+            // Go back to date comparison
+            const step2 = document.getElementById('mergeStep2');
+            const step3 = document.getElementById('mergeStep3');
+            
+            if (step3) step3.style.display = 'none';
+            if (step2) step2.style.display = 'block';
         }
     }
     
-    // Execute the merge
+    // Execute the merge with rate card integration
     executeMerge() {
         const selectedOption = document.querySelector('input[name="dateOption"]:checked')?.value;
         
@@ -737,23 +749,144 @@ class MergeManager {
         
         console.log('Executing merge with dates:', targetStart, 'to', targetEnd);
         
-        // Create merged project
-        const mergedProject = {
-            ...this.masterProject,
-            projectInfo: {
-                ...this.masterProject.projectInfo,
-                startDate: targetStart,
-                endDate: targetEnd,
-                projectDescription: (this.masterProject.projectInfo.projectDescription || '') + 
-                    `\n\n[Merged with specialist team estimate "${this.specialistProject.projectInfo.projectName}" on ${new Date().toISOString().split('T')[0]}]`
-            }
-        };
+        // Collect rate card resolutions
+        const rateCardResolutions = this.collectRateCardResolutions();
         
+        // Execute merge with rate cards
+        if (window.RateCardMerger && this.rateCardAnalysis) {
+            console.log('🔄 Executing merge with rate card integration...');
+            this.executeMergeWithRateCards(targetStart, targetEnd, rateCardResolutions);
+        } else {
+            console.log('🔄 Executing basic merge (no rate card integration)...');
+            this.executeBasicMerge(targetStart, targetEnd);
+        }
+    }
+    
+    // Modified merge execution function to include the rate card merge steps
+    executeMergeWithRateCards(targetStart, targetEnd, rateCardResolutions) {
+        try {
+            // Create merged project
+            const mergedProject = {
+                ...this.masterProject,
+                projectInfo: {
+                    ...this.masterProject.projectInfo,
+                    startDate: targetStart,
+                    endDate: targetEnd,
+                    projectDescription: (this.masterProject.projectInfo.projectDescription || '') + 
+                        `\n\n[Merged with specialist team estimate "${this.specialistProject.projectInfo.projectName}" on ${new Date().toISOString().split('T')[0]}]`
+                }
+            };
+            
+            // Step 1: Merge rate cards FIRST
+            console.log('📋 Merging rate cards...');
+            const rateCardResult = window.RateCardMerger.executeMerge(mergedProject, rateCardResolutions);
+            console.log('✅ Rate cards merged:', rateCardResult);
+            
+            // Step 2: Merge cost data
+            this.mergeResourceData(mergedProject);
+            
+            // Step 3: Update project data
+            window.projectData = mergedProject;
+            
+            // Step 4: Save to localStorage
+            if (window.dataManager && window.dataManager.saveToLocalStorage) {
+                window.dataManager.saveToLocalStorage();
+            }
+            
+            // Step 5: Refresh displays
+            this.refreshAllDisplays();
+            
+            // Step 6: Show success message
+            const summary = window.RateCardMerger.getMergeSummary(rateCardResolutions);
+            this.showMergeSuccessMessage(summary);
+            
+            // Close modal
+            const modal = document.getElementById('mergeModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            
+            console.log('✅ Merge with rate cards completed successfully');
+            this.mergeState = 'idle';
+            
+        } catch (error) {
+            console.error('❌ Merge failed:', error);
+            this.showMergeErrorMessage(error.message);
+        }
+    }
+    
+    // Basic merge without rate card integration (fallback)
+    executeBasicMerge(targetStart, targetEnd) {
+        try {
+            // Create merged project
+            const mergedProject = {
+                ...this.masterProject,
+                projectInfo: {
+                    ...this.masterProject.projectInfo,
+                    startDate: targetStart,
+                    endDate: targetEnd,
+                    projectDescription: (this.masterProject.projectInfo.projectDescription || '') + 
+                        `\n\n[Merged with specialist team estimate "${this.specialistProject.projectInfo.projectName}" on ${new Date().toISOString().split('T')[0]}]`
+                }
+            };
+            
+            // Merge cost data
+            this.mergeResourceData(mergedProject);
+            
+            // Merge rate cards (simple, no conflict resolution)
+            this.mergeRateCardsBasic(mergedProject);
+            
+            // Update project data
+            window.projectData = mergedProject;
+            
+            // Save to localStorage
+            if (window.dataManager && window.dataManager.saveToLocalStorage) {
+                window.dataManager.saveToLocalStorage();
+            }
+            
+            // Refresh displays
+            this.refreshAllDisplays();
+            
+            // Count total items merged
+            const totalItemsMerged = 
+                this.specialistProject.internalResources.length +
+                this.specialistProject.vendorCosts.length +
+                this.specialistProject.toolCosts.length +
+                this.specialistProject.miscCosts.length +
+                this.specialistProject.risks.length;
+            
+            // Show success message
+            if (window.dataManager && window.dataManager.showAlert) {
+                window.dataManager.showAlert(
+                    `Successfully merged specialist team estimate "${this.specialistProject.projectInfo.projectName}". Added ${totalItemsMerged} cost items.`,
+                    'success'
+                );
+            } else {
+                alert(`Merge completed successfully! Added ${totalItemsMerged} items from specialist team estimate.`);
+            }
+            
+            // Close modal
+            const modal = document.getElementById('mergeModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            
+            console.log('✅ Basic merge completed successfully');
+            this.mergeState = 'idle';
+            
+        } catch (error) {
+            console.error('❌ Merge failed:', error);
+            alert('Merge failed: ' + error.message);
+        }
+    }
+    
+    // Merge resource data (internal, vendor, tools, misc, risks)
+    mergeResourceData(mergedProject) {
         // Merge internal resources
         this.specialistProject.internalResources.forEach(resource => {
             mergedProject.internalResources.push({
                 ...resource,
-                id: Date.now() + Math.random(), // Ensure unique ID
+                id: Date.now() + Math.random(),
                 vendor: resource.vendor ? `${resource.vendor} (Specialist Team)` : undefined,
                 role: resource.role ? `${resource.role} (Specialist Team)` : resource.role
             });
@@ -794,8 +927,10 @@ class MergeManager {
                 description: risk.description ? `${risk.description} (Specialist Team)` : 'Specialist Team Risk'
             });
         });
-        
-        // Merge rate cards (avoid duplicates)
+    }
+    
+    // Basic rate card merge (no conflict resolution)
+    mergeRateCardsBasic(mergedProject) {
         this.specialistProject.rateCards.forEach(rateCard => {
             const exists = mergedProject.rateCards.find(
                 r => r.role === rateCard.role && r.category === rateCard.category
@@ -804,24 +939,10 @@ class MergeManager {
                 mergedProject.rateCards.push(rateCard);
             }
         });
-        
-        // Count total items merged
-        const totalItemsMerged = 
-            this.specialistProject.internalResources.length +
-            this.specialistProject.vendorCosts.length +
-            this.specialistProject.toolCosts.length +
-            this.specialistProject.miscCosts.length +
-            this.specialistProject.risks.length;
-        
-        // Replace current project data with merged version
-        window.projectData = mergedProject;
-        
-        // Save to localStorage
-        if (window.dataManager && window.dataManager.saveToLocalStorage) {
-            window.dataManager.saveToLocalStorage();
-        }
-        
-        // Refresh all displays
+    }
+    
+    // Refresh all displays after merge
+    refreshAllDisplays() {
         if (window.updateMonthHeaders) {
             window.updateMonthHeaders();
         }
@@ -841,7 +962,6 @@ class MergeManager {
             }
         }
         
-        // CRITICAL: Use longer delay and ensure DOM is fully updated
         // Update summary AFTER all rendering is complete
         setTimeout(() => {
             console.log('🔄 Starting post-merge summary update...');
@@ -868,26 +988,38 @@ class MergeManager {
                 }
             }, 200);
             
-        }, 300); // Increased from 100ms to 300ms
+        }, 300);
+    }
+    
+    // Success message display
+    showMergeSuccessMessage(summary) {
+        const message = `
+            <div style="background: #d1fae5; color: #065f46; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                <h4 style="margin-bottom: 0.5rem;">✅ Merge Completed Successfully!</h4>
+                <p>Specialist team estimate merged with rate card integration:</p>
+                <ul style="margin: 0.5rem 0 0 1.5rem;">
+                    <li>${summary.newCardsAdded} new rate cards added</li>
+                    <li>${summary.cardsUpdated} rate cards updated</li>
+                    <li>${summary.cardsKept} rate cards kept unchanged</li>
+                </ul>
+            </div>
+        `;
         
-        // Close modal
-        const modal = document.getElementById('mergeModal');
-        if (modal) {
-            modal.style.display = 'none';
-        }
-        
-        // Show success message
+        // Display in your modal or notification area
         if (window.dataManager && window.dataManager.showAlert) {
-            window.dataManager.showAlert(
-                `Successfully merged specialist team estimate "${this.specialistProject.projectInfo.projectName}". Added ${totalItemsMerged} cost items.`,
-                'success'
-            );
+            window.dataManager.showAlert(message, 'success');
         } else {
-            alert(`Merge completed successfully! Added ${totalItemsMerged} items from specialist team estimate.`);
+            alert('Merge completed successfully!');
         }
-        
-        console.log('Merge completed successfully');
-        this.mergeState = 'idle';
+    }
+    
+    // Error message display
+    showMergeErrorMessage(message) {
+        if (window.dataManager && window.dataManager.showAlert) {
+            window.dataManager.showAlert(`Merge failed: ${message}`, 'error');
+        } else {
+            alert(`Merge failed: ${message}`);
+        }
     }
 }
 
@@ -895,4 +1027,4 @@ class MergeManager {
 window.mergeManager = new MergeManager();
 window.MergeManager = window.mergeManager; // Backwards compatibility
 
-console.log('Merge Manager module loaded');
+console.log('Merge Manager module loaded with rate card integration');
