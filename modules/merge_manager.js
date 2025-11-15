@@ -498,6 +498,135 @@ class MergeManager {
         if (step2) step2.style.display = 'block';
     }
 
+    // Merging Rate Card Information for Specialist Team
+    function createRateCardReviewStep(analysis) {
+        const { conflicts, newCards, hasConflicts, hasNewCards } = analysis;
+        
+        let html = `
+            <div class="rate-card-review">
+                <h3 style="margin-bottom: 1rem;">Step 4: Review Rate Cards</h3>
+                <p style="color: #6b7280; margin-bottom: 1.5rem;">
+                    Review and resolve rate card differences between the files.
+                </p>
+        `;
+        
+        // Show new rate cards to be added
+        if (hasNewCards) {
+            html += `
+                <div class="new-rate-cards-section" style="margin-bottom: 2rem;">
+                    <h4 style="color: #059669; margin-bottom: 1rem;">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" style="vertical-align: middle;">
+                            <path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>
+                        </svg>
+                        New Rate Cards to Add (${newCards.length})
+                    </h4>
+                    <div class="rate-card-list" style="background: #f0fdf4; padding: 1rem; border-radius: 8px;">
+            `;
+            
+            newCards.forEach(card => {
+                html += `
+                    <div class="rate-card-item" style="display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #d1fae5;">
+                        <span><strong>${card.role}</strong> (${card.category})</span>
+                        <span style="font-weight: 500;">$${card.rate}/day</span>
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Show conflicts to resolve
+        if (hasConflicts) {
+            html += `
+                <div class="rate-card-conflicts-section">
+                    <h4 style="color: #dc2626; margin-bottom: 1rem;">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" style="vertical-align: middle;">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                        </svg>
+                        Rate Card Conflicts to Resolve (${conflicts.length})
+                    </h4>
+                    <div class="conflicts-list">
+            `;
+            
+            conflicts.forEach((conflict, index) => {
+                html += `
+                    <div class="conflict-item" style="background: #fef2f2; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                        <h5 style="margin-bottom: 0.75rem; font-weight: 600;">${conflict.role}</h5>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.75rem;">
+                            <div>
+                                <label style="display: block; font-size: 0.875rem; color: #6b7280;">Master File Rate:</label>
+                                <div style="font-weight: 500;">$${conflict.master.rate}/day (${conflict.master.category})</div>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.875rem; color: #6b7280;">Specialist File Rate:</label>
+                                <div style="font-weight: 500;">$${conflict.specialist.rate}/day (${conflict.specialist.category})</div>
+                            </div>
+                        </div>
+                        <div class="resolution-options">
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Resolution:</label>
+                            <select id="conflict_resolution_${index}" class="rate-card-resolution" data-role="${conflict.role}" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                                <option value="keep_master">Keep Master Rate ($${conflict.master.rate})</option>
+                                <option value="use_specialist">Use Specialist Rate ($${conflict.specialist.rate})</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += `
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Summary section
+        if (!hasConflicts && !hasNewCards) {
+            html += `
+                <div style="background: #f0f9ff; padding: 1rem; border-radius: 8px; text-align: center;">
+                    <svg width="48" height="48" viewBox="0 0 20 20" fill="#3b82f6" style="margin: 0 auto 0.5rem;">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    <p style="font-weight: 500; color: #1e40af;">No rate card conflicts detected!</p>
+                    <p style="color: #64748b; margin-top: 0.5rem;">All rate cards are compatible between files.</p>
+                </div>
+            `;
+        }
+        
+        html += `</div>`;
+        
+        return html;
+    }
+    
+    // Function to collect rate card resolutions
+    function collectRateCardResolutions() {
+        const resolutions = [];
+        const selects = document.querySelectorAll('.rate-card-resolution');
+        
+        selects.forEach(select => {
+            const role = select.dataset.role;
+            const action = select.value;
+            
+            // Find the conflict data
+            const conflict = window.RateCardMerger.conflicts.find(c => c.role === role);
+            
+            if (conflict) {
+                resolutions.push({
+                    role: role,
+                    action: action,
+                    masterRate: conflict.master.rate,
+                    specialistRate: conflict.specialist.rate,
+                    masterCategory: conflict.master.category,
+                    specialistCategory: conflict.specialist.category
+                });
+            }
+        });
+        
+        return resolutions;
+    }
+    
     // Execute the merge
     executeMerge() {
         const selectedOption = document.querySelector('input[name="dateOption"]:checked')?.value;
