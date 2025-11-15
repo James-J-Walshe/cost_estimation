@@ -1,6 +1,6 @@
 // modules/merge_manager.js
 // Merge Manager - Handles merging specialist team estimates into master project
-// Version: 1.0
+// Version: 1.1 - Syntax Errors Fixed
 
 class MergeManager {
     constructor() {
@@ -499,7 +499,7 @@ class MergeManager {
     }
 
     // Merging Rate Card Information for Specialist Team
-    function createRateCardReviewStep(analysis) {
+    createRateCardReviewStep(analysis) {
         const { conflicts, newCards, hasConflicts, hasNewCards } = analysis;
         
         let html = `
@@ -601,7 +601,7 @@ class MergeManager {
     }
     
     // Function to collect rate card resolutions
-    function collectRateCardResolutions() {
+    collectRateCardResolutions() {
         const resolutions = [];
         const selects = document.querySelectorAll('.rate-card-resolution');
         
@@ -625,6 +625,79 @@ class MergeManager {
         });
         
         return resolutions;
+    }
+    
+    // Modified merge execution function to include the rate card merge steps
+    executeMergeWithRateCards(masterData, specialistData, dateAlignment, rateCardResolutions) {
+        try {
+            // Step 1: Create full backup
+            const fullBackup = JSON.parse(JSON.stringify(masterData));
+            
+            // Step 2: Merge timeline data (existing)
+            this.mergeTimelineData(masterData, specialistData, dateAlignment);
+            
+            // Step 3: Merge rate cards (new)
+            const rateCardResult = window.RateCardMerger.executeMerge(masterData, rateCardResolutions);
+            
+            // Step 4: Merge cost data (existing)
+            this.mergeResourceData(masterData, specialistData);
+            
+            // Step 5: Save to localStorage
+            if (window.DataManager) {
+                window.DataManager.saveToLocalStorage();
+            }
+            
+            // Step 6: Re-render tables
+            if (window.TableRenderer) {
+                window.TableRenderer.renderAllTables();
+            }
+            
+            // Step 7: Update summary
+            if (window.updateSummary) {
+                window.updateSummary();
+            }
+            
+            // Success message
+            const summary = window.RateCardMerger.getMergeSummary(rateCardResolutions);
+            this.showMergeSuccessMessage(summary);
+            
+            return true;
+            
+        } catch (error) {
+            console.error('Merge failed:', error);
+            // Rollback everything
+            Object.assign(masterData, fullBackup);
+            this.showMergeErrorMessage(error.message);
+            return false;
+        }
+    }
+    
+    // Success message display
+    showMergeSuccessMessage(summary) {
+        const message = `
+            <div style="background: #d1fae5; color: #065f46; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                <h4 style="margin-bottom: 0.5rem;">✅ Merge Completed Successfully!</h4>
+                <ul style="margin: 0.5rem 0 0 1.5rem;">
+                    <li>${summary.newCardsAdded} new rate cards added</li>
+                    <li>${summary.cardsUpdated} rate cards updated</li>
+                    <li>${summary.cardsKept} rate cards kept unchanged</li>
+                </ul>
+            </div>
+        `;
+        
+        // Display in your modal or notification area
+        if (window.showAlert) {
+            window.showAlert(message, 'success');
+        }
+    }
+    
+    // Error message display
+    showMergeErrorMessage(message) {
+        if (window.showAlert) {
+            window.showAlert(`Merge failed: ${message}`, 'error');
+        } else {
+            alert(`Merge failed: ${message}`);
+        }
     }
     
     // Execute the merge
@@ -749,126 +822,53 @@ class MergeManager {
         }
         
         // Refresh all displays
-            // Replace current project data with merged version
-            window.projectData = mergedProject;
+        if (window.updateMonthHeaders) {
+            window.updateMonthHeaders();
+        }
+        
+        // Render all tables including forecast AND rate cards
+        if (window.tableRenderer) {
+            window.tableRenderer.renderInternalResourcesTable();
+            window.tableRenderer.renderVendorCostsTable();
+            window.tableRenderer.renderToolCostsTable();
+            window.tableRenderer.renderMiscCostsTable();
+            window.tableRenderer.renderRisksTable();
+            window.tableRenderer.renderForecastTable();
             
-            // Save to localStorage
-            if (window.dataManager && window.dataManager.saveToLocalStorage) {
-                window.dataManager.saveToLocalStorage();
+            // Check if rate cards method exists before calling
+            if (typeof window.tableRenderer.renderUnifiedRateCardsTable === 'function') {
+                window.tableRenderer.renderUnifiedRateCardsTable();
             }
+        }
+        
+        // CRITICAL: Use longer delay and ensure DOM is fully updated
+        // Update summary AFTER all rendering is complete
+        setTimeout(() => {
+            console.log('🔄 Starting post-merge summary update...');
             
-            // Refresh all displays
-            if (window.updateMonthHeaders) {
-                window.updateMonthHeaders();
-            }
-            
-            // Render all tables including forecast AND rate cards
+            // Force a re-render of all tables one more time to ensure data is loaded
             if (window.tableRenderer) {
                 window.tableRenderer.renderInternalResourcesTable();
                 window.tableRenderer.renderVendorCostsTable();
                 window.tableRenderer.renderToolCostsTable();
                 window.tableRenderer.renderMiscCostsTable();
-                window.tableRenderer.renderRisksTable();
-                window.tableRenderer.renderForecastTable();
-                
-                // Check if rate cards method exists before calling
-                if (typeof window.tableRenderer.renderUnifiedRateCardsTable === 'function') {
-                    window.tableRenderer.renderUnifiedRateCardsTable();
-                }
             }
             
-            // CRITICAL: Use longer delay and ensure DOM is fully updated
-            // Update summary AFTER all rendering is complete
+            // Now update the summary
+            if (window.updateSummary) {
+                window.updateSummary();
+                console.log('✅ Summary updated after merge');
+            }
+            
+            // Double-check summary after another short delay
             setTimeout(() => {
-                console.log('🔄 Starting post-merge summary update...');
-                
-                // Force a re-render of all tables one more time to ensure data is loaded
-                if (window.tableRenderer) {
-                    window.tableRenderer.renderInternalResourcesTable();
-                    window.tableRenderer.renderVendorCostsTable();
-                    window.tableRenderer.renderToolCostsTable();
-                    window.tableRenderer.renderMiscCostsTable();
-                }
-                
-                // Now update the summary
                 if (window.updateSummary) {
                     window.updateSummary();
-                    console.log('✅ Summary updated after merge');
+                    console.log('✅ Summary double-checked');
                 }
-                
-                // Double-check summary after another short delay
-                setTimeout(() => {
-                    if (window.updateSummary) {
-                        window.updateSummary();
-                        console.log('✅ Summary double-checked');
-                    }
-                }, 200);
-                
-            }, 300); // Increased from 100ms to 300ms
-
-            // Modified merge execution function to include the rate card merge steps.
-            function executeMergeWithRateCards(masterData, specialistData, dateAlignment, rateCardResolutions) {
-                try {
-                    // Step 1: Create full backup
-                    const fullBackup = JSON.parse(JSON.stringify(masterData));
-                    
-                    // Step 2: Merge timeline data (existing)
-                    mergeTimelineData(masterData, specialistData, dateAlignment);
-                    
-                    // Step 3: Merge rate cards (new)
-                    const rateCardResult = window.RateCardMerger.executeMerge(masterData, rateCardResolutions);
-                    
-                    // Step 4: Merge cost data (existing)
-                    mergeResourceData(masterData, specialistData);
-                    
-                    // Step 5: Save to localStorage
-                    if (window.DataManager) {
-                        window.DataManager.saveToLocalStorage();
-                    }
-                    
-                    // Step 6: Re-render tables
-                    if (window.TableRenderer) {
-                        window.TableRenderer.renderAllTables();
-                    }
-                    
-                    // Step 7: Update summary
-                    if (window.updateSummary) {
-                        window.updateSummary();
-                    }
-                    
-                    // Success message
-                    const summary = window.RateCardMerger.getMergeSummary(rateCardResolutions);
-                    showMergeSuccessMessage(summary);
-                    
-                    return true;
-                    
-                } catch (error) {
-                    console.error('Merge failed:', error);
-                    // Rollback everything
-                    Object.assign(masterData, fullBackup);
-                    showMergeErrorMessage(error.message);
-                    return false;
-                }
-            }
+            }, 200);
             
-            // Success message display
-            function showMergeSuccessMessage(summary) {
-                const message = `
-                    <div style="background: #d1fae5; color: #065f46; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
-                        <h4 style="margin-bottom: 0.5rem;">✅ Merge Completed Successfully!</h4>
-                        <ul style="margin: 0.5rem 0 0 1.5rem;">
-                            <li>${summary.newCardsAdded} new rate cards added</li>
-                            <li>${summary.cardsUpdated} rate cards updated</li>
-                            <li>${summary.cardsKept} rate cards kept unchanged</li>
-                        </ul>
-                    </div>
-                `;
-                
-                // Display in your modal or notification area
-                if (window.showAlert) {
-                    window.showAlert(message, 'success');
-                }
-            }
+        }, 300); // Increased from 100ms to 300ms
         
         // Close modal
         const modal = document.getElementById('mergeModal');
