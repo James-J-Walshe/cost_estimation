@@ -1,6 +1,7 @@
 /**
  * Edit Manager Module
  * Handles inline editing functionality for all data types with dynamic month support
+ * UPDATED: Now includes Rate Card editing with unique role name validation
  */
 
 class EditManager {
@@ -53,7 +54,7 @@ class EditManager {
     /**
      * Creates edit button HTML
      * @param {string} itemId - Unique identifier for the item
-     * @param {string} itemType - Type of item (internal-resource, vendor-cost, etc.)
+     * @param {string} itemType - Type of item (internal-resource, vendor-cost, rate-card, etc.)
      */
     createEditButton(itemId, itemType) {
         return `<button class="edit-btn icon-btn" data-id="${itemId}" data-type="${itemType}" title="Edit">
@@ -191,6 +192,14 @@ class EditManager {
                 data.impact = cells[2]?.textContent?.trim() || '';
                 data.mitigationCost = parseFloat(cells[4]?.textContent?.replace(/[^0-9.-]/g, '')) || 0;
                 break;
+                
+            case 'rate-card':
+                data.role = cells[0]?.textContent?.trim() || '';
+                // Extract category from the badge span
+                const categoryBadge = cells[1]?.querySelector('.category-badge');
+                data.category = categoryBadge?.textContent?.trim() || '';
+                data.rate = parseFloat(cells[2]?.textContent?.replace(/[^0-9.-]/g, '')) || 0;
+                break;
         }
         
         return data;
@@ -239,7 +248,7 @@ class EditManager {
                     if (cells[cellIndex]) {
                         const fieldName = monthKey + 'Cost';
                         const value = data[fieldName] || 0;
-                        cells[cellIndex].innerHTML = `<input type="number" class="edit-input month-input" value="${value}" data-field="${fieldName}" step="0.01" min="0">`;
+                        cells[cellIndex].innerHTML = `<input type="number" class="edit-input" value="${value}" data-field="${fieldName}" step="0.01" min="0">`;
                     }
                 });
                 break;
@@ -273,6 +282,14 @@ class EditManager {
                 </select>`;
                 cells[4].innerHTML = `<input type="number" class="edit-input" value="${data.mitigationCost}" data-field="mitigationCost" step="0.01" min="0">`;
                 break;
+                
+            case 'rate-card':
+                cells[0].innerHTML = `<input type="text" class="edit-input" value="${data.role}" data-field="role" placeholder="Role Name">`;
+                cells[1].innerHTML = `<select class="edit-input" data-field="category">
+                    ${this.getCategoryOptions(data.category)}
+                </select>`;
+                cells[2].innerHTML = `<input type="number" class="edit-input" value="${data.rate}" data-field="rate" step="1" min="0" placeholder="Daily Rate">`;
+                break;
         }
 
         // Focus first input
@@ -304,44 +321,31 @@ class EditManager {
             const newData = this.extractEditData(row, editState.type);
             
             // Validate data
-            if (!this.validateEditData(newData, editState.type)) {
-                alert('Please check your inputs. Some fields are invalid.');
+            if (!this.validateEditData(newData, editState.type, itemId)) {
                 row.classList.remove('saving');
                 return;
             }
-
-            // Add ID to data
-            newData.id = itemId;
-
-            console.log('Saving data:', newData);
-
-            // Update the data in your main data structure
+            
+            // Update the data
             this.updateItemData(itemId, newData, editState.type);
             
-            // Convert back to display mode
+            // Finish editing
             this.finishEditing(itemId, newData, editState.type);
             
-            // Re-render tables to ensure consistency
+            // Re-render tables
             if (window.tableRenderer) {
                 window.tableRenderer.renderAllTables();
             }
             
-            // Recalculate totals
-            if (window.updateAllCalculations) {
-                window.updateAllCalculations();
-            }
-            
-            // Save data
-            if (window.saveProjectData) {
-                window.saveProjectData();
+            // Update summary if available
+            if (window.calculateAndDisplaySummary) {
+                window.calculateAndDisplaySummary();
             }
             
             console.log('Save completed successfully');
-            
         } catch (error) {
             console.error('Error saving edit:', error);
-            alert('Error saving changes: ' + error.message);
-        } finally {
+            alert('An error occurred while saving. Please try again.');
             row.classList.remove('saving');
         }
     }
@@ -400,9 +404,9 @@ class EditManager {
     }
 
     /**
-     * Validate edit data
+     * Validate edit data with unique role name validation for rate cards
      */
-    validateEditData(data, itemType) {
+    validateEditData(data, itemType, itemId) {
         switch (itemType) {
             case 'internal-resource':
                 return data.role && data.dailyRate >= 0;
@@ -414,6 +418,26 @@ class EditManager {
                 return data.item && data.cost >= 0;
             case 'risk':
                 return data.description && data.probability && data.impact;
+            case 'rate-card':
+                // Validate required fields
+                if (!data.role || !data.category || data.rate < 0) {
+                    alert('Please fill in all required fields:\n- Role name\n- Category (Internal/External)\n- Daily Rate (must be 0 or greater)');
+                    return false;
+                }
+                
+                // Check for duplicate role names (case-insensitive)
+                const projectData = window.projectData || {};
+                const isDuplicate = projectData.rateCards?.some(card => {
+                    const cardId = card.id || card.role;
+                    return card.role.toLowerCase() === data.role.toLowerCase() && cardId !== itemId;
+                });
+                
+                if (isDuplicate) {
+                    alert(`A rate card with the role "${data.role}" already exists.\nPlease use a unique role name.`);
+                    return false;
+                }
+                
+                return true;
         }
         return true;
     }
@@ -467,6 +491,21 @@ class EditManager {
     }
 
     /**
+     * Get category options for rate cards (Internal/External)
+     */
+    getCategoryOptions(selectedCategory) {
+        const categories = ['Internal', 'External'];
+        let options = '<option value="">Select Category</option>';
+        
+        categories.forEach(category => {
+            const selected = category === selectedCategory ? 'selected' : '';
+            options += `<option value="${category}" ${selected}>${category}</option>`;
+        });
+        
+        return options;
+    }
+
+    /**
      * Get vendor category options
      */
     getVendorCategoryOptions(selectedCategory) {
@@ -497,7 +536,7 @@ class EditManager {
     }
 
     /**
-     * Get misc category options
+     * Get miscellaneous category options
      */
     getMiscCategoryOptions(selectedCategory) {
         const categories = ['Travel', 'Equipment', 'Training', 'Documentation', 'Other'];
@@ -512,20 +551,19 @@ class EditManager {
     }
 
     /**
-     * Get probability options
+     * Get probability options for risks
      */
-    getProbabilityOptions(selectedProb) {
-        const probs = [
-            { value: '1', label: '1 - Very Low' },
-            { value: '2', label: '2 - Low' },
-            { value: '3', label: '3 - Medium' },
-            { value: '4', label: '4 - High' },
-            { value: '5', label: '5 - Very High' }
+    getProbabilityOptions(selectedProbability) {
+        const probabilities = [
+            { value: 'Low', label: 'Low (< 30%)' },
+            { value: 'Medium', label: 'Medium (30-60%)' },
+            { value: 'High', label: 'High (> 60%)' }
         ];
+        
         let options = '<option value="">Select Probability</option>';
         
-        probs.forEach(prob => {
-            const selected = prob.value === selectedProb ? 'selected' : '';
+        probabilities.forEach(prob => {
+            const selected = prob.value === selectedProbability ? 'selected' : '';
             options += `<option value="${prob.value}" ${selected}>${prob.label}</option>`;
         });
         
@@ -533,16 +571,16 @@ class EditManager {
     }
 
     /**
-     * Get impact options
+     * Get impact options for risks
      */
     getImpactOptions(selectedImpact) {
         const impacts = [
-            { value: '1', label: '1 - Very Low' },
-            { value: '2', label: '2 - Low' },
-            { value: '3', label: '3 - Medium' },
-            { value: '4', label: '4 - High' },
-            { value: '5', label: '5 - Very High' }
+            { value: 'Low', label: 'Low' },
+            { value: 'Medium', label: 'Medium' },
+            { value: 'High', label: 'High' },
+            { value: 'Critical', label: 'Critical' }
         ];
+        
         let options = '<option value="">Select Impact</option>';
         
         impacts.forEach(impact => {
@@ -580,4 +618,4 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = EditManager;
 }
 
-console.log('Edit Manager loaded with dynamic month support');
+console.log('✅ Edit Manager loaded with Rate Card editing support and unique role name validation');
