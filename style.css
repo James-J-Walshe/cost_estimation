@@ -1746,6 +1746,283 @@ small {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* ==========================================================================
+   24. MERGE MANAGER STYLES
+   ========================================================================== */
+
+/* Merge Modal - wider than standard modal */
+.merge-modal-content {
+    max-width: 900px;
+    max-height: 85vh;
+}
+
+/* Merge Steps */
+.merge-step {
+    margin-bottom: 2rem;
+}
+
+.merge-step h3 {
+    color: #374151;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e5e7eb;
+    font-size: 1.2rem;
+}
+
+.help-text {
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+    font-style: italic;
+}
+
+/* Date Comparison Grid */
+.comparison-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin: 1.5rem 0;
+}
+
+.comparison-column {
+    background: #f9fafb;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border: 2px solid #e5e7eb;
+}
+
+.comparison-column h4 {
+    margin-top: 0;
+    color: #1f2937;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+.date-display p {
+    margin: 0.5rem 0;
+    font-size: 0.95rem;
+}
+
+.date-display p.differ {
+    background: #fef3c7;
+    padding: 0.5rem;
+    border-radius: 4px;
+    border-left: 3px solid #f59e0b;
+}
+
+.date-display p.match {
+    color: #059669;
+    font-weight: 500;
+}
+
+.variance {
+    color: #dc2626;
+    font-weight: 600;
+    margin-left: 0.5rem;
+    font-size: 0.9rem;
+}
+
+/* Date Selection Options */
+.date-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.date-option {
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.date-option:hover {
+    border-color: #cbd5e1;
+    background: #f9fafb;
+}
+
+.date-option:has(input:checked) {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.date-option input[type="radio"] {
+    margin-right: 0.75rem;
+    cursor: pointer;
+}
+
+.date-option label {
+    cursor: pointer;
+    display: block;
+    margin: 0;
+}
+
+.date-option label strong {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 1.05rem;
+    color: #1f2937;
+}
+
+.date-option label p {
+    margin: 0.25rem 0;
+    color: #4b5563;
+}
+
+.date-option .impact {
+    color: #6b7280;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    font-style: italic;
+}
+
+/* Manual Date Entry */
+.manual-dates {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.manual-dates .form-group {
+    margin-bottom: 1rem;
+}
+
+/* Metadata Display */
+.metadata-display {
+    background: #f9fafb;
+    padding: 1rem;
+    border-radius: 6px;
+    margin: 1rem 0;
+    border: 1px solid #e5e7eb;
+}
+
+.metadata-display p {
+    margin: 0.4rem 0;
+    font-size: 0.95rem;
+}
+
+/* Warnings */
+.warnings {
+    background: #fef3c7;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-top: 1rem;
+    border-left: 3px solid #f59e0b;
+}
+
+.warnings strong {
+    color: #92400e;
+}
+
+.warnings ul {
+    margin: 0.5rem 0 0 1.5rem;
+}
+
+.warnings li {
+    color: #78350f;
+}
+
+/* Merge Preview Section */
+.merge-preview-section {
+    background: #f0f9ff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin: 1.5rem 0;
+    border: 1px solid #bae6fd;
+}
+
+.merge-preview-section h4 {
+    margin-top: 0;
+    color: #0c4a6e;
+    font-size: 1rem;
+}
+
+.merge-preview-section ul {
+    margin: 1rem 0;
+    list-style: none;
+    padding: 0;
+}
+
+.merge-preview-section li {
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 4px;
+    color: #0369a1;
+}
+
+.info-note {
+    color: #0369a1;
+    font-size: 0.9rem;
+    margin-top: 1rem;
+    font-style: italic;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 4px;
+}
+
+/* Merge Actions */
+.merge-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* Button Icon */
+.btn-icon {
+    margin-right: 0.5rem;
+}
+
+/* Date Comparison Panel */
+.date-comparison-panel {
+    animation: fadeIn 0.3s ease;
+}
+
+.date-selection-panel {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Responsive adjustments for merge modal */
+@media (max-width: 768px) {
+    .comparison-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .merge-modal-content {
+        width: 95%;
+        margin: 2% auto;
+        padding: 1.5rem;
+    }
+    
+    .merge-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .merge-actions button {
+        width: 100%;
+    }
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 /* ==========================================================================
    Bug Fixes 
    ========================================================================== */
