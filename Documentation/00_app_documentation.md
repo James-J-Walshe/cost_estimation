@@ -9,7 +9,8 @@
 - [Common Patterns](#common-patterns)
 - [Feature Documentation](#feature-documentation)
   - [Currency Management](#currency-management)
-  - [Merge Functionality](#merge-functionality) ⭐ NEW
+  - [Merge Functionality](#merge-functionality) ⭐
+  - [Rate Card Editing](#rate-card-editing) ⭐ NEW
 - [Troubleshooting](#troubleshooting)
 
 ---
@@ -25,8 +26,9 @@ A web-based ICT project estimation tool for calculating and managing project cos
 - Vendor, tool, and miscellaneous cost tracking
 - Risk assessment and contingency planning
 - Currency management with exchange rates
-- **Specialist team estimate merging** ⭐ NEW
-- **Rate card conflict resolution** ⭐ NEW
+- Specialist team estimate merging ⭐
+- Rate card conflict resolution ⭐
+- **Inline rate card editing** ⭐ NEW
 - Data persistence via localStorage
 - Export capabilities
 
@@ -90,7 +92,7 @@ window.initManager.initialize();
    - Initializes currency settings with default primary currency
 
 2. **Module Detection**
-   - Checks for available modules (DataManager, TableRenderer, CurrencyManager, MergeManager, etc.)
+   - Checks for available modules (DataManager, TableRenderer, EditManager, CurrencyManager, MergeManager, etc.)
    - Logs which modules are loaded
    - Handles both capitalized and lowercase module naming
 
@@ -114,8 +116,9 @@ window.initManager.initialize();
    Step 12: Initialize Feature Toggle Manager
    Step 13: Initialize Currency Manager
    Step 14: Initialize Tool Costs Manager
-   Step 15: Initialize Merge Manager ⭐ NEW
-   Step 16: Final re-render after delay
+   Step 15: Initialize Merge Manager
+   Step 16: Initialize Edit Manager ⭐ NEW
+   Step 17: Final re-render after delay
    ```
 
 5. **Comprehensive Logging**
@@ -132,7 +135,7 @@ class InitializationManager {
         this.modules = {
             dataManager: false,
             tableRenderer: false,
-            editManager: false,
+            editManager: false,        // ⭐ Critical for rate card editing
             dynamicFormHelper: false,
             domManager: false,
             tableFixes: false,
@@ -141,8 +144,8 @@ class InitializationManager {
             userManager: false,
             featureToggleManager: false,
             toolCostsManager: false,
-            rateCardMerger: false,    // ⭐ NEW
-            mergeManager: false        // ⭐ NEW
+            rateCardMerger: false,
+            mergeManager: false
         };
     }
 
@@ -163,7 +166,7 @@ class InitializationManager {
 <script src="js/dom_manager.js"></script>
 <script src="js/table_renderer.js"></script> 
 <script src="js/data_manager.js"></script>
-<script src="modules/editManager.js"></script>
+<script src="modules/editManager.js"></script> <!-- ⭐ Required for rate card editing -->
 <script src="modules/dynamic_form_helper.js"></script>
 <script src="modules/table_fixes.js"></script>
 <script src="modules/new_project_welcome.js"></script>
@@ -171,8 +174,8 @@ class InitializationManager {
 <script src="modules/user_manager.js"></script>
 <script src="modules/feature_toggle_manager.js"></script>
 <script src="modules/tool_costs_manager.js"></script>
-<script src="modules/rate_card_merger.js"></script> <!-- ⭐ NEW - Load BEFORE merge_manager -->
-<script src="modules/merge_manager.js"></script>    <!-- ⭐ NEW -->
+<script src="modules/rate_card_merger.js"></script>
+<script src="modules/merge_manager.js"></script>
 
 <!-- Load main script (contains functions but NO auto-init) -->
 <script src="script.js"></script>
@@ -207,7 +210,7 @@ cost_estimation/
 │   ├── table_renderer.js              # Table rendering logic
 │   └── data_manager.js                # Data persistence & loading
 ├── modules/
-│   ├── editManager.js                 # Inline editing functionality
+│   ├── editManager.js                 # ⭐ Inline editing functionality (includes rate cards)
 │   ├── dynamic_form_helper.js         # Dynamic form generation
 │   ├── table_fixes.js                 # Table styling fixes
 │   ├── init_manager.js                # ⭐ INITIALIZATION MANAGER (load LAST)
@@ -216,15 +219,40 @@ cost_estimation/
 │   ├── user_manager.js                # User profile management
 │   ├── feature_toggle_manager.js      # Feature flag management
 │   ├── tool_costs_manager.js          # Tool costs handling
-│   ├── rate_card_merger.js            # ⭐ Rate card conflict resolution (NEW)
-│   └── merge_manager.js               # ⭐ Specialist estimate merging (NEW)
+│   ├── rate_card_merger.js            # Rate card conflict resolution
+│   └── merge_manager.js               # Specialist estimate merging
 ├── Styles/
 │   └── edit-styles.css                # Edit-specific styles
-└── Strategy/
-    └── app_documentation.md           # This file
+└── Documentation/
+    └── 00_app_documentation.md        # This file
 ```
 
 ### File Responsibilities
+
+#### `modules/editManager.js` ⭐ **Critical for Rate Card Editing**
+- **What:** Handles inline editing for all data types including rate cards
+- **Key features:**
+  - Inline editing with visual feedback
+  - Unique role name validation (case-insensitive)
+  - Required field validation
+  - Keyboard shortcuts (Enter/Escape)
+  - Data persistence integration
+- **Global export:** `window.editManager` (class instance)
+- **Supports item types:**
+  - `internal-resource` - Internal resource allocations
+  - `vendor-cost` - Vendor cost entries
+  - `tool-cost` - Tool and license costs
+  - `misc-cost` - Miscellaneous expenses
+  - `risk` - Risk assessments
+  - `rate-card` ⭐ NEW - Rate card entries
+- **Key methods:**
+  - `handleEditClick(button)` - Enter edit mode
+  - `handleSaveEdit(button)` - Save changes
+  - `handleCancelEdit(button)` - Revert changes
+  - `extractRowData(row, itemType)` - Get current values
+  - `convertToEditInputs(row, itemType, data)` - Create edit inputs
+  - `validateEditData(data, itemType, itemId)` - Validate with unique checks
+  - `updateItemData(itemId, newData, itemType)` - Update data structure
 
 #### `modules/init_manager.js` ⭐ **START HERE**
 - **What:** Central initialization orchestrator
@@ -247,7 +275,7 @@ cost_estimation/
   - `window.initializeProjectInfoSaveButton`
   - All calculation functions
 
-#### `modules/rate_card_merger.js` ⭐ **NEW MODULE**
+#### `modules/rate_card_merger.js`
 - **What:** Handles rate card conflict detection and resolution during merge
 - **Key features:**
   - Analyzes rate cards between master and specialist files
@@ -257,34 +285,19 @@ cost_estimation/
   - Maintains referential integrity
 - **Global export:** `window.RateCardMerger` (class instance)
 - **Must load:** BEFORE merge_manager.js (dependency)
-- **Key methods:**
-  - `analyzeRateCards(masterData, specialistData)` - Detect conflicts
-  - `executeMerge(masterData, resolutions)` - Execute transactional merge
-  - `getMergeSummary(resolutions)` - Generate merge statistics
 
-#### `modules/merge_manager.js` ⭐ **NEW MODULE**
+#### `modules/merge_manager.js`
 - **What:** Orchestrates specialist team estimate merging workflow
 - **Key features:**
-  - Multi-step merge wizard (file validation, date comparison, rate card review, final merge)
+  - Multi-step merge wizard
   - Project timeline alignment
   - Resource data merging
-  - Integration with RateCardMerger for conflict resolution
+  - Integration with RateCardMerger
 - **Global export:** `window.mergeManager` (class instance)
 - **Depends on:** `window.RateCardMerger` (optional, graceful fallback)
-- **Must have:** `initialize()` method called by init_manager
-- **Workflow steps:**
-  1. File Selection & Validation
-  2. Date Comparison
-  3. Rate Card Review (conditional)
-  4. Date Selection & Final Merge
 
 #### `modules/currency_manager.js`
 - **What:** Manages currency selection and exchange rates
-- **Key features:**
-  - Primary currency selection from 33 global currencies
-  - Exchange rate management (add, edit, delete)
-  - Currency conversion utilities
-  - Currency symbol mapping
 - **Global export:** `window.currencyManager`
 - **Must have:** `initialize()` method called by init_manager
 
@@ -337,7 +350,7 @@ cost_estimation/
    ```javascript
    this.modules = {
        // ... existing modules
-       mergeManager: false,       // ← MUST have comma here
+       editManager: false,        // ← MUST have comma here
        myNewModule: false         // ← Add your module (no comma if last)
    };
 
@@ -476,7 +489,7 @@ window.projectData.projectInfo.projectName = 'New Project';
 projectData.projectInfo.projectName = 'New Project';
 ```
 
-### Pattern 5: Transactional Operations ⭐ NEW
+### Pattern 5: Transactional Operations
 
 ```javascript
 // Use backup/rollback pattern for critical data operations
@@ -503,6 +516,45 @@ class DataModule {
             Object.assign(data, backup);
             return { success: false, error: error.message };
         }
+    }
+}
+```
+
+### Pattern 6: Inline Editing ⭐ NEW
+
+```javascript
+// Standard pattern for inline editing across all data types
+
+class EditManager {
+    handleEditClick(button) {
+        const itemId = button.dataset.id;
+        const itemType = button.dataset.type;  // 'rate-card', 'internal-resource', etc.
+        const row = button.closest('tr');
+        
+        // Store original values
+        this.originalValues.set(itemId, this.extractRowData(row, itemType));
+        
+        // Convert to edit mode
+        this.convertToEditInputs(row, itemType, originalData);
+    }
+    
+    handleSaveEdit(button) {
+        const itemId = button.dataset.id;
+        const editState = this.editingStates.get(itemId);
+        
+        // Extract edited values
+        const newData = this.extractEditData(row, editState.type);
+        
+        // Validate (includes unique checks for rate cards)
+        if (!this.validateEditData(newData, editState.type, itemId)) {
+            return;  // Stay in edit mode
+        }
+        
+        // Update data
+        this.updateItemData(itemId, newData, editState.type);
+        
+        // Re-render tables
+        window.tableRenderer.renderAllTables();
     }
 }
 ```
@@ -580,7 +632,7 @@ AED, ARS, BRL, CZK, DKK, HKD, HUF, IDR, ILS, KRW, MXN, MYR, NOK, NZD, PHP, PLN, 
 
 ---
 
-### Merge Functionality ⭐ NEW
+### Merge Functionality
 
 #### Overview
 
@@ -611,522 +663,449 @@ The merge system consists of two primary modules working together:
 #### Merge Workflow
 
 **Step 1: File Selection & Validation**
-```javascript
-// User selects specialist file via file input
-// MergeManager validates the file structure
-
-validateFile(fileContent) {
-    const project = JSON.parse(fileContent);
-    
-    // Check for required fields
-    const requiredFields = [
-        'projectInfo',
-        'internalResources',
-        'vendorCosts',
-        'toolCosts',
-        'miscCosts',
-        'risks',
-        'rateCards'
-    ];
-    
-    // Validation logic...
-}
-```
-
-**Validation checks:**
-- ✅ Valid JSON format
-- ✅ All required fields present
-- ✅ Proper data structure
-- ⚠️ Warns if dates missing (will use master dates)
+- User selects specialist file via file input
+- System validates JSON structure and required fields
+- Displays file metadata (resource counts, dates, team info)
 
 **Step 2: Date Comparison**
-```javascript
-// Compare project timelines
-compareDates() {
-    const masterStart = new Date(this.masterProject.projectInfo.startDate);
-    const specialistStart = new Date(this.specialistProject.projectInfo.startDate);
-    
-    // Calculate variances
-    const startVariance = Math.round((specialistStart - masterStart) / (1000 * 60 * 60 * 24));
-    
-    // Return comparison object with differences
-}
-```
-
-**Shows:**
-- Master project dates and duration
-- Specialist project dates and duration
-- Differences in days (start, end, duration)
-- Impact description for misaligned timelines
+- Compares project timelines (master vs specialist)
+- Shows start/end date differences
+- Calculates duration variances
+- Displays impact warnings
 
 **Step 3: Rate Card Review** (Conditional)
-```javascript
-// Analyze rate cards using RateCardMerger
-proceedToRateCardReview() {
-    this.rateCardAnalysis = window.RateCardMerger.analyzeRateCards(
-        this.masterProject,
-        this.specialistProject
-    );
-    
-    // Show review step if conflicts or new cards exist
-    if (this.rateCardAnalysis.hasConflicts || this.rateCardAnalysis.hasNewCards) {
-        this.showRateCardReviewStep();
-    } else {
-        this.proceedToDateSelection();
-    }
-}
-```
-
-**Rate Card Analysis Results:**
-- **New Cards:** Rate cards in specialist file not in master
-- **Conflicts:** Same role with different rates or categories
-- **No Issues:** All rate cards compatible
-
-**Conflict Resolution Options:**
-- Keep Master Rate - Retain existing rate
-- Use Specialist Rate - Update to specialist's rate
+- Analyzes rate cards using RateCardMerger
+- Identifies conflicts (same role, different rates)
+- Identifies new cards to add
+- Allows user to resolve conflicts
 
 **Step 4: Date Selection & Final Merge**
+- Choose timeline: Keep Master, Adopt Specialist, or Custom
+- Execute merge with selected options
+- Tag all merged data with "(Specialist Team)"
+- Update all displays and save
 
-**Date Options:**
-1. **Keep Master Dates** - Specialist costs adjusted to master timeline
-2. **Adopt Specialist Dates** - Master timeline updated to match specialist
-3. **Custom Dates** - User enters new timeline
+#### Key Features
 
-**Merge Execution:**
+✅ **File Validation** - Comprehensive structure checking
+✅ **Timeline Alignment** - Three date selection options
+✅ **Rate Card Management** - Conflict detection and resolution
+✅ **Data Integrity** - Backup, rollback, reference updating
+✅ **User Feedback** - Step-by-step progress and clear messages
+
+For complete merge functionality documentation, see the Merge Functionality section above.
+
+---
+
+### Rate Card Editing ⭐ NEW
+
+#### Overview
+
+The Rate Card editing feature provides **inline editing** of rate card entries directly within the Settings → Rate Cards table. Users can modify role names, categories, and daily rates without navigating to separate forms or dialogs.
+
+**Key Benefits:**
+- ✅ **Faster Updates** - Edit in-place with fewer clicks
+- ✅ **Data Integrity** - Unique role name validation prevents duplicates
+- ✅ **User-Friendly** - Visual feedback and clear error messages
+- ✅ **Keyboard Support** - Enter to save, Escape to cancel
+- ✅ **Consistent UX** - Matches edit patterns used throughout the app
+
+#### Accessing Rate Card Editing
+
+1. Navigate to **Settings** (⚙️ icon in top navigation)
+2. Select **Rate Cards** in the left sidebar
+3. Click **Edit** button (pencil icon) on any rate card
+4. Row highlights in yellow and fields become editable
+5. Modify fields as needed
+6. **Save** (✓) or **Cancel** (✗)
+
+#### Editable Fields
+
+| Field | Type | Validation | Notes |
+|-------|------|------------|-------|
+| **Role** | Text Input | Required, Must be unique | Case-insensitive uniqueness |
+| **Category** | Dropdown | Required (Internal/External) | Determines resource type |
+| **Daily Rate** | Number Input | Required, Must be ≥ 0 | Zero is valid (volunteer roles) |
+
+#### Visual States
+
+**Normal Mode:**
+```
+┌──────────────────┬──────────┬────────┬──────────────┐
+│ Senior Consultant│ EXTERNAL │ 1,200  │ [✏️] [🗑️]   │
+└──────────────────┴──────────┴────────┴──────────────┘
+```
+
+**Edit Mode:**
+```
+┌──────────────────────────────────────────────────────┐
+│ [Senior Consultant  ] │ [External ▼] │ [1200] │ [✅] [❌] [🗑️] │
+└──────────────────────────────────────────────────────┘
+Yellow highlight, input fields, Save/Cancel buttons
+```
+
+#### Validation Rules
+
+**1. Unique Role Name (Case-Insensitive)**
 ```javascript
-executeMergeWithRateCards(targetStart, targetEnd, rateCardResolutions) {
-    try {
-        // Step 1: Merge rate cards FIRST (with RateCardMerger)
-        const rateCardResult = window.RateCardMerger.executeMerge(
-            mergedProject, 
-            rateCardResolutions
-        );
-        
-        // Step 2: Merge resource data (internal, vendor, tools, misc, risks)
-        this.mergeResourceData(mergedProject);
-        
-        // Step 3: Update project data
-        window.projectData = mergedProject;
-        
-        // Step 4: Save and refresh
-        window.dataManager.saveToLocalStorage();
-        this.refreshAllDisplays();
-        
-        // Step 5: Show success message
-        this.showMergeSuccessMessage(summary);
-        
-    } catch (error) {
-        // Rollback on error
-        this.showMergeErrorMessage(error.message);
+// These are all considered duplicates:
+"Developer" = "developer" = "DEVELOPER" = "DEvELoPeR"
+
+// Error message:
+"A rate card with the role 'Developer' already exists. 
+Please use a unique role name."
+```
+
+**Self-Edit Exception:**
+- Editing "Developer" and keeping name "Developer" → ✅ Allowed
+- Changing only rate or category, keeping same role → ✅ Allowed
+
+**2. Required Fields**
+All three fields must have values:
+- Role: Cannot be empty
+- Category: Must select Internal or External
+- Rate: Must be number ≥ 0
+
+**3. Rate Validation**
+- ✅ Zero (0) is valid for volunteer roles
+- ✅ Decimals allowed (e.g., 1250.50)
+- ✅ Large values accepted (e.g., 999,999)
+- ❌ Negative values rejected
+
+#### Keyboard Shortcuts
+
+| Key | Action | Context |
+|-----|--------|---------|
+| **Enter** | Save changes | While in edit mode |
+| **Escape** | Cancel editing | While in edit mode |
+| **Tab** | Navigate between fields | While in edit mode |
+
+#### Integration with Internal Resources
+
+**Important Behavior:**  
+When a rate card is edited, existing Internal Resources using that rate card **DO NOT** automatically update. This is intentional:
+
+```javascript
+// Before edit:
+Rate Card: "Developer" → 600
+Internal Resource: "Developer" → dailyRate: 600
+
+// After editing rate card to 750:
+Rate Card: "Developer" → 750
+Internal Resource: "Developer" → dailyRate: 600 (unchanged)
+
+// New resources added AFTER edit will use 750
+```
+
+**Rationale:**
+- Preserves historical cost data
+- Prevents unexpected budget changes
+- Gives users control over rate updates
+- Aligns with project accounting best practices
+
+#### Code Implementation
+
+**EditManager Pattern:**
+```javascript
+// editManager.js handles all inline editing
+
+class EditManager {
+    constructor() {
+        this.editingStates = new Map();
+        this.originalValues = new Map();
+        this.setupEventListeners();
+    }
+    
+    // Rate card editing uses these methods:
+    extractRowData(row, 'rate-card') {
+        // Extracts: role, category (from badge), rate
+    }
+    
+    convertToEditInputs(row, 'rate-card', data) {
+        // Creates: text input, dropdown, number input
+    }
+    
+    validateEditData(data, 'rate-card', itemId) {
+        // Validates: required fields, unique name, rate >= 0
+        // Returns: boolean + shows alert if invalid
+    }
+    
+    updateItemData(itemId, newData, 'rate-card') {
+        // Calls: window.updateItemById()
+        // Updates: projectData.rateCards array
     }
 }
 ```
 
-#### Rate Card Merger Details
-
-**Conflict Detection:**
+**Table Renderer Integration:**
 ```javascript
-analyzeRateCards(masterData, specialistData) {
-    // Normalize rate cards from both files
-    const masterRateCards = this.normalizeRateCards(masterData);
-    const specialistRateCards = this.normalizeRateCards(specialistData);
-    
-    // Identify conflicts and new cards
-    specialistRateCards.forEach(specialistCard => {
-        const masterCard = masterMap.get(specialistCard.role.toLowerCase());
-        
-        if (!masterCard) {
-            // New card
-            this.newRateCards.push(specialistCard);
-        } else if (this.hasConflict(masterCard, specialistCard)) {
-            // Conflict
-            this.conflicts.push({
-                role: specialistCard.role,
-                master: masterCard,
-                specialist: specialistCard,
-                resolution: 'keep_master'  // default
-            });
-        }
-    });
-    
-    return {
-        conflicts: this.conflicts,
-        newCards: this.newRateCards,
-        hasConflicts: this.conflicts.length > 0,
-        hasNewCards: this.newRateCards.length > 0
-    };
-}
-```
+// js/table_renderer.js generates edit buttons
 
-**Transactional Merge:**
-```javascript
-executeMerge(masterData, resolutions) {
-    try {
-        // Create backup for rollback
-        this.createBackup(masterData);
-        
-        // Process new rate cards
-        this.newRateCards.forEach(newCard => {
-            mergedRateCards.push({
-                role: newCard.role,
-                rate: newCard.rate,
-                category: newCard.category || 'External'
-            });
-        });
-        
-        // Process conflict resolutions
-        resolutions.forEach(resolution => {
-            if (resolution.action === 'use_specialist') {
-                // Update to specialist rate
-                const index = mergedRateCards.findIndex(
-                    card => card.role.toLowerCase() === resolution.role.toLowerCase()
-                );
-                mergedRateCards[index].rate = resolution.specialistRate;
-            }
-        });
-        
-        // Update master data
-        masterData.rateCards = mergedRateCards;
-        
-        // Update resource references
-        this.updateResourceReferences(masterData, mergedRateCards);
-        
-        return { success: true, mergedCount: mergedRateCards.length };
-        
-    } catch (error) {
-        // Rollback on error
-        this.rollback(masterData);
-        throw error;
-    }
-}
-```
-
-**Referential Integrity:**
-```javascript
-updateResourceReferences(masterData, mergedRateCards) {
-    const rateMap = new Map(mergedRateCards.map(card => [card.role, card.rate]));
-    
-    // Update internal resources
-    masterData.internalResources.forEach(resource => {
-        if (rateMap.has(resource.role)) {
-            resource.rate = rateMap.get(resource.role);
-        }
-    });
-    
-    // Update vendor resources
-    masterData.vendorCosts.forEach(vendor => {
-        if (vendor.role && rateMap.has(vendor.role)) {
-            vendor.rate = rateMap.get(vendor.role);
-        }
+renderUnifiedRateCardsTable() {
+    rateCards.forEach(rate => {
+        row.innerHTML = `
+            <td>${rate.role}</td>
+            <td><span class="category-badge category-${rate.category.toLowerCase()}">
+                ${rate.category}
+            </span></td>
+            <td>${rate.rate.toLocaleString()}</td>
+            <td>${this.createActionButtons(rate.id, 'rate-card')}</td>
+        `;
     });
 }
-```
 
-#### Resource Data Merging
-
-**Data Tagged with "Specialist Team":**
-```javascript
-mergeResourceData(mergedProject) {
-    // Internal Resources
-    this.specialistProject.internalResources.forEach(resource => {
-        mergedProject.internalResources.push({
-            ...resource,
-            id: Date.now() + Math.random(),
-            role: resource.role ? `${resource.role} (Specialist Team)` : resource.role
-        });
-    });
-    
-    // Vendor Costs
-    this.specialistProject.vendorCosts.forEach(vendor => {
-        mergedProject.vendorCosts.push({
-            ...vendor,
-            id: Date.now() + Math.random(),
-            vendor: vendor.vendor ? `${vendor.vendor} (Specialist Team)` : 'Specialist Team'
-        });
-    });
-    
-    // Similar for tools, misc costs, and risks...
+createActionButtons(itemId, itemType) {
+    return `
+        <button class="edit-btn icon-btn" 
+                data-id="${itemId}" 
+                data-type="${itemType}">
+            <!-- Edit icon SVG -->
+        </button>
+        <button class="delete-btn icon-btn" 
+                data-id="${itemId}" 
+                data-type="${itemType}">
+            <!-- Delete icon SVG -->
+        </button>
+    `;
 }
 ```
 
-**All merged items are tagged** with "(Specialist Team)" for easy identification.
+#### Data Flow
 
-#### UI Components
-
-**Modal Structure:**
-```html
-<div id="mergeModal" class="modal">
-    <!-- Step 1: File Selection & Validation -->
-    <div id="mergeStep1">
-        <input type="file" id="specialistFileInput" accept=".json">
-        <div id="validationResult"></div>
-    </div>
-    
-    <!-- Step 2: Date Comparison -->
-    <div id="mergeStep2" style="display: none;">
-        <div id="dateComparisonResult"></div>
-    </div>
-    
-    <!-- Step 3: Rate Card Review -->
-    <div id="mergeStep4" style="display: none;">
-        <div id="rateCardReviewPanel"></div>
-    </div>
-    
-    <!-- Step 4: Date Selection -->
-    <div id="mergeStep3" style="display: none;">
-        <div id="dateSelectionPanel"></div>
-    </div>
-</div>
+```
+User clicks Edit
+    ↓
+handleEditClick(button)
+    ↓
+extractRowData(row, 'rate-card')
+    → Store original: {role, category, rate}
+    ↓
+convertToEditInputs(row, 'rate-card', data)
+    → Replace cells with inputs
+    → Show Save/Cancel buttons
+    ↓
+User modifies fields
+    ↓
+User clicks Save (or presses Enter)
+    ↓
+handleSaveEdit(button)
+    ↓
+extractEditData(row, 'rate-card')
+    → Get edited values from inputs
+    ↓
+validateEditData(data, 'rate-card', itemId)
+    ├─ Required fields? ✓
+    ├─ Unique name? ✓ (case-insensitive, excludes self)
+    └─ Rate >= 0? ✓
+    ↓
+updateItemData(itemId, newData, 'rate-card')
+    → window.updateItemById()
+    → Update projectData.rateCards
+    ↓
+window.tableRenderer.renderAllTables()
+    → Re-render with new values
+    ↓
+window.DataManager.saveToLocalStorage()
+    → Persist changes
+    ↓
+Success!
 ```
 
-**Navigation Flow:**
-```
-Step 1 (File Selection) 
-    ↓ [Next: Compare Dates]
-Step 2 (Date Comparison)
-    ↓ [Next: Review Rate Cards]
-Step 3 (Rate Card Review) - Conditional
-    ↓ [Next: Select Timeline]
-Step 4 (Date Selection)
-    ↓ [Complete Merge]
-Success / Error Message
-```
+#### UI/UX Patterns
 
-#### Key Features & Capabilities
+**Visual Feedback:**
+```css
+/* Row in edit mode */
+tr.editing {
+    background-color: #fffbeb;  /* Light yellow */
+    border: 2px solid #fbbf24;  /* Yellow border */
+}
 
-✅ **File Validation**
-- Comprehensive structure checking
-- Clear error messages
-- Metadata display (resource counts, dates, team info)
+/* Action buttons */
+.icon-btn.success {
+    background-color: #10b981;  /* Green save */
+}
 
-✅ **Timeline Alignment**
-- Visual comparison of project dates
-- Three date selection options
-- Impact warnings for misaligned timelines
-
-✅ **Rate Card Management**
-- Automatic conflict detection
-- User-controlled resolution
-- New card identification
-- Transactional execution
-
-✅ **Data Integrity**
-- Backup before merge
-- Rollback on error
-- Reference updating
-- Unique ID generation
-
-✅ **User Feedback**
-- Step-by-step progress
-- Clear validation messages
-- Merge summary statistics
-- Success/error notifications
-
-#### Console Logging
-
-**Successful Merge Sequence:**
-```
-merge_manager.js:79 File selected: ICT_Project_Specialist.json
-merge_manager.js:89 File validated successfully
-merge_manager.js:394 🔍 Analyzing rate cards...
-merge_manager.js:403 📊 Rate card analysis: {conflicts: 2, newCards: 3, ...}
-merge_manager.js:750 Executing merge with dates: 2026-02-01 to 2026-12-31
-merge_manager.js:579 📋 Collected rate card resolutions: [{...}, {...}]
-merge_manager.js:757 🔄 Executing merge with rate card integration...
-merge_manager.js:781 📋 Merging rate cards...
-rate_card_merger.js:108 Rate cards backup created
-rate_card_merger.js:129 Added new rate card: Senior Architect
-rate_card_merger.js:129 Added new rate card: DevOps Engineer
-rate_card_merger.js:142 Updated rate card: Project Manager
-rate_card_merger.js:167 Rate cards merge completed successfully
-merge_manager.js:783 ✅ Rate cards merged: {success: true, mergedCount: 12}
-merge_manager.js:809 ✅ Merge with rate cards completed successfully
-table_renderer.js:250 Rates to render: Array(12)
-merge_manager.js:967 🔄 Starting post-merge summary update...
-merge_manager.js:980 ✅ Summary updated after merge
-merge_manager.js:987 ✅ Summary double-checked
-```
-
-#### Error Handling
-
-**Graceful Degradation:**
-```javascript
-// If RateCardMerger not available
-if (window.RateCardMerger && this.rateCardAnalysis) {
-    // Full rate card integration
-    this.executeMergeWithRateCards(targetStart, targetEnd, resolutions);
-} else {
-    // Basic merge fallback
-    console.log('🔄 Executing basic merge (no rate card integration)...');
-    this.executeBasicMerge(targetStart, targetEnd);
+.icon-btn.secondary {
+    background-color: #6b7280;  /* Grey cancel */
 }
 ```
 
-**Error Messages:**
-- File validation errors (missing fields, invalid JSON)
-- Date validation errors (end before start)
-- Merge execution errors (with rollback)
-- Rate card conflict detection issues
+**Button Placement:**
+```
+[✅ Save] [❌ Cancel] [🗑️ Delete]
+ Primary   Secondary   Destructive
+ Green     Grey        Red
+```
 
-#### Data Structure After Merge
-
-```javascript
-{
-  projectInfo: {
-    projectName: "Master Project",
-    startDate: "2026-02-01",
-    endDate: "2026-12-31",
-    projectDescription: "...\n\n[Merged with specialist team estimate \"Infrastructure Team\" on 2024-10-15]"
-  },
-  
-  internalResources: [
-    // Original master resources
-    { role: "Project Manager", rate: 800, ... },
-    
-    // Merged specialist resources (tagged)
-    { role: "Senior Architect (Specialist Team)", rate: 1500, ... },
-    { role: "Security Engineer (Specialist Team)", rate: 1200, ... }
-  ],
-  
-  rateCards: [
-    // Original master rate cards
-    { role: "Project Manager", rate: 800, category: "Internal" },
-    
-    // New rate cards from specialist file
-    { role: "Senior Architect", rate: 1500, category: "Internal" },
-    
-    // Updated rate cards (if conflict resolved with specialist rate)
-    { role: "Developer", rate: 750, category: "Internal" }  // Updated from 600
-  ],
-  
-  // Similar structure for vendorCosts, toolCosts, miscCosts, risks
+**Category Badges:**
+```css
+.category-internal {
+    background: #dcfce7;  /* Light green */
+    color: #166534;       /* Dark green */
 }
+
+.category-external {
+    background: #dbeafe;  /* Light blue */
+    color: #1e40af;       /* Dark blue */
+}
+```
+
+#### Testing Scenarios
+
+**Basic Functionality:**
+- ✅ Click Edit → Row enters edit mode
+- ✅ Fields become editable
+- ✅ Save button works
+- ✅ Cancel button works
+- ✅ Changes persist after refresh
+
+**Validation Testing:**
+- ✅ Empty role name rejected
+- ✅ Duplicate role name rejected (exact match)
+- ✅ Duplicate role name rejected (case variation: "Developer" vs "developer")
+- ✅ Self-edit allowed (same role name)
+- ✅ Negative rate rejected
+- ✅ Zero rate accepted
+
+**Keyboard Navigation:**
+- ✅ Tab moves between fields
+- ✅ Enter saves changes
+- ✅ Escape cancels editing
+
+**Edge Cases:**
+- ✅ Special characters in role names
+- ✅ Very long role names (100+ chars)
+- ✅ Large rate values (999,999)
+- ✅ Decimal rates (1250.50)
+
+#### Error Messages
+
+**Duplicate Role Name:**
+```
+⚠️ Alert: "A rate card with the role 'Developer' already exists. 
+Please use a unique role name."
+```
+
+**Required Fields:**
+```
+⚠️ Alert: "Please fill in all required fields:
+- Role name
+- Category (Internal/External)
+- Daily Rate (must be 0 or greater)"
 ```
 
 #### Best Practices
 
-**For Central Project Managers:**
-1. Create master project with overall timeline first
-2. Share master file template with specialist teams
-3. Request specialist teams use consistent rate card naming
-4. Review rate card conflicts carefully before merging
-5. Choose appropriate timeline alignment option
-6. Verify merged data after import
-
-**For Specialist Teams:**
-1. Use provided master template if available
-2. Include accurate project dates
-3. Use clear, descriptive role names in rate cards
-4. Test export before sending to PM
-5. Document any assumptions or constraints
+**For Project Managers:**
+- Use descriptive, specific role names ("Senior Java Developer" not just "Developer")
+- Be consistent with naming conventions across projects
+- Review rate cards periodically for accuracy
+- Update resource rates manually if needed (not automatic)
 
 **For Developers:**
-1. Always load rate_card_merger.js BEFORE merge_manager.js
-2. Include Step 4 HTML container for rate card review
-3. Test with files containing conflicts
-4. Verify console logs show proper integration
-5. Handle graceful degradation if RateCardMerger unavailable
+- Always check `window.editManager` is loaded before using
+- Verify edit buttons have `data-type="rate-card"` attribute
+- Test with files containing duplicate names
+- Handle graceful degradation if module unavailable
 
-#### Testing Scenarios
+#### Console Logging
 
-**Test 1: Basic Merge (No Conflicts)**
-- Specialist file with unique rate cards
-- Same timeline as master
-- Should complete without showing rate card step
+**Successful Edit:**
+```
+Edit Manager loaded with Rate Card editing support and unique role name validation
+Updating item: Senior Consultant {role: "Senior Technical Consultant", category: "External", rate: 1300} rate-card
+Rate cards merge completed successfully
+✅ Summary updated after merge
+```
 
-**Test 2: Timeline Differences**
-- Specialist file with different start/end dates
-- Verify variance calculations
-- Test all three date selection options
-
-**Test 3: Rate Card Conflicts**
-- Specialist file with existing roles at different rates
-- Verify conflict detection
-- Test both resolution options (keep master, use specialist)
-
-**Test 4: New Rate Cards**
-- Specialist file with new roles
-- Verify new cards shown in review step
-- Confirm cards added to master after merge
-
-**Test 5: Complete Integration**
-- Multiple resources, vendors, tools, risks
-- Rate card conflicts AND new cards
-- Timeline differences
-- Verify all data merged correctly with tags
+**Validation Error:**
+```
+No edit state found for item: Developer
+Validation failed: Duplicate role name detected
+```
 
 #### Troubleshooting
 
-**Problem: "RateCardMerger not available"**
+**Problem: Edit button not working**
+- ✅ Check `window.editManager` exists in console
+- ✅ Verify editManager.js loaded in HTML
+- ✅ Check console for JavaScript errors
+- ✅ Force refresh browser (Ctrl+F5)
 
-**Solution:**
-```html
-<!-- Ensure rate_card_merger.js loads BEFORE merge_manager.js -->
-<script src="modules/rate_card_merger.js"></script>
-<script src="modules/merge_manager.js"></script>
-```
+**Problem: Fields not becoming editable**
+- ✅ Check `data-type="rate-card"` on edit button
+- ✅ Verify `convertToEditInputs` has rate-card case
+- ✅ Check cells array has expected elements
 
-**Problem: Rate card review step not showing**
+**Problem: Duplicate validation not working**
+- ✅ Verify `projectData.rateCards` populated
+- ✅ Check `.toLowerCase()` comparison used
+- ✅ Ensure `itemId` exclusion logic correct
 
-**Solution:** Add Step 4 container to HTML:
-```html
-<div id="mergeStep4" style="display: none;">
-    <div id="rateCardReviewPanel"></div>
-</div>
-```
-
-**Problem: Merged resources don't show in tables**
-
-**Solution:** Verify merge triggered table re-render and summary update:
-```javascript
-// Should see in console:
-// "✅ Summary updated after merge"
-// "✅ Summary double-checked"
-```
-
-**Problem: Rate cards not updating**
-
-**Solution:** Check referential integrity update executed:
-```javascript
-// Should see in console:
-// "Rate cards merge completed successfully"
-// Rates to render: Array(12)  // Increased count
-```
+**Problem: Changes not persisting**
+- ✅ Check localStorage not in private/incognito mode
+- ✅ Verify `DataManager.saveToLocalStorage()` called
+- ✅ Check for errors in save operation
 
 #### Future Enhancements
 
-Potential improvements to merge functionality:
+**Planned Improvements:**
+1. **Batch Editing** - Edit multiple rate cards simultaneously
+2. **Rate Card Templates** - Pre-defined sets for quick setup
+3. **Historical Rate Tracking** - Track rate changes over time
+4. **Usage Analytics** - Show which rate cards are most used
+5. **Import/Export** - CSV import/export for rate cards
+6. **Rate Calculator** - Show weekly/monthly/annual equivalents
 
-1. **Batch Merge**
-   - Merge multiple specialist files in sequence
-   - Cumulative conflict resolution
-   - Batch progress tracking
+#### Data Structure
 
-2. **Merge Preview**
-   - Show before/after comparison
-   - Preview merged resource plan
-   - Cost impact analysis
+```javascript
+// Rate card object
+{
+    id: 'rc-1',              // Unique identifier
+    role: 'Developer',        // Role name (unique, case-insensitive)
+    category: 'Internal',     // 'Internal' or 'External'
+    rate: 600                // Daily rate (number >= 0)
+}
 
-3. **Merge History**
-   - Track merge operations
-   - Undo/redo capability
-   - Audit trail
+// Stored in projectData
+window.projectData = {
+    // ... other data
+    rateCards: [
+        {id: 'rc-1', role: 'Developer', category: 'Internal', rate: 600},
+        {id: 'rc-2', role: 'Consultant', category: 'External', rate: 1200},
+        // ... more rate cards
+    ]
+}
+```
 
-4. **Smart Conflict Resolution**
-   - Suggest resolution based on context
-   - Auto-resolve identical conflicts
-   - ML-based recommendations
+#### API Reference
 
-5. **Collaborative Merge**
-   - Real-time merge with multiple users
-   - Commenting on conflicts
-   - Approval workflows
+**EditManager Methods for Rate Cards:**
 
-6. **Advanced Validation**
-   - Resource capacity checking
-   - Budget threshold warnings
-   - Timeline feasibility analysis
+| Method | Parameters | Returns | Purpose |
+|--------|-----------|---------|---------|
+| `extractRowData()` | row, 'rate-card' | {role, category, rate} | Get current values |
+| `convertToEditInputs()` | row, 'rate-card', data | void | Create edit inputs |
+| `validateEditData()` | data, 'rate-card', itemId | boolean | Validate with unique check |
+| `getCategoryOptions()` | selectedCategory | HTML string | Generate dropdown |
+| `handleEditClick()` | button | void | Enter edit mode |
+| `handleSaveEdit()` | button | void | Save and validate |
+| `handleCancelEdit()` | button | void | Revert changes |
+
+**Global Functions:**
+
+```javascript
+// Update item in data structure
+window.updateItemById(itemId, newData, 'rate-card')
+
+// Re-render all tables
+window.tableRenderer.renderAllTables()
+
+// Save to localStorage
+window.DataManager.saveToLocalStorage()
+```
 
 ---
 
@@ -1150,7 +1129,7 @@ window.updateSummary = updateSummary;
 2. Exported to window: `window.initializeBasicFunctionality = initializeBasicFunctionality;`
 3. Called by init_manager.js in the `initializeDOMManager()` method
 
-### Problem: "Uncaught SyntaxError: Unexpected identifier 'mergeManager'"
+### Problem: "Uncaught SyntaxError: Unexpected identifier"
 
 **Cause:** Missing comma before the new module in the modules object
 
@@ -1158,20 +1137,62 @@ window.updateSummary = updateSummary;
 ```javascript
 this.modules = {
     // ... other modules
-    currencyManager: false,    // ← MUST have comma here
-    rateCardMerger: false,     // ← MUST have comma here
-    mergeManager: false        // ← Last item, no comma
+    mergeManager: false,       // ← MUST have comma here
+    editManager: false         // ← Add module (no comma if last)
 };
 ```
 
-### Problem: "Uncaught SyntaxError: Unexpected end of input"
+### Problem: Edit button not working ⭐ NEW
 
-**Cause:** Missing closing brace `}` somewhere in the file
+**Cause:** EditManager not loaded or edit button missing data attribute
 
-**Fix:** 
-1. Check your code editor's bracket matching
-2. Look at the line number in the error
-3. Count opening and closing braces in functions
+**Checklist:**
+1. ✅ editManager.js loaded in HTML?
+2. ✅ Console shows "Edit Manager loaded with Rate Card editing support"?
+3. ✅ Edit button has `data-type="rate-card"` attribute?
+4. ✅ `window.editManager` exists in console?
+
+**Fix:**
+```html
+<!-- Ensure editManager.js loaded -->
+<script src="modules/editManager.js"></script>
+```
+
+### Problem: Duplicate validation not working ⭐ NEW
+
+**Cause:** Rate card validation not checking correctly
+
+**Console Check:**
+```javascript
+// Test in console:
+window.editManager.validateEditData(
+    {role: 'Developer', category: 'Internal', rate: 600}, 
+    'rate-card', 
+    'test-id'
+)
+// Should return true/false and show alert if duplicate
+```
+
+**Fix:** Verify:
+1. `projectData.rateCards` populated with current data
+2. `.toLowerCase()` comparison being used
+3. `itemId` exclusion logic correct
+
+### Problem: Rate card changes not persisting ⭐ NEW
+
+**Cause:** localStorage not saving or browser in private mode
+
+**Console Check:**
+```javascript
+// Check localStorage:
+localStorage.getItem('projectData')
+// Should contain rate cards with updated values
+```
+
+**Fix:**
+1. Exit private/incognito browsing
+2. Verify `DataManager.saveToLocalStorage()` called after edit
+3. Check browser allows localStorage
 
 ### Problem: Module not loading
 
@@ -1181,46 +1202,6 @@ this.modules = {
 3. ✅ Module registered in init_manager.js modules list?
 4. ✅ **Comma added after previous module?** ⚠️ Common mistake!
 5. ✅ Check browser console for loading errors
-
-### Problem: Functions not found / undefined errors
-
-**Cause:** Function not exported to window or called before initialization
-
-**Fix:**
-1. Export function: `window.myFunction = myFunction;`
-2. Ensure init_manager has completed before calling
-3. Check function is defined before the export line
-
-### Problem: Rate card merge not working
-
-**Cause:** RateCardMerger module not loading
-
-**Checklist:**
-1. ✅ rate_card_merger.js loaded in HTML?
-2. ✅ Loaded BEFORE merge_manager.js?
-3. ✅ Console shows "Rate Card Merger initialized"?
-4. ✅ Step 4 HTML container exists?
-
-**Console Check:**
-```javascript
-// Should see:
-🔍 Analyzing rate cards...
-📊 Rate card analysis: Object
-📋 Merging rate cards...
-✅ Rate cards merged: Object
-```
-
-### Problem: Merge completes but data not visible
-
-**Cause:** Tables not re-rendering after merge
-
-**Fix:** Verify refreshAllDisplays() is called:
-```javascript
-// Should see in console:
-🔄 Starting post-merge summary update...
-✅ Summary updated after merge
-✅ Summary double-checked
-```
 
 ---
 
@@ -1237,9 +1218,12 @@ this.modules = {
 - **Comment your code** - Especially initialization and integration points
 - **Test in isolation** - Each module should work independently when possible
 - **Add commas in object literals** - Remember the comma before adding new properties ⚠️
-- **Load modules in correct order** - Dependencies first (rate_card_merger before merge_manager)
+- **Load modules in correct order** - Dependencies first
 - **Use transactional patterns** - Backup before critical operations, rollback on error
-- **Tag merged data** - Make it easy to identify source of data items
+- **Validate user input** - Prevent bad data at the source
+- **Provide clear error messages** - Users should understand what went wrong
+- **Test with realistic data** - Include edge cases and special characters
+- **Document validation rules** - Make constraints clear to users and developers
 
 ### DON'T ❌
 
@@ -1252,9 +1236,11 @@ this.modules = {
 - **Don't duplicate functions** - Check for existing implementations first
 - **Don't skip error handling** - Wrap critical code in try-catch blocks
 - **Don't forget commas in modules object** - This causes syntax errors! ⚠️
-- **Don't load merge_manager before rate_card_merger** - Breaks dependency chain
-- **Don't modify original data without backup** - Use transactional approach
-- **Don't skip validation** - Always validate file structure before merging
+- **Don't skip validation** - Always validate before updating data
+- **Don't assume uniqueness** - Always check for duplicates when required
+- **Don't modify data without backup** - Use transactional approach
+- **Don't use ambiguous error messages** - Be specific about what's wrong
+- **Don't forget to re-render** - Update UI after data changes
 
 ---
 
@@ -1267,7 +1253,7 @@ All module scripts load in order:
   - dom_manager
   - table_renderer
   - data_manager
-  - editManager
+  - editManager ⭐ (Rate card editing)
   - dynamic_form_helper
   - table_fixes
   - new_project_welcome
@@ -1275,8 +1261,8 @@ All module scripts load in order:
   - user_manager
   - feature_toggle_manager
   - tool_costs_manager
-  - rate_card_merger ⭐ (BEFORE merge_manager)
-  - merge_manager ⭐
+  - rate_card_merger
+  - merge_manager
       ↓
 script.js loads (defines functions, NO execution)
       ↓
@@ -1318,11 +1304,16 @@ init_manager.initialize() called
       ↓
 14. Initialize Tool Costs Manager
       ↓
-15. Initialize Merge Manager ⭐
+15. Initialize Merge Manager
    - Setup merge button listener
    - Ready to handle merge workflows
       ↓
-16. Final re-render after delay
+16. Initialize Edit Manager ⭐ NEW
+   - Setup event listeners for edit buttons
+   - Ready to handle inline editing
+   - Rate card editing enabled
+      ↓
+17. Final re-render after delay
       ↓
 ✅ Application Ready
 ```
@@ -1349,12 +1340,28 @@ When creating a new module, ensure:
 - [ ] Error handling implemented
 - [ ] Tested in isolation and integrated
 - [ ] Console logs added for debugging
+- [ ] **Validation rules documented** ⭐ For editing features
+- [ ] **User feedback implemented** ⭐ For validation errors
+- [ ] **Data persistence tested** ⭐ For data modifications
 
 ---
 
 ## Version History
 
-### v3.0 - Merge Functionality (Current) ⭐ NEW
+### v3.1 - Rate Card Editing (Current) ⭐ NEW
+- ✅ Added inline rate card editing functionality
+- ✅ Unique role name validation (case-insensitive)
+- ✅ Required field validation
+- ✅ Keyboard shortcuts (Enter/Escape)
+- ✅ Visual feedback (yellow highlight, save/cancel buttons)
+- ✅ Data persistence integration
+- ✅ Integration with existing edit patterns
+- ✅ Comprehensive error messages
+- ✅ Self-edit exception (allows keeping same role name)
+- ✅ Updated initialization sequence (Step 16)
+- ✅ Enhanced EditManager with rate-card support
+
+### v3.0 - Merge Functionality
 - ✅ Added Merge Manager module
 - ✅ Added Rate Card Merger module
 - ✅ Multi-step merge workflow (4 steps)
@@ -1403,9 +1410,16 @@ When asking for help or suggesting improvements:
    - Specific error messages
    - Step where merge failed
 7. **For rate card issues, include:**
-   - Rate card data structure from both files
-   - Conflict detection output
-   - Resolution selections made
+   - Rate card data structure
+   - Validation error messages
+   - Edit operation attempted
+   - Console logs during edit
+8. **For editing issues, include:** ⭐ NEW
+   - Item type being edited (rate-card, internal-resource, etc.)
+   - Data values before and after edit
+   - Validation error messages
+   - Whether changes persisted
+   - Console logs during edit operation
 
 This ensures efficient problem-solving and maintains architectural consistency.
 
@@ -1414,4 +1428,4 @@ This ensures efficient problem-solving and maintains architectural consistency.
 **Last Updated:** November 2024  
 **Maintained By:** Project Development Team  
 **Architecture Pattern:** Centralized Initialization Manager  
-**Latest Feature:** Merge Functionality v3.0 with Rate Card Integration
+**Latest Feature:** Rate Card Editing v3.1 with Inline Editing & Unique Validation
