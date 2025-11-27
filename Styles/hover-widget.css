@@ -1,0 +1,126 @@
+/* Hover Widget Styles */
+.hover-widget-container {
+    position: fixed;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 999; /* Below modals (1000) but above content */
+}
+
+.widget-panel {
+    position: relative;
+    display: flex;
+    align-items: center;
+    transition: transform 0.3s ease-in-out;
+}
+
+.panel-content {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+    width: 0;
+    height: 400px;
+    overflow: hidden;
+    transition: width 0.3s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.widget-tab {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+    width: 30px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.widget-tab::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    clip-path: polygon(0 0, 100% 20%, 100% 80%, 0 100%);
+    background: inherit;
+}
+
+.widget-tab-arrow {
+    color: white;
+    font-size: 20px;
+    z-index: 1;
+    transition: transform 0.3s ease;
+}
+
+/* Hover state */
+.hover-widget-container:hover .panel-content {
+    width: 140px;
+    padding: 20px 15px;
+}
+
+.hover-widget-container:hover .widget-tab-arrow {
+    transform: translateX(3px);
+}
+
+/* Panel icons */
+.panel-icons {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease 0.1s;
+}
+
+.hover-widget-container:hover .panel-icons {
+    opacity: 1;
+}
+
+.icon-item {
+    background: white;
+    padding: 15px 10px;
+    border-radius: 6px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: #2d3748;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    white-space: nowrap;
+    line-height: 1.3;
+}
+
+.icon-item:hover {
+    background: #f8f9fa;
+    transform: translateX(5px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.icon-item .icon-emoji {
+    display: block;
+    font-size: 28px;
+    margin-bottom: 6px;
+}
+
+.icon-item .icon-label {
+    display: block;
+    font-size: 11px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .hover-widget-container {
+        display: none; /* Hide on mobile to avoid interference */
+    }
+}
+
+/* Ensure widget doesn't interfere with scrolling */
+body.widget-hover {
+    overflow: visible;
+}
