@@ -42,16 +42,7 @@
     border-radius: 0 12px 12px 0;
 }
 
-.widget-tab::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    clip-path: polygon(0 0, 100% 20%, 100% 80%, 0 100%);
-    background: inherit;
-}
+/* Removed the ::before pseudo-element with clip-path for cleaner appearance */
 
 .widget-tab-arrow {
     color: rgba(255, 255, 255, 0.4);
