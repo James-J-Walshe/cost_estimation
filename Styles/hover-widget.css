@@ -25,10 +25,11 @@
     justify-content: center;
     padding: 0;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+    border-radius: 0 12px 12px 0;
 }
 
 .widget-tab {
-    background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+    background: rgba(30, 58, 95, 0.3);
     width: 30px;
     height: 80px;
     display: flex;
@@ -36,8 +37,9 @@
     justify-content: center;
     cursor: pointer;
     position: relative;
-    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 0 12px 12px 0;
 }
 
 .widget-tab::before {
@@ -52,20 +54,26 @@
 }
 
 .widget-tab-arrow {
-    color: white;
+    color: rgba(255, 255, 255, 0.4);
     font-size: 20px;
     z-index: 1;
-    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Hover state */
-.hover-widget-container:hover .panel-content {
-    width: 140px;
-    padding: 20px 15px;
+.hover-widget-container:hover .widget-tab {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
 }
 
 .hover-widget-container:hover .widget-tab-arrow {
+    color: white;
     transform: translateX(3px);
+}
+
+.hover-widget-container:hover .panel-content {
+    width: 140px;
+    padding: 20px 15px;
 }
 
 /* Panel icons */
