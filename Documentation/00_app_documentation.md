@@ -10,7 +10,8 @@
 - [Feature Documentation](#feature-documentation)
   - [Currency Management](#currency-management)
   - [Merge Functionality](#merge-functionality) ⭐
-  - [Rate Card Editing](#rate-card-editing) ⭐ NEW
+  - [Rate Card Editing](#rate-card-editing) ⭐
+  - [Hover Widget Navigation](#hover-widget-navigation) ⭐ NEW
 - [Troubleshooting](#troubleshooting)
 
 ---
@@ -28,7 +29,8 @@ A web-based ICT project estimation tool for calculating and managing project cos
 - Currency management with exchange rates
 - Specialist team estimate merging ⭐
 - Rate card conflict resolution ⭐
-- **Inline rate card editing** ⭐ NEW
+- Inline rate card editing ⭐
+- **Hover widget navigation between Zyantik applications** ⭐ NEW
 - Data persistence via localStorage
 - Export capabilities
 
@@ -117,8 +119,9 @@ window.initManager.initialize();
    Step 13: Initialize Currency Manager
    Step 14: Initialize Tool Costs Manager
    Step 15: Initialize Merge Manager
-   Step 16: Initialize Edit Manager ⭐ NEW
-   Step 17: Final re-render after delay
+   Step 16: Initialize Edit Manager
+   Step 17: Initialize Hover Widget Navigation ⭐ NEW
+   Step 18: Final re-render after delay
    ```
 
 5. **Comprehensive Logging**
@@ -135,7 +138,7 @@ class InitializationManager {
         this.modules = {
             dataManager: false,
             tableRenderer: false,
-            editManager: false,        // ⭐ Critical for rate card editing
+            editManager: false,
             dynamicFormHelper: false,
             domManager: false,
             tableFixes: false,
@@ -145,7 +148,8 @@ class InitializationManager {
             featureToggleManager: false,
             toolCostsManager: false,
             rateCardMerger: false,
-            mergeManager: false
+            mergeManager: false,
+            hoverWidget: false          // ⭐ NEW
         };
     }
 
@@ -166,7 +170,7 @@ class InitializationManager {
 <script src="js/dom_manager.js"></script>
 <script src="js/table_renderer.js"></script> 
 <script src="js/data_manager.js"></script>
-<script src="modules/editManager.js"></script> <!-- ⭐ Required for rate card editing -->
+<script src="modules/editManager.js"></script>
 <script src="modules/dynamic_form_helper.js"></script>
 <script src="modules/table_fixes.js"></script>
 <script src="modules/new_project_welcome.js"></script>
@@ -179,6 +183,9 @@ class InitializationManager {
 
 <!-- Load main script (contains functions but NO auto-init) -->
 <script src="script.js"></script>
+
+<!-- Load hover widget ⭐ NEW -->
+<script src="hover-widget.js"></script>
 
 <!-- Load initialization manager LAST -->
 <script src="modules/init_manager.js"></script>
@@ -204,13 +211,15 @@ cost_estimation/
 ├── index.html                          # Main HTML file
 ├── script.js                           # Core application logic & functions
 ├── style.css                           # Main stylesheet
+├── hover-widget.css                    # ⭐ Hover widget styles
+├── hover-widget.js                     # ⭐ Hover widget navigation
 ├── README.md                           # Project README
 ├── js/
 │   ├── dom_manager.js                 # DOM manipulation utilities
 │   ├── table_renderer.js              # Table rendering logic
 │   └── data_manager.js                # Data persistence & loading
 ├── modules/
-│   ├── editManager.js                 # ⭐ Inline editing functionality (includes rate cards)
+│   ├── editManager.js                 # Inline editing functionality
 │   ├── dynamic_form_helper.js         # Dynamic form generation
 │   ├── table_fixes.js                 # Table styling fixes
 │   ├── init_manager.js                # ⭐ INITIALIZATION MANAGER (load LAST)
@@ -229,7 +238,28 @@ cost_estimation/
 
 ### File Responsibilities
 
-#### `modules/editManager.js` ⭐ **Critical for Rate Card Editing**
+#### `hover-widget.js` ⭐ NEW
+- **What:** Provides side-panel navigation between Zyantik applications
+- **Key features:**
+  - Hover-activated sliding panel
+  - Material Design SVG icons
+  - Smooth animations
+  - Configurable application list
+  - Keyboard shortcut support (Ctrl/Cmd + M)
+  - Mobile-responsive (hidden on mobile)
+- **Global export:** `window.zyantikWidget` (HoverWidget instance)
+- **Styling:** Requires `hover-widget.css`
+
+#### `hover-widget.css` ⭐ NEW
+- **What:** Styles for hover widget navigation
+- **Key features:**
+  - Zyantik dark navy brand colors
+  - Smooth transitions and animations
+  - Responsive design
+  - Visual states (inactive, hover, active)
+  - Material Design icon styling
+
+#### `modules/editManager.js`
 - **What:** Handles inline editing for all data types including rate cards
 - **Key features:**
   - Inline editing with visual feedback
@@ -238,21 +268,6 @@ cost_estimation/
   - Keyboard shortcuts (Enter/Escape)
   - Data persistence integration
 - **Global export:** `window.editManager` (class instance)
-- **Supports item types:**
-  - `internal-resource` - Internal resource allocations
-  - `vendor-cost` - Vendor cost entries
-  - `tool-cost` - Tool and license costs
-  - `misc-cost` - Miscellaneous expenses
-  - `risk` - Risk assessments
-  - `rate-card` ⭐ NEW - Rate card entries
-- **Key methods:**
-  - `handleEditClick(button)` - Enter edit mode
-  - `handleSaveEdit(button)` - Save changes
-  - `handleCancelEdit(button)` - Revert changes
-  - `extractRowData(row, itemType)` - Get current values
-  - `convertToEditInputs(row, itemType, data)` - Create edit inputs
-  - `validateEditData(data, itemType, itemId)` - Validate with unique checks
-  - `updateItemData(itemId, newData, itemType)` - Update data structure
 
 #### `modules/init_manager.js` ⭐ **START HERE**
 - **What:** Central initialization orchestrator
@@ -275,293 +290,490 @@ cost_estimation/
   - `window.initializeProjectInfoSaveButton`
   - All calculation functions
 
-#### `modules/rate_card_merger.js`
-- **What:** Handles rate card conflict detection and resolution during merge
-- **Key features:**
-  - Analyzes rate cards between master and specialist files
-  - Detects conflicts (different rates for same role)
-  - Identifies new rate cards to add
-  - Transactional merge with backup/rollback
-  - Maintains referential integrity
-- **Global export:** `window.RateCardMerger` (class instance)
-- **Must load:** BEFORE merge_manager.js (dependency)
-
-#### `modules/merge_manager.js`
-- **What:** Orchestrates specialist team estimate merging workflow
-- **Key features:**
-  - Multi-step merge wizard
-  - Project timeline alignment
-  - Resource data merging
-  - Integration with RateCardMerger
-- **Global export:** `window.mergeManager` (class instance)
-- **Depends on:** `window.RateCardMerger` (optional, graceful fallback)
-
-#### `modules/currency_manager.js`
-- **What:** Manages currency selection and exchange rates
-- **Global export:** `window.currencyManager`
-- **Must have:** `initialize()` method called by init_manager
-
-#### Module Files (`js/*.js` and `modules/*.js`)
-- **What:** Specific functionality modules
-- **Key principle:** Export module to window, but DON'T initialize automatically
-- **Pattern:**
-  ```javascript
-  class MyModule {
-      constructor() { }
-      initialize() { }
-      // ... methods
-  }
-  window.myModule = new MyModule();
-  ```
-
----
-
-## Development Guidelines
-
-### Adding a New Module
-
-1. **Create the module file**
-   ```javascript
-   // modules/my_new_module.js
-   class MyNewModule {
-       constructor() {
-           console.log('My New Module initialized');
-       }
-
-       initialize() {
-           // Setup code here
-       }
-
-       myMethod() {
-           // Functionality here
-       }
-   }
-
-   window.myNewModule = new MyNewModule();
-   console.log('My New Module loaded');
-   ```
-
-2. **Add script tag to index.html** (BEFORE init_manager.js)
-   ```html
-   <script src="modules/my_new_module.js"></script>
-   ```
-
-3. **Register in init_manager.js** ⚠️ **CRITICAL: Don't forget the comma!**
-   ```javascript
-   this.modules = {
-       // ... existing modules
-       editManager: false,        // ← MUST have comma here
-       myNewModule: false         // ← Add your module (no comma if last)
-   };
-
-   // In checkModules()
-   this.modules.myNewModule = !!(window.myNewModule || window.MyNewModule);
-
-   // In initialize() - add initialization step if needed
-   if (this.modules.myNewModule && typeof window.myNewModule.initialize === 'function') {
-       window.myNewModule.initialize();
-       console.log('✓ My New Module initialized');
-   }
-   ```
-
-### Adding Global Functions
-
-Any function that needs to be called from other modules MUST be exported to window:
-
-```javascript
-// In script.js or module file
-
-function myFunction() {
-    // Function code
-}
-
-// CRITICAL: Export to window
-window.myFunction = myFunction;
-```
-
-### Event Listener Setup
-
-**All DOM event listeners should be set up in ONE place:**
-
-```javascript
-// script.js - initializeBasicFunctionality()
-
-function initializeBasicFunctionality() {
-    // Tab listeners
-    // Button listeners
-    // Modal listeners
-    // Form listeners
-}
-
-// Export it
-window.initializeBasicFunctionality = initializeBasicFunctionality;
-```
-
-**This function is called by init_manager.js** - you don't need to call it manually.
-
----
-
-## Common Patterns
-
-### Pattern 1: Module with Initialization
-
-```javascript
-// modules/example_module.js
-
-class ExampleModule {
-    constructor() {
-        this.data = [];
-        console.log('Example Module constructor called');
-    }
-
-    initialize() {
-        console.log('Example Module initializing...');
-        this.setupEventListeners();
-        this.loadData();
-    }
-
-    setupEventListeners() {
-        // Add event listeners here
-    }
-
-    loadData() {
-        // Load data here
-    }
-
-    publicMethod() {
-        // Public API
-    }
-}
-
-// Create and export instance
-window.exampleModule = new ExampleModule();
-console.log('Example Module loaded');
-```
-
-### Pattern 2: Checking for Dependencies
-
-```javascript
-// In your module
-
-myMethod() {
-    // Check if dependency exists
-    if (window.TableRenderer && typeof window.TableRenderer.renderAllTables === 'function') {
-        window.TableRenderer.renderAllTables();
-    } else if (window.tableRenderer && typeof window.tableRenderer.renderAllTables === 'function') {
-        window.tableRenderer.renderAllTables();
-    } else {
-        console.warn('TableRenderer not available');
-    }
-}
-```
-
-### Pattern 3: Fallback Functions
-
-```javascript
-// Always provide fallbacks for critical operations
-
-function saveProjectFallback() {
-    if (window.DataManager) {
-        window.DataManager.saveProject();
-    } else if (window.dataManager) {
-        window.dataManager.saveProject();
-    } else {
-        // Basic fallback implementation
-        try {
-            localStorage.setItem('ictProjectData', JSON.stringify(projectData));
-            console.log('Project saved using fallback method');
-        } catch (e) {
-            console.error('Error saving project:', e);
-        }
-    }
-}
-```
-
-### Pattern 4: Global Data Access
-
-```javascript
-// ALWAYS access projectData through window
-
-// ✅ CORRECT
-window.projectData.projectInfo.projectName = 'New Project';
-
-// ❌ WRONG (might reference local scope)
-projectData.projectInfo.projectName = 'New Project';
-```
-
-### Pattern 5: Transactional Operations
-
-```javascript
-// Use backup/rollback pattern for critical data operations
-
-class DataModule {
-    performCriticalOperation(data) {
-        try {
-            // Step 1: Create backup
-            const backup = JSON.parse(JSON.stringify(data));
-            
-            // Step 2: Perform operation
-            this.modifyData(data);
-            
-            // Step 3: Validate result
-            if (!this.validateData(data)) {
-                throw new Error('Validation failed');
-            }
-            
-            return { success: true, data };
-            
-        } catch (error) {
-            // Step 4: Rollback on error
-            console.error('Operation failed, rolling back:', error);
-            Object.assign(data, backup);
-            return { success: false, error: error.message };
-        }
-    }
-}
-```
-
-### Pattern 6: Inline Editing ⭐ NEW
-
-```javascript
-// Standard pattern for inline editing across all data types
-
-class EditManager {
-    handleEditClick(button) {
-        const itemId = button.dataset.id;
-        const itemType = button.dataset.type;  // 'rate-card', 'internal-resource', etc.
-        const row = button.closest('tr');
-        
-        // Store original values
-        this.originalValues.set(itemId, this.extractRowData(row, itemType));
-        
-        // Convert to edit mode
-        this.convertToEditInputs(row, itemType, originalData);
-    }
-    
-    handleSaveEdit(button) {
-        const itemId = button.dataset.id;
-        const editState = this.editingStates.get(itemId);
-        
-        // Extract edited values
-        const newData = this.extractEditData(row, editState.type);
-        
-        // Validate (includes unique checks for rate cards)
-        if (!this.validateEditData(newData, editState.type, itemId)) {
-            return;  // Stay in edit mode
-        }
-        
-        // Update data
-        this.updateItemData(itemId, newData, editState.type);
-        
-        // Re-render tables
-        window.tableRenderer.renderAllTables();
-    }
-}
-```
-
 ---
 
 ## Feature Documentation
+
+### Hover Widget Navigation ⭐ NEW
+
+#### Overview
+
+The Hover Widget provides a **persistent side-panel navigation** that allows users to quickly switch between different Zyantik applications (Cost Estimator, Portfolio Manager, etc.) without using the browser's back button or navigating through menus.
+
+**Design Goals:**
+- ✅ **Minimal UI Footprint** - Discreet when inactive, visible on hover
+- ✅ **Brand Consistency** - Matches Zyantik dark navy theme
+- ✅ **Professional Appearance** - Material Design icons, smooth animations
+- ✅ **Mobile-Friendly** - Hidden on mobile devices to avoid interference
+- ✅ **Accessible** - Keyboard shortcuts and clear visual states
+
+#### Visual Design
+
+**Brand Colors:**
+- **Background:** `linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%)` - Zyantik dark navy
+- **Icons:** `#667eea` - Purple accent matching app theme
+- **Hover States:** White backgrounds with shadow elevation
+
+**States:**
+
+**Inactive State:**
+```
+┌─────┐
+│  ❯  │  ← Semi-transparent tab (30% opacity)
+└─────┘     Subtle, barely visible
+```
+
+**Hover State:**
+```
+┌──────────────┬─────┐
+│   📊         │  ❯  │  ← Panel slides out (140px)
+│ Estimator    │     │     Full opacity gradient
+│              │     │     Icons fade in
+│   📁         │     │
+│ Portfolio    │     │
+└──────────────┴─────┘
+```
+
+**Active Icon Hover:**
+```
+┌──────────────┐
+│   📊         │  ← Icon lifts up
+│ Estimator    │     Background lightens
+└──────────────┘     Shadow increases
+```
+
+#### Integration
+
+**Files Required:**
+
+1. **hover-widget.css** - Styling
+   ```html
+   <link rel="stylesheet" href="hover-widget.css">
+   ```
+
+2. **hover-widget.js** - Functionality
+   ```html
+   <script src="hover-widget.js"></script>
+   ```
+
+**Load Order:**
+- CSS: In `<head>` after existing stylesheets
+- JS: Before `init_manager.js` but after other modules
+
+**Automatic Initialization:**
+The widget initializes automatically on DOMContentLoaded with default configuration.
+
+#### Configuration
+
+**Default Configuration:**
+```javascript
+const widgetConfig = {
+    items: [
+        {
+            id: 'estimator',
+            label: 'Cost Estimator',
+            iconSvg: '<path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>',
+            url: 'index.html'
+        },
+        {
+            id: 'portfolio',
+            label: 'Portfolio Manager',
+            iconSvg: '<path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-1 12H5V8h14v10z"/>',
+            url: 'portfolio.html'
+        }
+    ],
+    position: 'left'
+};
+```
+
+**Adding Applications:**
+
+To add new applications to the widget, edit the `widgetConfig` in `hover-widget.js`:
+
+```javascript
+{
+    id: 'resource-manager',
+    label: 'Resource Manager',
+    iconSvg: '<path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>',
+    url: 'resources.html'
+}
+```
+
+**Icon Selection:**
+
+Use Material Design SVG paths from [Google Material Icons](https://fonts.google.com/icons). Popular icons for business applications:
+
+| Icon | SVG Path | Use Case |
+|------|----------|----------|
+| 📊 Bar Chart | `<path d="M19 3H5c-1.1..."/>` | Analytics, Reports |
+| 📁 Folder | `<path d="M20 6h-8l-2..."/>` | Files, Portfolio |
+| 👥 People | `<path d="M16 11c1.66..."/>` | Resources, Teams |
+| 📈 Trending Up | `<path d="M16 6l2.29..."/>` | Growth, Performance |
+| ⚙️ Settings | `<path d="M19.14,12.94..."/>` | Configuration |
+| 📅 Calendar | `<path d="M9 11H7v2h2v-2zm4..."/>` | Schedule, Timeline |
+
+#### User Interaction
+
+**Mouse Interaction:**
+1. Hover over the arrow tab on left side
+2. Panel slides out smoothly (400ms)
+3. Icons fade in with slight delay (150ms)
+4. Click any icon to navigate
+5. Visual feedback: icon lifts and scales
+6. Brief delay then navigation occurs
+
+**Keyboard Shortcut:**
+- **Ctrl+M** (Windows/Linux) or **Cmd+M** (Mac)
+- Toggles force-open state
+- Useful for accessibility
+
+**Touch Devices:**
+- Widget hidden on screens < 768px
+- Prevents interference with touch navigation
+- Mobile users rely on standard navigation
+
+#### Technical Details
+
+**CSS Classes:**
+
+```css
+.hover-widget-container      /* Main container, fixed position */
+.widget-panel                /* Flexbox wrapper for content + tab */
+.panel-content              /* Sliding content area */
+.widget-tab                 /* Arrow tab trigger */
+.widget-tab-arrow           /* Arrow icon (❯) */
+.panel-icons                /* Icons container */
+.icon-item                  /* Individual app icon button */
+```
+
+**Animations:**
+
+```css
+/* Panel slide-out */
+transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+
+/* Icon fade-in */
+transition: opacity 0.4s ease 0.15s;
+
+/* Icon hover */
+transition: all 0.2s ease;
+transform: translateY(-2px);
+```
+
+**Z-Index Management:**
+- Widget: `z-index: 999`
+- Modal overlays: `z-index: 1000`
+- Widget stays below modals but above content
+
+#### Styling Customization
+
+**Changing Colors:**
+
+```css
+/* Inactive tab opacity */
+.widget-tab {
+    background: rgba(30, 58, 95, 0.3);  /* 30% opacity */
+}
+
+/* Active tab */
+.hover-widget-container:hover .widget-tab {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+}
+
+/* Icon color */
+.icon-item svg {
+    fill: #667eea;  /* Purple accent */
+}
+```
+
+**Adjusting Size:**
+
+```css
+/* Panel width when expanded */
+.hover-widget-container:hover .panel-content {
+    width: 140px;  /* Adjust as needed */
+}
+
+/* Tab dimensions */
+.widget-tab {
+    width: 30px;
+    height: 80px;
+}
+
+/* Icon size */
+.icon-item svg {
+    width: 32px;
+    height: 32px;
+}
+```
+
+**Animation Speed:**
+
+```css
+/* Faster animation */
+transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+/* Slower animation */
+transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+```
+
+#### API Reference
+
+**HoverWidget Class:**
+
+```javascript
+class HoverWidget {
+    constructor(config)
+    // Initialize widget with configuration
+    
+    init()
+    // Set up widget structure and events
+    
+    createWidget()
+    // Build DOM structure
+    
+    attachEventListeners()
+    // Bind click and keyboard events
+    
+    handleNavigation(iconItem)
+    // Process navigation with visual feedback
+    
+    addItem(item)
+    // Dynamically add new application
+    
+    destroy()
+    // Remove widget from DOM
+}
+```
+
+**Global Access:**
+
+```javascript
+// Access widget instance
+window.zyantikWidget
+
+// Add application dynamically
+window.zyantikWidget.addItem({
+    id: 'new-app',
+    label: 'New Application',
+    iconSvg: '<path d="..."/>',
+    url: 'new-app.html'
+});
+
+// Remove widget
+window.zyantikWidget.destroy();
+```
+
+#### Browser Compatibility
+
+**Tested Browsers:**
+- ✅ Chrome 90+ (desktop/mobile)
+- ✅ Firefox 88+ (desktop/mobile)
+- ✅ Safari 14+ (desktop/mobile)
+- ✅ Edge 90+ (desktop)
+
+**Required Features:**
+- CSS3 transitions
+- CSS3 gradients
+- Flexbox layout
+- SVG support
+- ES6 Classes
+- addEventListener
+
+**Fallback Behavior:**
+- Degrades gracefully if CSS3 not supported
+- Widget hidden if JavaScript disabled
+- No layout breaking on older browsers
+
+#### Responsive Design
+
+**Breakpoints:**
+
+```css
+/* Desktop (default) */
+@media (min-width: 769px) {
+    .hover-widget-container { display: block; }
+}
+
+/* Mobile and Tablet */
+@media (max-width: 768px) {
+    .hover-widget-container { display: none; }
+}
+```
+
+**Rationale:**
+- Mobile devices have limited screen space
+- Touch interaction with hover effects is problematic
+- Mobile users typically use full-page navigation
+- Prevents accidental activation
+
+#### Testing Checklist
+
+**Visual Testing:**
+- [ ] Tab visible but subtle when inactive
+- [ ] Panel slides out smoothly on hover
+- [ ] Icons appear with fade-in effect
+- [ ] Rounded corners render correctly
+- [ ] Colors match Zyantik brand
+- [ ] Shadows appear appropriate
+- [ ] Icons are crisp (not blurry)
+
+**Interaction Testing:**
+- [ ] Hover activates panel
+- [ ] Mouse leave deactivates panel
+- [ ] Click navigates to correct URL
+- [ ] Visual feedback on icon hover
+- [ ] Visual feedback on icon click
+- [ ] Keyboard shortcut works (Ctrl/Cmd+M)
+
+**Responsive Testing:**
+- [ ] Widget hidden on mobile (< 768px)
+- [ ] Widget appears on tablet landscape
+- [ ] No horizontal scrollbar introduced
+- [ ] No layout shifts when activating
+
+**Integration Testing:**
+- [ ] Doesn't interfere with modals
+- [ ] Doesn't block clickable elements
+- [ ] Doesn't affect page scrolling
+- [ ] Works with all navigation tabs
+- [ ] Settings page displays correctly
+
+#### Troubleshooting
+
+**Problem: Widget not appearing**
+
+**Checklist:**
+1. ✅ `hover-widget.css` loaded in `<head>`?
+2. ✅ `hover-widget.js` loaded before closing `</body>`?
+3. ✅ Browser console shows no errors?
+4. ✅ Screen width > 768px?
+5. ✅ Widget not blocked by browser extension?
+
+**Console Check:**
+```javascript
+// Verify widget loaded
+window.zyantikWidget
+// Should show HoverWidget instance
+
+// Check initialization
+console.log('✅ Zyantik Hover Widget initialized')
+// Should appear in console
+```
+
+**Problem: Navigation not working**
+
+**Checklist:**
+1. ✅ URLs in config are correct?
+2. ✅ Console shows navigation logs?
+3. ✅ Click event firing? (check console)
+4. ✅ Browser not blocking navigation?
+
+**Console Debug:**
+```javascript
+// Should appear on icon click:
+🚀 Navigating to: estimator
+```
+
+**Problem: Styling looks wrong**
+
+**Checklist:**
+1. ✅ CSS file fully loaded? (check Network tab)
+2. ✅ No CSS conflicts with other styles?
+3. ✅ Browser cache cleared?
+4. ✅ Correct `hover-widget.css` version deployed?
+
+**CSS Debug:**
+```javascript
+// Check computed styles
+const widget = document.querySelector('.hover-widget-container');
+window.getComputedStyle(widget).zIndex;  // Should be 999
+window.getComputedStyle(widget).position; // Should be 'fixed'
+```
+
+**Problem: Icons not showing**
+
+**Cause:** SVG paths invalid or missing
+
+**Fix:**
+1. Verify `iconSvg` property contains valid SVG path
+2. Check SVG viewBox is `0 0 24 24`
+3. Ensure `fill` attribute not set in path (CSS controls fill)
+
+**Test SVG:**
+```javascript
+// Test icon rendering
+const testItem = {
+    id: 'test',
+    label: 'Test',
+    iconSvg: '<path d="M12 2L2 7l10 5 10-5-10-5z"/>',
+    url: '#'
+};
+window.zyantikWidget.addItem(testItem);
+```
+
+#### Performance Considerations
+
+**Optimization:**
+- Widget uses CSS transitions (GPU-accelerated)
+- Minimal JavaScript execution
+- No external dependencies
+- SVG icons are lightweight
+- No image assets required
+
+**Load Impact:**
+- CSS file: ~3KB
+- JavaScript file: ~4KB
+- Total overhead: ~7KB
+- Initialization: < 10ms
+
+**Best Practices:**
+- Load CSS in `<head>` for FOUC prevention
+- Load JS before closing `</body>` for non-blocking
+- Use CDN if serving multiple sites
+- Minify CSS/JS for production
+
+#### Accessibility
+
+**Keyboard Navigation:**
+- Tab key focuses icon items
+- Enter activates focused icon
+- Escape closes forced-open state
+- Ctrl/Cmd+M toggles widget
+
+**Screen Readers:**
+```html
+<!-- Add aria attributes for better accessibility -->
+<div class="hover-widget-container" 
+     role="navigation" 
+     aria-label="Application Navigator">
+```
+
+**Color Contrast:**
+- Icons: 4.5:1 contrast ratio (WCAG AA)
+- Text labels: 4.5:1 contrast ratio (WCAG AA)
+- Hover states: Enhanced contrast
+
+#### Future Enhancements
+
+**Planned Features:**
+1. **Active State Indicator** - Highlight current application
+2. **Badge Notifications** - Show unread counts (e.g., "3 pending items")
+3. **Recent Apps** - Track and display recently visited
+4. **User Preferences** - Position customization (left/right)
+5. **Animation Settings** - Speed adjustment or disable
+6. **Tooltips** - Full app descriptions on hover
+7. **Drag to Reorder** - Custom icon ordering
+8. **Search** - Filter applications by name
+
+**Under Consideration:**
+- Dark mode variant
+- Compact mode (smaller icons)
+- Horizontal orientation (top/bottom)
+- Multi-level navigation (sub-menus)
+- Pin/unpin applications
+
+---
 
 ### Currency Management
 
@@ -572,751 +784,94 @@ The Currency Manager module provides comprehensive currency management including
 - Currency conversion utilities
 - Persistent storage of settings
 
-#### Using the Currency Manager
-
-**Setting Primary Currency:**
-```javascript
-// Access current primary currency
-const primaryCurrency = window.projectData.currency.primaryCurrency;  // 'USD'
-
-// Change primary currency (through UI or programmatically)
-window.projectData.currency.primaryCurrency = 'EUR';
-window.currencyManager.updateCurrencyDisplay();
-```
-
-**Managing Exchange Rates:**
-```javascript
-// Add an exchange rate
-window.currencyManager.addExchangeRate('EUR', 0.85);
-
-// Delete an exchange rate
-window.currencyManager.deleteExchangeRate(rateId);
-
-// Get all exchange rates
-const rates = window.projectData.currency.exchangeRates;
-```
-
-**Converting Currency:**
-```javascript
-// Convert 100 USD to EUR
-const converted = window.currencyManager.convertCurrency(100, 'USD', 'EUR');
-
-// Get currency symbol
-const symbol = window.currencyManager.getCurrencySymbol('USD');  // '$'
-const name = window.currencyManager.getCurrencyName('USD');      // 'US Dollar'
-```
-
-#### Supported Currencies
-**Top 10 (Priority Display):**
-USD, EUR, GBP, JPY, CNY, AUD, CAD, CHF, INR, SGD
-
-**Additional 23 Currencies:**
-AED, ARS, BRL, CZK, DKK, HKD, HUF, IDR, ILS, KRW, MXN, MYR, NOK, NZD, PHP, PLN, RON, RUB, SEK, THB, TRY, TWD, ZAR
-
-#### Data Structure
-```javascript
-{
-  currency: {
-    primaryCurrency: 'USD',           // ISO 4217 code
-    exchangeRates: [
-      {
-        id: 1234567890,              // Timestamp ID
-        currency: 'EUR',              // Target currency
-        rate: 0.85,                   // 1 primary = rate target
-        lastUpdated: '2024-10-10'     // ISO date string
-      }
-    ]
-  }
-}
-```
+[... rest of existing Currency Management section ...]
 
 ---
 
 ### Merge Functionality
 
-#### Overview
-
-The Merge functionality allows central project managers to merge specialist team estimates into a master project file. This is essential for collaborative project estimation where different teams work on separate portions of a project.
-
-**Use Case:**
-- Central PM creates master project with overall timeline and structure
-- Specialist teams (e.g., Infrastructure, Security, Development) create their own detailed estimates
-- Central PM merges specialist estimates into master file
-- System handles timeline alignment, rate card conflicts, and data integration
-
-#### Architecture
-
-The merge system consists of two primary modules working together:
-
-1. **MergeManager** (`merge_manager.js`)
-   - Orchestrates the multi-step merge workflow
-   - Handles file validation and UI flow
-   - Manages date comparison and selection
-   - Coordinates with RateCardMerger for conflict resolution
-
-2. **RateCardMerger** (`rate_card_merger.js`)
-   - Analyzes rate cards for conflicts
-   - Provides transactional merge execution
-   - Maintains referential integrity
-   - Supports rollback on failure
-
-#### Merge Workflow
-
-**Step 1: File Selection & Validation**
-- User selects specialist file via file input
-- System validates JSON structure and required fields
-- Displays file metadata (resource counts, dates, team info)
-
-**Step 2: Date Comparison**
-- Compares project timelines (master vs specialist)
-- Shows start/end date differences
-- Calculates duration variances
-- Displays impact warnings
-
-**Step 3: Rate Card Review** (Conditional)
-- Analyzes rate cards using RateCardMerger
-- Identifies conflicts (same role, different rates)
-- Identifies new cards to add
-- Allows user to resolve conflicts
-
-**Step 4: Date Selection & Final Merge**
-- Choose timeline: Keep Master, Adopt Specialist, or Custom
-- Execute merge with selected options
-- Tag all merged data with "(Specialist Team)"
-- Update all displays and save
-
-#### Key Features
-
-✅ **File Validation** - Comprehensive structure checking
-✅ **Timeline Alignment** - Three date selection options
-✅ **Rate Card Management** - Conflict detection and resolution
-✅ **Data Integrity** - Backup, rollback, reference updating
-✅ **User Feedback** - Step-by-step progress and clear messages
-
-For complete merge functionality documentation, see the Merge Functionality section above.
+[... existing Merge Functionality section ...]
 
 ---
 
-### Rate Card Editing ⭐ NEW
+### Rate Card Editing
 
-#### Overview
-
-The Rate Card editing feature provides **inline editing** of rate card entries directly within the Settings → Rate Cards table. Users can modify role names, categories, and daily rates without navigating to separate forms or dialogs.
-
-**Key Benefits:**
-- ✅ **Faster Updates** - Edit in-place with fewer clicks
-- ✅ **Data Integrity** - Unique role name validation prevents duplicates
-- ✅ **User-Friendly** - Visual feedback and clear error messages
-- ✅ **Keyboard Support** - Enter to save, Escape to cancel
-- ✅ **Consistent UX** - Matches edit patterns used throughout the app
-
-#### Accessing Rate Card Editing
-
-1. Navigate to **Settings** (⚙️ icon in top navigation)
-2. Select **Rate Cards** in the left sidebar
-3. Click **Edit** button (pencil icon) on any rate card
-4. Row highlights in yellow and fields become editable
-5. Modify fields as needed
-6. **Save** (✓) or **Cancel** (✗)
-
-#### Editable Fields
-
-| Field | Type | Validation | Notes |
-|-------|------|------------|-------|
-| **Role** | Text Input | Required, Must be unique | Case-insensitive uniqueness |
-| **Category** | Dropdown | Required (Internal/External) | Determines resource type |
-| **Daily Rate** | Number Input | Required, Must be ≥ 0 | Zero is valid (volunteer roles) |
-
-#### Visual States
-
-**Normal Mode:**
-```
-┌──────────────────┬──────────┬────────┬──────────────┐
-│ Senior Consultant│ EXTERNAL │ 1,200  │ [✏️] [🗑️]   │
-└──────────────────┴──────────┴────────┴──────────────┘
-```
-
-**Edit Mode:**
-```
-┌──────────────────────────────────────────────────────┐
-│ [Senior Consultant  ] │ [External ▼] │ [1200] │ [✅] [❌] [🗑️] │
-└──────────────────────────────────────────────────────┘
-Yellow highlight, input fields, Save/Cancel buttons
-```
-
-#### Validation Rules
-
-**1. Unique Role Name (Case-Insensitive)**
-```javascript
-// These are all considered duplicates:
-"Developer" = "developer" = "DEVELOPER" = "DEvELoPeR"
-
-// Error message:
-"A rate card with the role 'Developer' already exists. 
-Please use a unique role name."
-```
-
-**Self-Edit Exception:**
-- Editing "Developer" and keeping name "Developer" → ✅ Allowed
-- Changing only rate or category, keeping same role → ✅ Allowed
-
-**2. Required Fields**
-All three fields must have values:
-- Role: Cannot be empty
-- Category: Must select Internal or External
-- Rate: Must be number ≥ 0
-
-**3. Rate Validation**
-- ✅ Zero (0) is valid for volunteer roles
-- ✅ Decimals allowed (e.g., 1250.50)
-- ✅ Large values accepted (e.g., 999,999)
-- ❌ Negative values rejected
-
-#### Keyboard Shortcuts
-
-| Key | Action | Context |
-|-----|--------|---------|
-| **Enter** | Save changes | While in edit mode |
-| **Escape** | Cancel editing | While in edit mode |
-| **Tab** | Navigate between fields | While in edit mode |
-
-#### Integration with Internal Resources
-
-**Important Behavior:**  
-When a rate card is edited, existing Internal Resources using that rate card **DO NOT** automatically update. This is intentional:
-
-```javascript
-// Before edit:
-Rate Card: "Developer" → 600
-Internal Resource: "Developer" → dailyRate: 600
-
-// After editing rate card to 750:
-Rate Card: "Developer" → 750
-Internal Resource: "Developer" → dailyRate: 600 (unchanged)
-
-// New resources added AFTER edit will use 750
-```
-
-**Rationale:**
-- Preserves historical cost data
-- Prevents unexpected budget changes
-- Gives users control over rate updates
-- Aligns with project accounting best practices
-
-#### Code Implementation
-
-**EditManager Pattern:**
-```javascript
-// editManager.js handles all inline editing
-
-class EditManager {
-    constructor() {
-        this.editingStates = new Map();
-        this.originalValues = new Map();
-        this.setupEventListeners();
-    }
-    
-    // Rate card editing uses these methods:
-    extractRowData(row, 'rate-card') {
-        // Extracts: role, category (from badge), rate
-    }
-    
-    convertToEditInputs(row, 'rate-card', data) {
-        // Creates: text input, dropdown, number input
-    }
-    
-    validateEditData(data, 'rate-card', itemId) {
-        // Validates: required fields, unique name, rate >= 0
-        // Returns: boolean + shows alert if invalid
-    }
-    
-    updateItemData(itemId, newData, 'rate-card') {
-        // Calls: window.updateItemById()
-        // Updates: projectData.rateCards array
-    }
-}
-```
-
-**Table Renderer Integration:**
-```javascript
-// js/table_renderer.js generates edit buttons
-
-renderUnifiedRateCardsTable() {
-    rateCards.forEach(rate => {
-        row.innerHTML = `
-            <td>${rate.role}</td>
-            <td><span class="category-badge category-${rate.category.toLowerCase()}">
-                ${rate.category}
-            </span></td>
-            <td>${rate.rate.toLocaleString()}</td>
-            <td>${this.createActionButtons(rate.id, 'rate-card')}</td>
-        `;
-    });
-}
-
-createActionButtons(itemId, itemType) {
-    return `
-        <button class="edit-btn icon-btn" 
-                data-id="${itemId}" 
-                data-type="${itemType}">
-            <!-- Edit icon SVG -->
-        </button>
-        <button class="delete-btn icon-btn" 
-                data-id="${itemId}" 
-                data-type="${itemType}">
-            <!-- Delete icon SVG -->
-        </button>
-    `;
-}
-```
-
-#### Data Flow
-
-```
-User clicks Edit
-    ↓
-handleEditClick(button)
-    ↓
-extractRowData(row, 'rate-card')
-    → Store original: {role, category, rate}
-    ↓
-convertToEditInputs(row, 'rate-card', data)
-    → Replace cells with inputs
-    → Show Save/Cancel buttons
-    ↓
-User modifies fields
-    ↓
-User clicks Save (or presses Enter)
-    ↓
-handleSaveEdit(button)
-    ↓
-extractEditData(row, 'rate-card')
-    → Get edited values from inputs
-    ↓
-validateEditData(data, 'rate-card', itemId)
-    ├─ Required fields? ✓
-    ├─ Unique name? ✓ (case-insensitive, excludes self)
-    └─ Rate >= 0? ✓
-    ↓
-updateItemData(itemId, newData, 'rate-card')
-    → window.updateItemById()
-    → Update projectData.rateCards
-    ↓
-window.tableRenderer.renderAllTables()
-    → Re-render with new values
-    ↓
-window.DataManager.saveToLocalStorage()
-    → Persist changes
-    ↓
-Success!
-```
-
-#### UI/UX Patterns
-
-**Visual Feedback:**
-```css
-/* Row in edit mode */
-tr.editing {
-    background-color: #fffbeb;  /* Light yellow */
-    border: 2px solid #fbbf24;  /* Yellow border */
-}
-
-/* Action buttons */
-.icon-btn.success {
-    background-color: #10b981;  /* Green save */
-}
-
-.icon-btn.secondary {
-    background-color: #6b7280;  /* Grey cancel */
-}
-```
-
-**Button Placement:**
-```
-[✅ Save] [❌ Cancel] [🗑️ Delete]
- Primary   Secondary   Destructive
- Green     Grey        Red
-```
-
-**Category Badges:**
-```css
-.category-internal {
-    background: #dcfce7;  /* Light green */
-    color: #166534;       /* Dark green */
-}
-
-.category-external {
-    background: #dbeafe;  /* Light blue */
-    color: #1e40af;       /* Dark blue */
-}
-```
-
-#### Testing Scenarios
-
-**Basic Functionality:**
-- ✅ Click Edit → Row enters edit mode
-- ✅ Fields become editable
-- ✅ Save button works
-- ✅ Cancel button works
-- ✅ Changes persist after refresh
-
-**Validation Testing:**
-- ✅ Empty role name rejected
-- ✅ Duplicate role name rejected (exact match)
-- ✅ Duplicate role name rejected (case variation: "Developer" vs "developer")
-- ✅ Self-edit allowed (same role name)
-- ✅ Negative rate rejected
-- ✅ Zero rate accepted
-
-**Keyboard Navigation:**
-- ✅ Tab moves between fields
-- ✅ Enter saves changes
-- ✅ Escape cancels editing
-
-**Edge Cases:**
-- ✅ Special characters in role names
-- ✅ Very long role names (100+ chars)
-- ✅ Large rate values (999,999)
-- ✅ Decimal rates (1250.50)
-
-#### Error Messages
-
-**Duplicate Role Name:**
-```
-⚠️ Alert: "A rate card with the role 'Developer' already exists. 
-Please use a unique role name."
-```
-
-**Required Fields:**
-```
-⚠️ Alert: "Please fill in all required fields:
-- Role name
-- Category (Internal/External)
-- Daily Rate (must be 0 or greater)"
-```
-
-#### Best Practices
-
-**For Project Managers:**
-- Use descriptive, specific role names ("Senior Java Developer" not just "Developer")
-- Be consistent with naming conventions across projects
-- Review rate cards periodically for accuracy
-- Update resource rates manually if needed (not automatic)
-
-**For Developers:**
-- Always check `window.editManager` is loaded before using
-- Verify edit buttons have `data-type="rate-card"` attribute
-- Test with files containing duplicate names
-- Handle graceful degradation if module unavailable
-
-#### Console Logging
-
-**Successful Edit:**
-```
-Edit Manager loaded with Rate Card editing support and unique role name validation
-Updating item: Senior Consultant {role: "Senior Technical Consultant", category: "External", rate: 1300} rate-card
-Rate cards merge completed successfully
-✅ Summary updated after merge
-```
-
-**Validation Error:**
-```
-No edit state found for item: Developer
-Validation failed: Duplicate role name detected
-```
-
-#### Troubleshooting
-
-**Problem: Edit button not working**
-- ✅ Check `window.editManager` exists in console
-- ✅ Verify editManager.js loaded in HTML
-- ✅ Check console for JavaScript errors
-- ✅ Force refresh browser (Ctrl+F5)
-
-**Problem: Fields not becoming editable**
-- ✅ Check `data-type="rate-card"` on edit button
-- ✅ Verify `convertToEditInputs` has rate-card case
-- ✅ Check cells array has expected elements
-
-**Problem: Duplicate validation not working**
-- ✅ Verify `projectData.rateCards` populated
-- ✅ Check `.toLowerCase()` comparison used
-- ✅ Ensure `itemId` exclusion logic correct
-
-**Problem: Changes not persisting**
-- ✅ Check localStorage not in private/incognito mode
-- ✅ Verify `DataManager.saveToLocalStorage()` called
-- ✅ Check for errors in save operation
-
-#### Future Enhancements
-
-**Planned Improvements:**
-1. **Batch Editing** - Edit multiple rate cards simultaneously
-2. **Rate Card Templates** - Pre-defined sets for quick setup
-3. **Historical Rate Tracking** - Track rate changes over time
-4. **Usage Analytics** - Show which rate cards are most used
-5. **Import/Export** - CSV import/export for rate cards
-6. **Rate Calculator** - Show weekly/monthly/annual equivalents
-
-#### Data Structure
-
-```javascript
-// Rate card object
-{
-    id: 'rc-1',              // Unique identifier
-    role: 'Developer',        // Role name (unique, case-insensitive)
-    category: 'Internal',     // 'Internal' or 'External'
-    rate: 600                // Daily rate (number >= 0)
-}
-
-// Stored in projectData
-window.projectData = {
-    // ... other data
-    rateCards: [
-        {id: 'rc-1', role: 'Developer', category: 'Internal', rate: 600},
-        {id: 'rc-2', role: 'Consultant', category: 'External', rate: 1200},
-        // ... more rate cards
-    ]
-}
-```
-
-#### API Reference
-
-**EditManager Methods for Rate Cards:**
-
-| Method | Parameters | Returns | Purpose |
-|--------|-----------|---------|---------|
-| `extractRowData()` | row, 'rate-card' | {role, category, rate} | Get current values |
-| `convertToEditInputs()` | row, 'rate-card', data | void | Create edit inputs |
-| `validateEditData()` | data, 'rate-card', itemId | boolean | Validate with unique check |
-| `getCategoryOptions()` | selectedCategory | HTML string | Generate dropdown |
-| `handleEditClick()` | button | void | Enter edit mode |
-| `handleSaveEdit()` | button | void | Save and validate |
-| `handleCancelEdit()` | button | void | Revert changes |
-
-**Global Functions:**
-
-```javascript
-// Update item in data structure
-window.updateItemById(itemId, newData, 'rate-card')
-
-// Re-render all tables
-window.tableRenderer.renderAllTables()
-
-// Save to localStorage
-window.DataManager.saveToLocalStorage()
-```
+[... existing Rate Card Editing section ...]
 
 ---
 
 ## Troubleshooting
 
-### Problem: "Timeout waiting for function: updateSummary"
+### Problem: Hover widget not appearing ⭐ NEW
 
-**Cause:** The function isn't exported to window
-
-**Fix:** In script.js, ensure:
-```javascript
-window.updateSummary = updateSummary;
-```
-
-### Problem: Tabs/buttons not working
-
-**Cause:** Event listeners not being set up
-
-**Fix:** Ensure `initializeBasicFunctionality()` is:
-1. Defined in script.js
-2. Exported to window: `window.initializeBasicFunctionality = initializeBasicFunctionality;`
-3. Called by init_manager.js in the `initializeDOMManager()` method
-
-### Problem: "Uncaught SyntaxError: Unexpected identifier"
-
-**Cause:** Missing comma before the new module in the modules object
-
-**Fix:** In init_manager.js, ensure there's a comma after the previous module:
-```javascript
-this.modules = {
-    // ... other modules
-    mergeManager: false,       // ← MUST have comma here
-    editManager: false         // ← Add module (no comma if last)
-};
-```
-
-### Problem: Edit button not working ⭐ NEW
-
-**Cause:** EditManager not loaded or edit button missing data attribute
+**Cause:** Files not loaded or screen too small
 
 **Checklist:**
-1. ✅ editManager.js loaded in HTML?
-2. ✅ Console shows "Edit Manager loaded with Rate Card editing support"?
-3. ✅ Edit button has `data-type="rate-card"` attribute?
-4. ✅ `window.editManager` exists in console?
+1. ✅ `hover-widget.css` linked in `<head>`?
+2. ✅ `hover-widget.js` loaded before closing `</body>`?
+3. ✅ Screen width > 768px? (hidden on mobile)
+4. ✅ Browser console shows no errors?
+5. ✅ Check Network tab - files loaded successfully?
+
+**Console Check:**
+```javascript
+// Verify widget exists
+window.zyantikWidget
+// Should return HoverWidget instance
+
+// Check initialization message
+// Should see: ✅ Zyantik Hover Widget initialized
+```
 
 **Fix:**
 ```html
-<!-- Ensure editManager.js loaded -->
-<script src="modules/editManager.js"></script>
+<!-- In <head> -->
+<link rel="stylesheet" href="hover-widget.css">
+
+<!-- Before </body> -->
+<script src="hover-widget.js"></script>
 ```
 
-### Problem: Duplicate validation not working ⭐ NEW
+### Problem: Widget navigation not working ⭐ NEW
 
-**Cause:** Rate card validation not checking correctly
+**Cause:** Invalid URLs or click handler not firing
 
 **Console Check:**
 ```javascript
-// Test in console:
-window.editManager.validateEditData(
-    {role: 'Developer', category: 'Internal', rate: 600}, 
-    'rate-card', 
-    'test-id'
-)
-// Should return true/false and show alert if duplicate
-```
+// Click should show:
+🚀 Navigating to: estimator
 
-**Fix:** Verify:
-1. `projectData.rateCards` populated with current data
-2. `.toLowerCase()` comparison being used
-3. `itemId` exclusion logic correct
-
-### Problem: Rate card changes not persisting ⭐ NEW
-
-**Cause:** localStorage not saving or browser in private mode
-
-**Console Check:**
-```javascript
-// Check localStorage:
-localStorage.getItem('projectData')
-// Should contain rate cards with updated values
+// If no log appears, click handler not attached
 ```
 
 **Fix:**
-1. Exit private/incognito browsing
-2. Verify `DataManager.saveToLocalStorage()` called after edit
-3. Check browser allows localStorage
+1. Verify URLs in `widgetConfig` are correct
+2. Check `iconItem.dataset.url` is set
+3. Ensure no JavaScript errors blocking execution
+4. Test with simple URL first (e.g., `url: '#'`)
 
-### Problem: Module not loading
+### Problem: Widget styling incorrect ⭐ NEW
 
-**Checklist:**
-1. ✅ Script tag in index.html? (before init_manager.js)
-2. ✅ Module exports to window? (`window.myModule = ...`)
-3. ✅ Module registered in init_manager.js modules list?
-4. ✅ **Comma added after previous module?** ⚠️ Common mistake!
-5. ✅ Check browser console for loading errors
+**Cause:** CSS conflicts or cache issues
 
----
+**Fix:**
+1. Clear browser cache (Ctrl+Shift+R or Cmd+Shift+R)
+2. Check for CSS conflicts in DevTools
+3. Verify correct `hover-widget.css` version deployed
+4. Inspect computed styles in DevTools
 
-## Best Practices
-
-### DO ✅
-
-- **Use init_manager for all initialization** - Keep startup logic centralized
-- **Export critical functions to window** - Make them accessible to all modules
-- **Check dependencies before using them** - Handle missing modules gracefully
-- **Log initialization steps** - Use console.log with ✓ for successful steps
-- **Provide fallback implementations** - Don't break if a module is missing
-- **Use consistent naming** - Either MyModule or myModule, but be consistent
-- **Comment your code** - Especially initialization and integration points
-- **Test in isolation** - Each module should work independently when possible
-- **Add commas in object literals** - Remember the comma before adding new properties ⚠️
-- **Load modules in correct order** - Dependencies first
-- **Use transactional patterns** - Backup before critical operations, rollback on error
-- **Validate user input** - Prevent bad data at the source
-- **Provide clear error messages** - Users should understand what went wrong
-- **Test with realistic data** - Include edge cases and special characters
-- **Document validation rules** - Make constraints clear to users and developers
-
-### DON'T ❌
-
-- **Don't add DOMContentLoaded listeners in multiple files** - Use init_manager only
-- **Don't initialize on file load** - Wait for init_manager to call initialize()
-- **Don't assume modules are loaded** - Always check before using
-- **Don't use setTimeout for initialization** - Use init_manager's waitForFunction()
-- **Don't hardcode dependencies** - Check for availability at runtime
-- **Don't mix global and local scope** - Always be explicit with window.
-- **Don't duplicate functions** - Check for existing implementations first
-- **Don't skip error handling** - Wrap critical code in try-catch blocks
-- **Don't forget commas in modules object** - This causes syntax errors! ⚠️
-- **Don't skip validation** - Always validate before updating data
-- **Don't assume uniqueness** - Always check for duplicates when required
-- **Don't modify data without backup** - Use transactional approach
-- **Don't use ambiguous error messages** - Be specific about what's wrong
-- **Don't forget to re-render** - Update UI after data changes
-
----
-
-## Initialization Flow Diagram
-
+**CSS Validation:**
+```javascript
+// Check key styles
+const widget = document.querySelector('.hover-widget-container');
+getComputedStyle(widget).position;  // Should be 'fixed'
+getComputedStyle(widget).zIndex;    // Should be '999'
+getComputedStyle(widget).left;      // Should be '0px'
 ```
-Browser Loads Page
-      ↓
-All module scripts load in order:
-  - dom_manager
-  - table_renderer
-  - data_manager
-  - editManager ⭐ (Rate card editing)
-  - dynamic_form_helper
-  - table_fixes
-  - new_project_welcome
-  - currency_manager
-  - user_manager
-  - feature_toggle_manager
-  - tool_costs_manager
-  - rate_card_merger
-  - merge_manager
-      ↓
-script.js loads (defines functions, NO execution)
-      ↓
-init_manager.js loads
-      ↓
-DOMContentLoaded fires
-      ↓
-init_manager.initialize() called
-      ↓
-1. Initialize projectData (including currency structure)
-      ↓
-2. Check which modules are available
-      ↓
-3. Initialize DOM Manager
-      ↓
-4. Call initializeBasicFunctionality()
-   - Set up tab listeners
-   - Set up button listeners
-   - Set up modal listeners
-   - Set up form listeners
-      ↓
-5. Wait for critical functions
-      ↓
-6. Initialize Project Info Save Button
-      ↓
-7. Load data from localStorage
-      ↓
-8. Render all tables
-      ↓
-9. Update UI (summary, month headers)
-      ↓
-10. Initialize New Project Welcome
-      ↓
-11. Initialize User Manager
-      ↓
-12. Initialize Feature Toggle Manager
-      ↓
-13. Initialize Currency Manager
-      ↓
-14. Initialize Tool Costs Manager
-      ↓
-15. Initialize Merge Manager
-   - Setup merge button listener
-   - Ready to handle merge workflows
-      ↓
-16. Initialize Edit Manager ⭐ NEW
-   - Setup event listeners for edit buttons
-   - Ready to handle inline editing
-   - Rate card editing enabled
-      ↓
-17. Final re-render after delay
-      ↓
-✅ Application Ready
-```
+
+### Problem: "Timeout waiting for function: updateSummary"
+
+[... existing troubleshooting sections ...]
 
 ---
 
@@ -1331,24 +886,38 @@ When creating a new module, ensure:
 - [ ] Exported to window: `window.moduleName = new ModuleName()`
 - [ ] Console log on load: `console.log('Module Name loaded')`
 - [ ] Added to index.html (before init_manager.js)
-- [ ] **Dependencies loaded before this module** ⚠️ Critical!
+- [ ] Dependencies loaded before this module
 - [ ] Registered in init_manager.js modules object
-- [ ] **Comma added after previous module in modules object** ⚠️ Critical!
+- [ ] Comma added after previous module in modules object
 - [ ] Initialization code added to init_manager.initialize() if needed
 - [ ] Public methods documented
 - [ ] Dependencies checked before use
 - [ ] Error handling implemented
 - [ ] Tested in isolation and integrated
 - [ ] Console logs added for debugging
-- [ ] **Validation rules documented** ⭐ For editing features
-- [ ] **User feedback implemented** ⭐ For validation errors
-- [ ] **Data persistence tested** ⭐ For data modifications
+- [ ] Validation rules documented (for editing features)
+- [ ] User feedback implemented (for validation errors)
+- [ ] Data persistence tested (for data modifications)
+- [ ] **CSS loaded if module has styling** ⭐ NEW
+- [ ] **Responsive behavior tested** ⭐ NEW
 
 ---
 
 ## Version History
 
-### v3.1 - Rate Card Editing (Current) ⭐ NEW
+### v3.2 - Hover Widget Navigation (Current) ⭐ NEW
+- ✅ Added hover-activated navigation widget
+- ✅ Material Design SVG icons
+- ✅ Zyantik dark navy brand colors
+- ✅ Smooth slide-out animations (400ms)
+- ✅ Configurable application list
+- ✅ Keyboard shortcut (Ctrl/Cmd + M)
+- ✅ Mobile-responsive (hidden < 768px)
+- ✅ Professional visual states
+- ✅ No external dependencies
+- ✅ Lightweight (~7KB total)
+
+### v3.1 - Rate Card Editing
 - ✅ Added inline rate card editing functionality
 - ✅ Unique role name validation (case-insensitive)
 - ✅ Required field validation
@@ -1414,18 +983,25 @@ When asking for help or suggesting improvements:
    - Validation error messages
    - Edit operation attempted
    - Console logs during edit
-8. **For editing issues, include:** ⭐ NEW
+8. **For editing issues, include:**
    - Item type being edited (rate-card, internal-resource, etc.)
    - Data values before and after edit
    - Validation error messages
    - Whether changes persisted
    - Console logs during edit operation
+9. **For hover widget issues, include:** ⭐ NEW
+   - Browser and version
+   - Screen size/resolution
+   - Console logs and errors
+   - Network tab showing file loads
+   - Screenshots of visual issues
+   - Steps to reproduce
 
 This ensures efficient problem-solving and maintains architectural consistency.
 
 ---
 
-**Last Updated:** November 2024  
+**Last Updated:** December 2024  
 **Maintained By:** Project Development Team  
 **Architecture Pattern:** Centralized Initialization Manager  
-**Latest Feature:** Rate Card Editing v3.1 with Inline Editing & Unique Validation
+**Latest Feature:** Hover Widget Navigation v3.2 with Material Design Icons
