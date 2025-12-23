@@ -1,6 +1,7 @@
 /* ==========================================================================
    COMPLETE STYLE.CSS - Merged with All Features
    Includes dropdown menu support and all GitHub styles
+   FIXED: Modal close button now properly clickable
    ========================================================================== */
 
 /* ==========================================================================
@@ -1062,7 +1063,7 @@ small {
 }
 
 /* ==========================================================================
-   12. MODAL
+   12. MODAL - FIXED CLOSE BUTTON
    ========================================================================== */
 
 .modal {
@@ -1090,6 +1091,7 @@ small {
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }
 
+/* FIXED: Close button with proper z-index and interactive styles */
 .close {
     position: absolute;
     top: 1rem;
@@ -1098,10 +1100,25 @@ small {
     font-weight: bold;
     cursor: pointer;
     color: #6b7280;
+    z-index: 10;
+    line-height: 1;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    border-radius: 4px;
 }
 
 .close:hover {
     color: #374151;
+    background-color: #f3f4f6;
+}
+
+.close:active {
+    background-color: #e5e7eb;
+    transform: scale(0.95);
 }
 
 #modalTitle {
@@ -2062,7 +2079,7 @@ body {
 
 header {
     margin: 0;
-    /* padding: 1rem 2rem;
+    /* padding: 1rem 2rem; */
     width: 100%;
 }
 
