@@ -1,12 +1,28 @@
 // ============================================================================
-// MODAL CLOSE BUTTON FIX - V3 (Non-Breaking)
-// This file fixes the inactive close button without breaking Add buttons
+// MODAL CLOSE BUTTON FIX - V4 (Properly Resets State)
+// Fixes close button WITHOUT breaking modal reopening
 // ============================================================================
 
 (function() {
     'use strict';
     
-    console.log('🔧 Loading modal close button fix V3...');
+    console.log('🔧 Loading modal close button fix V4...');
+    
+    // Function to properly close the modal and reset state
+    function closeModal() {
+        const modal = document.getElementById('modal');
+        if (!modal) return;
+        
+        console.log('🚪 Closing modal properly...');
+        
+        // Set display to none (standard way)
+        modal.style.display = 'none';
+        
+        // DO NOT use visibility or opacity - these prevent reopening
+        // Just display: none is sufficient
+        
+        console.log('✅ Modal closed');
+    }
     
     // Fix function that only handles close button
     function fixModalCloseButtons() {
@@ -24,46 +40,44 @@
                 // Remove existing onclick to avoid conflicts
                 closeBtn.onclick = null;
                 
-                // Add new click handler
-                closeBtn.addEventListener('click', function(e) {
-                    console.log('✅ Close button clicked');
+                // Add new click handler - use named function for easier debugging
+                closeBtn.addEventListener('click', function modalCloseBtnClick(e) {
+                    console.log('✅ Close button (X) clicked');
                     e.preventDefault();
                     e.stopPropagation();
-                    modal.style.setProperty('display', 'none', 'important');
-                    modal.style.visibility = 'hidden';
-                    modal.style.opacity = '0';
+                    closeModal();
                 });
                 
                 console.log('✅ Close button event listener added');
             }
             
             if (cancelBtn) {
-                cancelBtn.addEventListener('click', function(e) {
+                // Remove existing listeners
+                const newCancelBtn = cancelBtn.cloneNode(true);
+                cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+                
+                newCancelBtn.addEventListener('click', function modalCancelBtnClick(e) {
                     console.log('✅ Cancel button clicked');
                     e.preventDefault();
-                    modal.style.setProperty('display', 'none', 'important');
-                    modal.style.visibility = 'hidden';
-                    modal.style.opacity = '0';
+                    closeModal();
                 });
+                
+                console.log('✅ Cancel button event listener added');
             }
             
             // Click outside modal to close
-            modal.addEventListener('click', function(e) {
+            modal.addEventListener('click', function modalBackdropClick(e) {
                 if (e.target === modal) {
                     console.log('✅ Clicked outside modal - closing');
-                    modal.style.setProperty('display', 'none', 'important');
-                    modal.style.visibility = 'hidden';
-                    modal.style.opacity = '0';
+                    closeModal();
                 }
             });
             
             // Escape key to close
-            document.addEventListener('keydown', function(e) {
+            document.addEventListener('keydown', function modalEscapeKey(e) {
                 if (e.key === 'Escape' && modal.style.display === 'block') {
                     console.log('✅ Escape key pressed - closing modal');
-                    modal.style.setProperty('display', 'none', 'important');
-                    modal.style.visibility = 'hidden';
-                    modal.style.opacity = '0';
+                    closeModal();
                 }
             });
         }
@@ -73,13 +87,11 @@
             const mergeCloseBtn = mergeModal.querySelector('.close');
             if (mergeCloseBtn) {
                 mergeCloseBtn.onclick = null;
-                mergeCloseBtn.addEventListener('click', function(e) {
+                mergeCloseBtn.addEventListener('click', function mergeModalCloseBtnClick(e) {
                     console.log('✅ Merge modal close button clicked');
                     e.preventDefault();
                     e.stopPropagation();
-                    mergeModal.style.setProperty('display', 'none', 'important');
-                    mergeModal.style.visibility = 'hidden';
-                    mergeModal.style.opacity = '0';
+                    mergeModal.style.display = 'none';
                 });
             }
         }
@@ -89,9 +101,16 @@
     
     // Force CSS styles
     function forceCloseButtonStyles() {
+        // Check if already added
+        if (document.getElementById('modal-close-fix-styles')) {
+            return;
+        }
+        
         const style = document.createElement('style');
         style.id = 'modal-close-fix-styles';
         style.textContent = `
+            /* Close button styles with high specificity */
+            #modal .close,
             .modal .close {
                 position: absolute !important;
                 top: 1rem !important;
@@ -112,12 +131,14 @@
                 transition: all 0.2s ease !important;
             }
             
+            #modal .close:hover,
             .modal .close:hover {
                 color: #374151 !important;
                 background-color: #f3f4f6 !important;
                 border-radius: 4px !important;
             }
             
+            #modal .close:active,
             .modal .close:active {
                 background-color: #e5e7eb !important;
                 transform: scale(0.95) !important;
@@ -125,25 +146,20 @@
             
             .modal-content {
                 position: relative !important;
-                z-index: 1001 !important;
-            }
-            
-            .modal {
-                z-index: 1000 !important;
             }
         `;
         
-        // Only add if not already added
-        if (!document.getElementById('modal-close-fix-styles')) {
-            document.head.appendChild(style);
-            console.log('✅ Force close button styles applied');
-        }
+        document.head.appendChild(style);
+        console.log('✅ Close button styles applied');
     }
     
-    // Monitor for modal opening and re-apply fix
+    // Monitor for modal opening and ensure close button is ready
     function monitorModalOpening() {
         const modal = document.getElementById('modal');
-        if (!modal) return;
+        if (!modal) {
+            console.warn('⚠️ Modal element not found');
+            return;
+        }
         
         // Use MutationObserver to watch for display changes
         const observer = new MutationObserver(function(mutations) {
@@ -151,17 +167,16 @@
                 if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
                     const display = modal.style.display;
                     if (display === 'block') {
-                        console.log('📢 Modal opened - ensuring close button is active');
+                        console.log('📢 Modal opened - ensuring close button is ready');
                         
-                        // Small delay to ensure modal is fully rendered
+                        // Small delay to ensure modal content is rendered
                         setTimeout(function() {
                             const closeBtn = modal.querySelector('.close');
                             if (closeBtn) {
-                                // Ensure styles are correct
+                                // Ensure the close button is clickable
                                 closeBtn.style.pointerEvents = 'auto';
                                 closeBtn.style.cursor = 'pointer';
-                                closeBtn.style.zIndex = '9999';
-                                console.log('✅ Close button styles refreshed');
+                                console.log('✅ Close button ready');
                             }
                         }, 50);
                     }
@@ -174,15 +189,16 @@
             attributeFilter: ['style']
         });
         
-        console.log('✅ Modal opening monitor active');
+        console.log('✅ Modal monitor active');
     }
     
     // Initialize everything
     function init() {
-        fixModalCloseButtons();
+        console.log('🚀 Initializing modal close fix V4...');
         forceCloseButtonStyles();
+        fixModalCloseButtons();
         monitorModalOpening();
-        console.log('✅ Modal close button fix V3 initialized');
+        console.log('✅ Modal close button fix V4 initialized');
     }
     
     // Run when DOM is ready
@@ -194,9 +210,10 @@
     
     // Also run on window load as backup
     window.addEventListener('load', function() {
+        console.log('🔄 Window loaded - running init again');
         setTimeout(init, 100);
     });
     
 })();
 
-console.log('✅ Modal close button fix V3 script loaded - Non-breaking version');
+console.log('✅ Modal close button fix V4 loaded - Properly resets state');
