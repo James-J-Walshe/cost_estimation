@@ -28,7 +28,8 @@ let projectData = {
         { role: 'Implementation Specialist', rate: 900, category: 'External' },
         { role: 'Support Specialist', rate: 700, category: 'External' }
     ],
-    contingencyPercentage: 10
+    contingencyPercentage: 10,
+    contingencyMethod: 'percentage' // ADDED for Issue #129: 'percentage' or 'risk-based'
 };
 
 // Make projectData available globally for modules
@@ -764,7 +765,8 @@ function newProjectFallback() {
                 projectInfo: { projectName: '', startDate: '', endDate: '', projectManager: '', projectDescription: '' },
                 internalResources: [], vendorCosts: [], toolCosts: [], miscCosts: [], risks: [],
                 rateCards: projectData.rateCards, // Keep default rate cards
-                contingencyPercentage: 10
+                contingencyPercentage: 10,
+                contingencyMethod: 'percentage' // ADDED for Issue #129
             };
             updateSummary();
             if (window.TableRenderer) {
@@ -1372,6 +1374,57 @@ function deleteItem(arrayName, id) {
     }
 }
 
+// ADDED for Issue #129: Calculate contingency based on selected method
+function calculateContingency() {
+    const method = projectData.contingencyMethod || 'percentage';
+    const internalTotal = calculateInternalResourcesTotal();
+    const vendorTotal = calculateVendorCostsTotal();
+    const toolTotal = calculateToolCostsTotal();
+    const miscTotal = calculateMiscCostsTotal();
+    const subtotal = internalTotal + vendorTotal + toolTotal + miscTotal;
+    
+    if (method === 'percentage') {
+        const percentage = projectData.contingencyPercentage || 0;
+        return (subtotal * percentage) / 100;
+    } else if (method === 'risk-based') {
+        // Sum all risk mitigation costs
+        return projectData.risks.reduce((total, risk) => {
+            return total + (parseFloat(risk.mitigationCost) || 0);
+        }, 0);
+    }
+    return 0;
+}
+
+// ADDED for Issue #129: Update contingency method label in UI
+function updateContingencyMethodLabel() {
+    const label = document.getElementById('contingencyMethodLabel');
+    const method = projectData.contingencyMethod || 'percentage';
+    
+    if (label) {
+        if (method === 'percentage') {
+            const percentage = projectData.contingencyPercentage || 0;
+            label.textContent = `Calculated using: Percentage-based method (${percentage}%)`;
+        } else {
+            const riskCount = projectData.risks.length;
+            label.textContent = `Calculated using: Risk-based method (${riskCount} risk${riskCount !== 1 ? 's' : ''} documented)`;
+        }
+    }
+}
+
+// ADDED for Issue #129: Toggle percentage input visibility based on method
+function togglePercentageInput() {
+    const method = projectData.contingencyMethod || 'percentage';
+    const percentageGroup = document.getElementById('percentageContingencyGroup');
+    
+    if (percentageGroup) {
+        if (method === 'percentage') {
+            percentageGroup.style.display = 'block';
+        } else {
+            percentageGroup.style.display = 'none';
+        }
+    }
+}
+
 // Summary Calculations
 function updateSummary() {
     try {
@@ -1382,7 +1435,7 @@ function updateSummary() {
         const miscTotal = calculateMiscCostsTotal();
 
         const subtotal = internalTotal + vendorTotal + toolTotal + miscTotal;
-        const contingency = subtotal * (projectData.contingencyPercentage / 100);
+        const contingency = calculateContingency(); // CHANGED for Issue #129: Use new function
         const total = subtotal + contingency;
 
         // Update resource plan cards
@@ -1397,6 +1450,9 @@ function updateSummary() {
         // Update contingency display
         const contingencyAmountEl = document.getElementById('contingencyAmount');
         if (contingencyAmountEl) contingencyAmountEl.textContent = contingency.toLocaleString();
+        
+        // ADDED for Issue #129: Update contingency method label
+        updateContingencyMethodLabel();
 
         // Update summary tab
         const summaryElements = {
@@ -1601,4 +1657,9 @@ window.initializeProjectInfoSaveButton = initializeProjectInfoSaveButton;
 window.calculateInternalResourcesTotal = calculateInternalResourcesTotal;
 window.calculateVendorCostsTotal = calculateVendorCostsTotal;
 window.calculateToolCostsTotal = calculateToolCostsTotal;
-window.calculateMiscCostsTotal = calculateMiscCostsTotal
+window.calculateMiscCostsTotal = calculateMiscCostsTotal;
+
+// ADDED for Issue #129: Export new contingency functions
+window.calculateContingency = calculateContingency;
+window.updateContingencyMethodLabel = updateContingencyMethodLabel;
+window.togglePercentageInput = togglePercentageInput;
