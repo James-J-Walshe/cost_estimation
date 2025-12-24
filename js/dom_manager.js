@@ -123,6 +123,57 @@ class DOMManager {
                 if (window.updateSummary) window.updateSummary();
             });
         }
+
+        // ADDED for Issue #129: Initialize contingency method radio buttons
+        this.initializeContingencyMethodListeners();
+    }
+
+    // ADDED for Issue #129: Initialize contingency method radio buttons
+    initializeContingencyMethodListeners() {
+        console.log('Initializing contingency method listeners...');
+        
+        const methodRadios = document.querySelectorAll('input[name="contingencyMethod"]');
+        
+        methodRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (window.projectData) {
+                    window.projectData.contingencyMethod = e.target.value;
+                    console.log(`Contingency method changed to: ${e.target.value}`);
+                    
+                    // Toggle percentage input visibility
+                    if (window.togglePercentageInput) {
+                        window.togglePercentageInput();
+                    }
+                    
+                    // Update calculations and display
+                    if (window.updateSummary) {
+                        window.updateSummary();
+                    }
+                    
+                    // Save to localStorage
+                    if (window.dataManager && window.dataManager.saveToLocalStorage) {
+                        window.dataManager.saveToLocalStorage();
+                    } else if (window.DataManager && window.DataManager.saveToLocalStorage) {
+                        window.DataManager.saveToLocalStorage();
+                    }
+                }
+            });
+        });
+        
+        // Set initial state based on projectData
+        const currentMethod = window.projectData?.contingencyMethod || 'percentage';
+        const radioToCheck = document.getElementById(
+            currentMethod === 'percentage' ? 'contingencyMethodPercentage' : 'contingencyMethodRiskBased'
+        );
+        
+        if (radioToCheck) {
+            radioToCheck.checked = true;
+        }
+        
+        // Initialize visibility
+        if (window.togglePercentageInput) {
+            window.togglePercentageInput();
+        }
     }
 
     // Initialize button listeners
