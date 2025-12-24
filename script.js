@@ -1415,13 +1415,26 @@ function updateContingencyMethodLabel() {
 function togglePercentageInput() {
     const method = projectData.contingencyMethod || 'percentage';
     const percentageGroup = document.getElementById('percentageContingencyGroup');
+    const riskBasedContent = document.getElementById('riskBasedContent');
     
-    if (percentageGroup) {
-        if (method === 'percentage') {
+    if (method === 'percentage') {
+        // Show percentage input, hide risk content
+        if (percentageGroup) {
             percentageGroup.style.display = 'block';
-        } else {
+        }
+        if (riskBasedContent) {
+            riskBasedContent.style.display = 'none';
+        }
+        console.log('Switched to percentage-based view');
+    } else {
+        // Hide percentage input, show risk content
+        if (percentageGroup) {
             percentageGroup.style.display = 'none';
         }
+        if (riskBasedContent) {
+            riskBasedContent.style.display = 'block';
+        }
+        console.log('Switched to risk-based view');
     }
 }
 
