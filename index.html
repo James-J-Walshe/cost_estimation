@@ -430,27 +430,29 @@
                             </small>
                         </div>
                     </div>
-                    <div class="section-actions">
-                        <button id="addRisk" class="btn btn-primary">Add Risk</button>
+                    <div id="riskBasedContent" style="display: none;">
+                        <div class="section-actions">
+                            <button id="addRisk" class="btn btn-primary">Add Risk</button>
+                        </div>
+                    
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Risk Description</th>
+                                        <th>Probability</th>
+                                        <th>Impact</th>
+                                        <th>Risk Score</th>
+                                        <th>Mitigation Cost</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="risksTable">
+                                    <!-- Populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Risk Description</th>
-                                    <th>Probability</th>
-                                    <th>Impact</th>
-                                    <th>Risk Score</th>
-                                    <th>Mitigation Cost</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="risksTable">
-                                <!-- Populated by JavaScript -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
             </main>
         </div>
 
