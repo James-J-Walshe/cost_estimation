@@ -912,6 +912,15 @@ class DOMManager {
             settingsOverlay.style.display = 'none';
         }
     }
+
+    // Initialize the DOM Manager - ADDED to call all initialization methods
+    initialize() {
+        console.log('DOM Manager initialize() called');
+        this.initializeDOMElements();
+        this.initializeTabs();
+        this.initializeEventListeners();
+        console.log('✓ DOM Manager fully initialized with all event listeners');
+    }
 }
 
 // Create and export DOM manager instance
