@@ -397,39 +397,53 @@
                     </div>
                 </div>
 
-                <!-- Risks & Contingency Tab -->
+               <!-- Risks & Contingency Tab -->
                 <div id="risks" class="tab-content">
                     <h2>Risks & Contingency</h2>
-                    <div class="risk-summary">
-                        <div class="input-group">
-                            <label>Contingency Calculation Method:</label>
-                            <div class="radio-group">
-                                <label class="radio-option">
-                                    <input type="radio" name="contingencyMethod" value="percentage" id="contingencyMethodPercentage" checked>
-                                    <span>Percentage-based</span>
-                                    <small class="radio-description">Apply a fixed percentage to total project cost</small>
-                                </label>
-                                <label class="radio-option">
-                                    <input type="radio" name="contingencyMethod" value="risk-based" id="contingencyMethodRiskBased">
-                                    <span>Risk-based</span>
-                                    <small class="radio-description">Use sum of documented risk mitigation costs</small>
-                                </label>
+                    
+                    <!-- Contingency Method Selection -->
+                    <div style="margin-bottom: 2rem;">
+                        <h3 style="margin-bottom: 1rem; color: #4b5563; font-size: 1.1rem;">Contingency Calculation Method:</h3>
+                        
+                        <!-- Radio Buttons (Horizontal Layout) -->
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" id="contingencyMethodPercentage" name="contingencyMethod" value="percentage" checked>
+                                <div class="radio-option-content">
+                                    <label class="radio-option-label" for="contingencyMethodPercentage">Percentage-based</label>
+                                    <p class="radio-option-description">Apply a fixed percentage to total project cost</p>
+                                </div>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" id="contingencyMethodRiskBased" name="contingencyMethod" value="risk-based">
+                                <div class="radio-option-content">
+                                    <label class="radio-option-label" for="contingencyMethodRiskBased">Risk-based</label>
+                                    <p class="radio-option-description">Use sum of documented risk mitigation costs</p>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="input-group" id="percentageContingencyGroup">
-                            <label for="contingencyPercentage">Contingency Percentage:</label>
-                            <input type="number" id="contingencyPercentage" class="form-control" value="10" min="0" max="100">
-                            <small>Percentage of total project cost</small>
+                        <!-- Percentage Input (Conditional Display) -->
+                        <div id="percentageContingencyGroup" style="display: block; margin-top: 1.5rem;">
+                            <div class="form-group">
+                                <label for="contingencyPercentage">Contingency Percentage:</label>
+                                <input type="number" id="contingencyPercentage" class="form-control" value="10" min="0" max="100" step="1">
+                                <small style="color: #6b7280; margin-left: 0.5rem;">Percentage of total project cost</small>
+                            </div>
                         </div>
-                        
-                        <div class="cost-display">
-                            <strong>Contingency Amount: $<span id="contingencyAmount">0</span></strong>
-                            <small id="contingencyMethodLabel" style="display: block; margin-top: 0.5rem; color: #6b7280;">
-                                Calculated using: Percentage-based method
-                            </small>
+
+                        <!-- Contingency Amount Display (Always Visible, Below Inputs) -->
+                        <div class="contingency-display" style="margin-top: 2rem; padding: 1.5rem; background-color: #f0fdf4; border-radius: 8px; border: 1px solid #d1fae5;">
+                            <h3 style="color: #059669; font-size: 1.5rem; margin-bottom: 0.5rem; font-weight: 600;">
+                                Contingency Amount: $<span id="contingencyAmount">0</span>
+                            </h3>
+                            <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">
+                                <span id="contingencyMethodLabel">Calculated using: Percentage-based method (10%)</span>
+                            </p>
                         </div>
                     </div>
+
+                    <!-- Risk-based Content (Conditional Display) -->
                     <div id="riskBasedContent" style="display: none;">
                         <div class="section-actions">
                             <button id="addRisk" class="btn btn-primary">Add Risk</button>
@@ -453,6 +467,7 @@
                             </table>
                         </div>
                     </div>
+                </div>
             </main>
         </div>
 
