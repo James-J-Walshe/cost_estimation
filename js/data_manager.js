@@ -22,7 +22,8 @@ class DataManager {
                         vendorCosts: parsed.vendorCosts?.length || 0,
                         toolCosts: parsed.toolCosts?.length || 0,
                         internalResources: parsed.internalResources?.length || 0,
-                        hasCurrency: !!parsed.currency 
+                        hasCurrency: !!parsed.currency,
+                        contingencyMethod: parsed.contingencyMethod || 'not set' // ADDED for Issue #129
                     });
                     
                     // Update the global projectData - merge arrays properly
@@ -35,6 +36,9 @@ class DataManager {
                         window.projectData.miscCosts = parsed.miscCosts || [];
                         window.projectData.risks = parsed.risks || [];
                         window.projectData.contingencyPercentage = parsed.contingencyPercentage || 10;
+                        
+                        // ADDED for Issue #129: Load contingency method
+                        window.projectData.contingencyMethod = parsed.contingencyMethod || 'percentage';
                         
                         // Load currency settings
                         if (parsed.currency) {
@@ -101,7 +105,8 @@ class DataManager {
                         toolCosts: window.projectData.toolCosts?.length || 0,
                         internalResources: window.projectData.internalResources?.length || 0,
                         projectData: window.projectData,
-                        currency: window.projectData.currency?.primaryCurrency || 'Not set'
+                        currency: window.projectData.currency?.primaryCurrency || 'Not set',
+                        contingencyMethod: window.projectData.contingencyMethod || 'percentage' // ADDED for Issue #129
                     });
                     
                     console.log('Data loaded and populated successfully');
@@ -135,6 +140,36 @@ class DataManager {
                 element.value = formFields[id];
             }
         });
+
+        // ADDED for Issue #129: Set contingency method radio buttons
+        const contingencyMethod = projectData.contingencyMethod || 'percentage';
+        const radioToCheck = document.getElementById(
+            contingencyMethod === 'percentage' ? 'contingencyMethodPercentage' : 'contingencyMethodRiskBased'
+        );
+        if (radioToCheck) {
+            radioToCheck.checked = true;
+        }
+    }
+
+    // Save to localStorage (helper method)
+    saveToLocalStorage() {
+        try {
+            const projectData = window.projectData;
+            if (!projectData) {
+                console.error('No project data to save');
+                return false;
+            }
+
+            if (typeof(Storage) !== "undefined" && localStorage) {
+                localStorage.setItem('ictProjectData', JSON.stringify(projectData));
+                console.log('Project auto-saved to localStorage');
+                return true;
+            }
+            return false;
+        } catch (e) {
+            console.error('Error saving to localStorage:', e);
+            return false;
+        }
     }
 
     // Save project to localStorage
@@ -197,14 +232,18 @@ class DataManager {
     newProject() {
         if (confirm('Are you sure you want to start a new project? This will clear all current data. Make sure to save or download your current project first.')) {
             try {
-                // Reset project data to initial state
-                const newProjectData = {
+                // Reset projectData to initial state
+                window.projectData = {
                     projectInfo: {
                         projectName: '',
                         startDate: '',
                         endDate: '',
                         projectManager: '',
                         projectDescription: ''
+                    },
+                    currency: {
+                        primaryCurrency: 'USD',
+                        exchangeRates: []
                     },
                     internalResources: [],
                     vendorCosts: [],
@@ -222,39 +261,29 @@ class DataManager {
                         { role: 'Implementation Specialist', rate: 900, category: 'External' },
                         { role: 'Support Specialist', rate: 700, category: 'External' }
                     ],
-                    internalRates: [
-                        { role: 'Project Manager', rate: 800 },
-                        { role: 'Business Analyst', rate: 650 },
-                        { role: 'Technical Lead', rate: 750 },
-                        { role: 'Developer', rate: 600 },
-                        { role: 'Tester', rate: 550 }
-                    ],
-                    externalRates: [
-                        { role: 'Senior Consultant', rate: 1200 },
-                        { role: 'Technical Architect', rate: 1500 },
-                        { role: 'Implementation Specialist', rate: 900 },
-                        { role: 'Support Specialist', rate: 700 }
-                    ],
-                    contingencyPercentage: 10
+                    contingencyPercentage: 10,
+                    contingencyMethod: 'percentage' // ADDED for Issue #129
                 };
-                
-                // Update global reference
-                window.projectData = newProjectData;
                 
                 // Clear form fields
                 this.populateFormFields();
                 
-                // Clear localStorage
-                if (typeof(Storage) !== "undefined" && localStorage) {
-                    localStorage.removeItem('ictProjectData');
+                // Re-render tables
+                if (window.TableRenderer) {
+                    window.TableRenderer.renderAllTables();
+                } else if (window.tableRenderer) {
+                    window.tableRenderer.renderAllTables();
                 }
                 
-                // Re-render all tables and summaries
-                if (window.TableRenderer) window.TableRenderer.renderAllTables();
-                if (window.updateSummary) window.updateSummary();
-                if (window.updateMonthHeaders) window.updateMonthHeaders();
+                // Update summary
+                if (window.updateSummary) {
+                    window.updateSummary();
+                }
                 
-                this.showAlert('New project started successfully! Please enter your project information.', 'success');
+                // Clear localStorage
+                localStorage.removeItem('ictProjectData');
+                
+                this.showAlert('New project created successfully! Please enter your project information.', 'success');
                 
                 console.log('New project created');
                 return true;
@@ -282,7 +311,7 @@ class DataManager {
         input.click();
     }
 
-    // Load project from file object (new method)
+    // Load project from file object
     loadProjectFromFile(file) {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -300,6 +329,9 @@ class DataManager {
                     window.projectData.risks = data.risks || [];
                     window.projectData.contingencyPercentage = data.contingencyPercentage || 10;
                     
+                    // ADDED for Issue #129: Load contingency method
+                    window.projectData.contingencyMethod = data.contingencyMethod || 'percentage';
+                    
                     // Handle rate cards properly
                     if (data.rateCards) {
                         window.projectData.rateCards = data.rateCards;
@@ -309,6 +341,11 @@ class DataManager {
                     }
                     if (data.externalRates) {
                         window.projectData.externalRates = data.externalRates;
+                    }
+
+                    // Load currency if present
+                    if (data.currency) {
+                        window.projectData.currency = data.currency;
                     }
                 }
                 
@@ -442,6 +479,22 @@ class DataManager {
             });
         }
         
+        // ADDED for Issue #129: Contingency Calculation section
+        csv += '\nCONTINGENCY CALCULATION\n';
+        const contingencyMethod = projectData.contingencyMethod || 'percentage';
+        csv += `Method,"${contingencyMethod}"\n`;
+        
+        if (contingencyMethod === 'percentage') {
+            const percentage = projectData.contingencyPercentage || 0;
+            csv += `Percentage,${percentage}%\n`;
+        } else {
+            const riskCount = projectData.risks?.length || 0;
+            csv += `Risk Count,${riskCount}\n`;
+        }
+        
+        const contingencyAmount = window.calculateContingency ? window.calculateContingency() : 0;
+        csv += `Contingency Amount,$${contingencyAmount.toLocaleString()}\n`;
+        
         // Summary
         csv += '\nPROJECT SUMMARY\n';
         const internalTotal = window.calculateInternalResourcesTotal ? window.calculateInternalResourcesTotal() : 0;
@@ -449,7 +502,7 @@ class DataManager {
         const toolTotal = window.calculateToolCostsTotal ? window.calculateToolCostsTotal() : 0;
         const miscTotal = window.calculateMiscCostsTotal ? window.calculateMiscCostsTotal() : 0;
         const subtotal = internalTotal + vendorTotal + toolTotal + miscTotal;
-        const contingency = subtotal * ((projectData.contingencyPercentage || 10) / 100);
+        const contingency = contingencyAmount;
         const total = subtotal + contingency;
         
         csv += `Internal Resources,${internalTotal}\n`;
@@ -457,7 +510,14 @@ class DataManager {
         csv += `Tool Costs,${toolTotal}\n`;
         csv += `Miscellaneous,${miscTotal}\n`;
         csv += `Subtotal,${subtotal}\n`;
-        csv += `Contingency (${projectData.contingencyPercentage || 10}%),${contingency}\n`;
+        
+        // Show contingency with method info
+        if (contingencyMethod === 'percentage') {
+            csv += `Contingency (${projectData.contingencyPercentage || 10}%),${contingency}\n`;
+        } else {
+            csv += `Contingency (Risk-based),${contingency}\n`;
+        }
+        
         csv += `Total Project Cost,${total}\n`;
         
         return csv;

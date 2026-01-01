@@ -123,6 +123,57 @@ class DOMManager {
                 if (window.updateSummary) window.updateSummary();
             });
         }
+
+        // ADDED for Issue #129: Initialize contingency method radio buttons
+        this.initializeContingencyMethodListeners();
+    }
+
+    // ADDED for Issue #129: Initialize contingency method radio buttons
+    initializeContingencyMethodListeners() {
+        console.log('Initializing contingency method listeners...');
+        
+        const methodRadios = document.querySelectorAll('input[name="contingencyMethod"]');
+        
+        methodRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                if (window.projectData) {
+                    window.projectData.contingencyMethod = e.target.value;
+                    console.log(`Contingency method changed to: ${e.target.value}`);
+                    
+                    // Toggle percentage input visibility
+                    if (window.togglePercentageInput) {
+                        window.togglePercentageInput();
+                    }
+                    
+                    // Update calculations and display
+                    if (window.updateSummary) {
+                        window.updateSummary();
+                    }
+                    
+                    // Save to localStorage
+                    if (window.dataManager && window.dataManager.saveToLocalStorage) {
+                        window.dataManager.saveToLocalStorage();
+                    } else if (window.DataManager && window.DataManager.saveToLocalStorage) {
+                        window.DataManager.saveToLocalStorage();
+                    }
+                }
+            });
+        });
+        
+        // Set initial state based on projectData
+        const currentMethod = window.projectData?.contingencyMethod || 'percentage';
+        const radioToCheck = document.getElementById(
+            currentMethod === 'percentage' ? 'contingencyMethodPercentage' : 'contingencyMethodRiskBased'
+        );
+        
+        if (radioToCheck) {
+            radioToCheck.checked = true;
+        }
+        
+        // Initialize visibility
+        if (window.togglePercentageInput) {
+            window.togglePercentageInput();
+        }
     }
 
     // Initialize button listeners
@@ -144,37 +195,28 @@ class DOMManager {
             const element = document.getElementById(btn.id);
             console.log(`Looking for button ${btn.id}:`, element);
             if (element) {
+                // Guard to prevent duplicate listener attachment
+                if (element.hasAttribute('data-add-listener-attached')) {
+                    console.log(`⚠️ Add listener already attached to ${btn.id} - skipping`);
+                    return;
+                }
                 element.addEventListener('click', () => {
                     console.log(`${btn.id} button clicked`);
                     this.openModal(btn.title, btn.type);
                 });
+                element.setAttribute('data-add-listener-attached', 'true');
                 console.log(`Event listener added to ${btn.id}`);
             } else {
                 console.warn(`Button ${btn.id} not found in DOM`);
             }
         });
 
-        // Save/Load buttons
-        const actionButtons = [
-            { id: 'saveBtn', handler: window.saveProject },
-            { id: 'loadBtn', handler: window.loadProject },
-            { id: 'exportBtn', handler: window.exportToExcel },
-            { id: 'newProjectBtn', handler: window.newProject },
-            { id: 'downloadBtn', handler: window.downloadProject }
-        ];
-
-        actionButtons.forEach(btn => {
-            const element = document.getElementById(btn.id);
-            console.log(`Looking for action button ${btn.id}:`, element);
-            if (element && btn.handler) {
-                element.addEventListener('click', btn.handler);
-                console.log(`Event listener added to ${btn.id}`);
-            } else if (element) {
-                console.warn(`Handler not found for button ${btn.id}`);
-            } else {
-                console.warn(`Action button ${btn.id} not found in DOM`);
-            }
-        });
+        // ====================================================================
+        // FIX for Issue #130: Action buttons (Save, Load, Export, etc.) are 
+        // handled by init_manager.js dropdown menu system. Removing duplicate
+        // listeners here to prevent double save/load/export actions.
+        // ====================================================================
+        console.log('Action buttons (saveBtn, loadBtn, etc.) handled by init_manager dropdown menus');
         
         console.log('Button listener initialization complete');
     }
@@ -199,17 +241,32 @@ class DOMManager {
             }
         });
 
-        // Modal form submission
-        if (this.modalForm) {
+        // ====================================================================
+        // FIX for Issue #130: Prevent duplicate form submit listener attachment
+        // Only attach the listener if it hasn't been attached already
+        // This prevents the duplicate tool cost bug where items were added twice
+        // ====================================================================
+        if (this.modalForm && !this.modalForm.hasAttribute('data-submit-listener-attached')) {
             this.modalForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 if (window.handleModalSubmit) {
                     window.handleModalSubmit();
                 }
             });
+            this.modalForm.setAttribute('data-submit-listener-attached', 'true');
+            console.log('Modal form submit listener attached by DOM Manager');
+        } else if (this.modalForm) {
+            console.log('⚠️ Modal form submit listener already attached - skipping (DOM Manager)');
         }
         
-        // Modal save button backup
+        // ====================================================================
+        // FIX for Issue #130: Remove duplicate save button listener
+        // The form submit handler already handles the save action
+        // This backup listener was causing the second submission
+        // ====================================================================
+        // REMOVED: Modal save button backup - this was causing duplicates
+        // The form submit event handler above is sufficient
+        /*
         const modalSaveBtn = document.querySelector('.modal-actions .btn-primary');
         if (modalSaveBtn) {
             modalSaveBtn.addEventListener('click', (e) => {
@@ -220,6 +277,7 @@ class DOMManager {
                 }
             });
         }
+        */
     }
 
     // Open modal with specified content
@@ -860,6 +918,15 @@ class DOMManager {
         if (settingsOverlay) {
             settingsOverlay.style.display = 'none';
         }
+    }
+
+    // Initialize the DOM Manager - ADDED to call all initialization methods
+    initialize() {
+        console.log('DOM Manager initialize() called');
+        this.initializeDOMElements();
+        this.initializeTabs();
+        this.initializeEventListeners();
+        console.log('✓ DOM Manager fully initialized with all event listeners');
     }
 }
 
