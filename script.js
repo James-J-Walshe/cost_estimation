@@ -127,28 +127,12 @@ function initializeBasicEventListeners() {
         }
     });
 
-    // Action buttons - with guard to prevent duplicate listeners
-    const actionButtons = [
-        { id: 'saveBtn', action: () => saveProjectFallback() },
-        { id: 'loadBtn', action: () => loadProjectFallback() },
-        { id: 'exportBtn', action: () => exportToExcelFallback() },
-        { id: 'newProjectBtn', action: () => newProjectFallback() },
-        { id: 'downloadBtn', action: () => downloadProjectFallback() }
-    ];
-
-    actionButtons.forEach(({ id, action }) => {
-        const element = document.getElementById(id);
-        if (element) {
-            // Guard to prevent duplicate listener attachment
-            if (element.hasAttribute('data-action-listener-attached')) {
-                console.log(`⚠️ Action listener already attached to ${id} - skipping`);
-                return;
-            }
-            element.addEventListener('click', action);
-            element.setAttribute('data-action-listener-attached', 'true');
-            console.log(`Event listener added to ${id}`);
-        }
-    });
+    // ====================================================================
+    // FIX for Issue #130: Action buttons (Save, Load, Export, etc.) are 
+    // handled by init_manager.js dropdown menu system. Removing duplicate
+    // listeners here to prevent double save/load/export actions.
+    // ====================================================================
+    console.log('Action buttons (saveBtn, loadBtn, etc.) handled by init_manager dropdown menus');
 
     // Settings button functionality
     initializeSettingsButton();
