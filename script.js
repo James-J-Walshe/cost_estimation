@@ -28,7 +28,8 @@ let projectData = {
         { role: 'Implementation Specialist', rate: 900, category: 'External' },
         { role: 'Support Specialist', rate: 700, category: 'External' }
     ],
-    contingencyPercentage: 10
+    contingencyPercentage: 10,
+    contingencyMethod: 'percentage' // ADDED for Issue #129: 'percentage' or 'risk-based'
 };
 
 // Make projectData available globally for modules
@@ -41,6 +42,18 @@ window.projectData = projectData;
 
 // Basic functionality fallback
 function initializeBasicFunctionality() {
+    // ====================================================================
+    // FIX for Issue #130: Prevent duplicate event listener attachment
+    // This check ensures listeners are only attached once, even if this
+    // function is called multiple times (e.g., by both dom_manager.js 
+    // and script.js via init_manager.js)
+    // ====================================================================
+    if (window._basicFunctionalityInitialized) {
+        console.log('⚠️ Basic functionality already initialized - skipping to prevent duplicate listeners');
+        return;
+    }
+    window._basicFunctionalityInitialized = true;
+    
     console.log('Initializing basic functionality...');
 
     // Initialize tab functionality
@@ -77,6 +90,16 @@ function initializeBasicFunctionality() {
 }
 
 function initializeBasicEventListeners() {
+    // ====================================================================
+    // FIX for Issue #130: Prevent duplicate event listener attachment
+    // Check if DOM Manager has already initialized these listeners
+    // ====================================================================
+    if (window._basicEventListenersInitialized) {
+        console.log('⚠️ Basic event listeners already initialized - skipping to prevent duplicates');
+        return;
+    }
+    window._basicEventListenersInitialized = true;
+    
     const addButtons = [
         { id: 'addInternalResource', type: 'internalResource', title: 'Add Internal Resource' },
         { id: 'addVendorCost', type: 'vendorCost', title: 'Add Vendor Cost' },
@@ -91,29 +114,25 @@ function initializeBasicEventListeners() {
     addButtons.forEach(btn => {
         const element = document.getElementById(btn.id);
         if (element) {
+            // Guard to prevent duplicate listener attachment
+            if (element.hasAttribute('data-add-listener-attached')) {
+                console.log(`⚠️ Add listener already attached to ${btn.id} - skipping`);
+                return;
+            }
             element.addEventListener('click', () => {
                 openModal(btn.title, btn.type);
             });
+            element.setAttribute('data-add-listener-attached', 'true');
             console.log(`Event listener added to ${btn.id}`);
         }
     });
 
-    // Action buttons
-    const actionButtons = [
-        { id: 'saveBtn', action: () => saveProjectFallback() },
-        { id: 'loadBtn', action: () => loadProjectFallback() },
-        { id: 'exportBtn', action: () => exportToExcelFallback() },
-        { id: 'newProjectBtn', action: () => newProjectFallback() },
-        { id: 'downloadBtn', action: () => downloadProjectFallback() }
-    ];
-
-    actionButtons.forEach(({ id, action }) => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.addEventListener('click', action);
-            console.log(`Event listener added to ${id}`);
-        }
-    });
+    // ====================================================================
+    // FIX for Issue #130: Action buttons (Save, Load, Export, etc.) are 
+    // handled by init_manager.js dropdown menu system. Removing duplicate
+    // listeners here to prevent double save/load/export actions.
+    // ====================================================================
+    console.log('Action buttons (saveBtn, loadBtn, etc.) handled by init_manager dropdown menus');
 
     // Settings button functionality
     initializeSettingsButton();
@@ -142,11 +161,19 @@ function initializeBasicEventListeners() {
         }
     });
 
-    if (modalForm) {
+    // ====================================================================
+    // FIX for Issue #130: Only attach form submit listener if not already attached
+    // This was the primary cause of duplicate tool cost entries
+    // ====================================================================
+    if (modalForm && !modalForm.hasAttribute('data-submit-listener-attached')) {
         modalForm.addEventListener('submit', (e) => {
             e.preventDefault();
             handleModalSubmit();
         });
+        modalForm.setAttribute('data-submit-listener-attached', 'true');
+        console.log('Modal form submit listener attached');
+    } else if (modalForm) {
+        console.log('⚠️ Modal form submit listener already attached - skipping');
     }
 
     // Project info form listeners
@@ -764,7 +791,8 @@ function newProjectFallback() {
                 projectInfo: { projectName: '', startDate: '', endDate: '', projectManager: '', projectDescription: '' },
                 internalResources: [], vendorCosts: [], toolCosts: [], miscCosts: [], risks: [],
                 rateCards: projectData.rateCards, // Keep default rate cards
-                contingencyPercentage: 10
+                contingencyPercentage: 10,
+                contingencyMethod: 'percentage' // ADDED for Issue #129
             };
             updateSummary();
             if (window.TableRenderer) {
@@ -1372,6 +1400,70 @@ function deleteItem(arrayName, id) {
     }
 }
 
+// ADDED for Issue #129: Calculate contingency based on selected method
+function calculateContingency() {
+    const method = projectData.contingencyMethod || 'percentage';
+    const internalTotal = calculateInternalResourcesTotal();
+    const vendorTotal = calculateVendorCostsTotal();
+    const toolTotal = calculateToolCostsTotal();
+    const miscTotal = calculateMiscCostsTotal();
+    const subtotal = internalTotal + vendorTotal + toolTotal + miscTotal;
+    
+    if (method === 'percentage') {
+        const percentage = projectData.contingencyPercentage || 0;
+        return (subtotal * percentage) / 100;
+    } else if (method === 'risk-based') {
+        // Sum all risk mitigation costs
+        return projectData.risks.reduce((total, risk) => {
+            return total + (parseFloat(risk.mitigationCost) || 0);
+        }, 0);
+    }
+    return 0;
+}
+
+// ADDED for Issue #129: Update contingency method label in UI
+function updateContingencyMethodLabel() {
+    const label = document.getElementById('contingencyMethodLabel');
+    const method = projectData.contingencyMethod || 'percentage';
+    
+    if (label) {
+        if (method === 'percentage') {
+            const percentage = projectData.contingencyPercentage || 0;
+            label.textContent = `Calculated using: Percentage-based method (${percentage}%)`;
+        } else {
+            const riskCount = projectData.risks.length;
+            label.textContent = `Calculated using: Risk-based method (${riskCount} risk${riskCount !== 1 ? 's' : ''} documented)`;
+        }
+    }
+}
+
+// ADDED for Issue #129: Toggle percentage input visibility based on method
+function togglePercentageInput() {
+    const method = projectData.contingencyMethod || 'percentage';
+    const percentageGroup = document.getElementById('percentageContingencyGroup');
+    const riskBasedContent = document.getElementById('riskBasedContent');
+    
+    if (method === 'percentage') {
+        // Show percentage input, hide risk content
+        if (percentageGroup) {
+            percentageGroup.style.display = 'block';
+        }
+        if (riskBasedContent) {
+            riskBasedContent.style.display = 'none';
+        }
+        console.log('Switched to percentage-based view');
+    } else {
+        // Hide percentage input, show risk content
+        if (percentageGroup) {
+            percentageGroup.style.display = 'none';
+        }
+        if (riskBasedContent) {
+            riskBasedContent.style.display = 'block';
+        }
+        console.log('Switched to risk-based view');
+    }
+}
+
 // Summary Calculations
 function updateSummary() {
     try {
@@ -1382,7 +1474,7 @@ function updateSummary() {
         const miscTotal = calculateMiscCostsTotal();
 
         const subtotal = internalTotal + vendorTotal + toolTotal + miscTotal;
-        const contingency = subtotal * (projectData.contingencyPercentage / 100);
+        const contingency = calculateContingency(); // CHANGED for Issue #129: Use new function
         const total = subtotal + contingency;
 
         // Update resource plan cards
@@ -1397,6 +1489,9 @@ function updateSummary() {
         // Update contingency display
         const contingencyAmountEl = document.getElementById('contingencyAmount');
         if (contingencyAmountEl) contingencyAmountEl.textContent = contingency.toLocaleString();
+        
+        // ADDED for Issue #129: Update contingency method label
+        updateContingencyMethodLabel();
 
         // Update summary tab
         const summaryElements = {
@@ -1601,4 +1696,9 @@ window.initializeProjectInfoSaveButton = initializeProjectInfoSaveButton;
 window.calculateInternalResourcesTotal = calculateInternalResourcesTotal;
 window.calculateVendorCostsTotal = calculateVendorCostsTotal;
 window.calculateToolCostsTotal = calculateToolCostsTotal;
-window.calculateMiscCostsTotal = calculateMiscCostsTotal
+window.calculateMiscCostsTotal = calculateMiscCostsTotal;
+
+// ADDED for Issue #129: Export new contingency functions
+window.calculateContingency = calculateContingency;
+window.updateContingencyMethodLabel = updateContingencyMethodLabel;
+window.togglePercentageInput = togglePercentageInput;
