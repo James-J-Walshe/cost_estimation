@@ -250,17 +250,32 @@ class DOMManager {
             }
         });
 
-        // Modal form submission
-        if (this.modalForm) {
+        // ====================================================================
+        // FIX for Issue #130: Prevent duplicate form submit listener attachment
+        // Only attach the listener if it hasn't been attached already
+        // This prevents the duplicate tool cost bug where items were added twice
+        // ====================================================================
+        if (this.modalForm && !this.modalForm.hasAttribute('data-submit-listener-attached')) {
             this.modalForm.addEventListener('submit', (e) => {
                 e.preventDefault();
                 if (window.handleModalSubmit) {
                     window.handleModalSubmit();
                 }
             });
+            this.modalForm.setAttribute('data-submit-listener-attached', 'true');
+            console.log('Modal form submit listener attached by DOM Manager');
+        } else if (this.modalForm) {
+            console.log('⚠️ Modal form submit listener already attached - skipping (DOM Manager)');
         }
         
-        // Modal save button backup
+        // ====================================================================
+        // FIX for Issue #130: Remove duplicate save button listener
+        // The form submit handler already handles the save action
+        // This backup listener was causing the second submission
+        // ====================================================================
+        // REMOVED: Modal save button backup - this was causing duplicates
+        // The form submit event handler above is sufficient
+        /*
         const modalSaveBtn = document.querySelector('.modal-actions .btn-primary');
         if (modalSaveBtn) {
             modalSaveBtn.addEventListener('click', (e) => {
@@ -271,6 +286,7 @@ class DOMManager {
                 }
             });
         }
+        */
     }
 
     // Open modal with specified content
