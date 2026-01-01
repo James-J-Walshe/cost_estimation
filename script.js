@@ -114,14 +114,20 @@ function initializeBasicEventListeners() {
     addButtons.forEach(btn => {
         const element = document.getElementById(btn.id);
         if (element) {
+            // Guard to prevent duplicate listener attachment
+            if (element.hasAttribute('data-add-listener-attached')) {
+                console.log(`⚠️ Add listener already attached to ${btn.id} - skipping`);
+                return;
+            }
             element.addEventListener('click', () => {
                 openModal(btn.title, btn.type);
             });
+            element.setAttribute('data-add-listener-attached', 'true');
             console.log(`Event listener added to ${btn.id}`);
         }
     });
 
-    // Action buttons
+    // Action buttons - with guard to prevent duplicate listeners
     const actionButtons = [
         { id: 'saveBtn', action: () => saveProjectFallback() },
         { id: 'loadBtn', action: () => loadProjectFallback() },
@@ -133,7 +139,13 @@ function initializeBasicEventListeners() {
     actionButtons.forEach(({ id, action }) => {
         const element = document.getElementById(id);
         if (element) {
+            // Guard to prevent duplicate listener attachment
+            if (element.hasAttribute('data-action-listener-attached')) {
+                console.log(`⚠️ Action listener already attached to ${id} - skipping`);
+                return;
+            }
             element.addEventListener('click', action);
+            element.setAttribute('data-action-listener-attached', 'true');
             console.log(`Event listener added to ${id}`);
         }
     });
