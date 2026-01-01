@@ -195,17 +195,23 @@ class DOMManager {
             const element = document.getElementById(btn.id);
             console.log(`Looking for button ${btn.id}:`, element);
             if (element) {
+                // Guard to prevent duplicate listener attachment
+                if (element.hasAttribute('data-add-listener-attached')) {
+                    console.log(`⚠️ Add listener already attached to ${btn.id} - skipping`);
+                    return;
+                }
                 element.addEventListener('click', () => {
                     console.log(`${btn.id} button clicked`);
                     this.openModal(btn.title, btn.type);
                 });
+                element.setAttribute('data-add-listener-attached', 'true');
                 console.log(`Event listener added to ${btn.id}`);
             } else {
                 console.warn(`Button ${btn.id} not found in DOM`);
             }
         });
 
-        // Save/Load buttons
+        // Save/Load buttons - with guard to prevent duplicate listeners
         const actionButtons = [
             { id: 'saveBtn', handler: window.saveProject },
             { id: 'loadBtn', handler: window.loadProject },
@@ -218,7 +224,13 @@ class DOMManager {
             const element = document.getElementById(btn.id);
             console.log(`Looking for action button ${btn.id}:`, element);
             if (element && btn.handler) {
+                // Guard to prevent duplicate listener attachment
+                if (element.hasAttribute('data-action-listener-attached')) {
+                    console.log(`⚠️ Action listener already attached to ${btn.id} - skipping`);
+                    return;
+                }
                 element.addEventListener('click', btn.handler);
+                element.setAttribute('data-action-listener-attached', 'true');
                 console.log(`Event listener added to ${btn.id}`);
             } else if (element) {
                 console.warn(`Handler not found for button ${btn.id}`);
