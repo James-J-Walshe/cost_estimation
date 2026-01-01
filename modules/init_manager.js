@@ -251,6 +251,12 @@ class InitializationManager {
     }
 
     // NEW: Connect project menu buttons
+    // ====================================================================
+    // FIX for Issue #130: These dropdown menu buttons should NOT add 
+    // duplicate action listeners. Instead, they should just close the 
+    // dropdown and trigger a click on the existing button, OR check for
+    // existing listeners before attaching.
+    // ====================================================================
     connectProjectMenuButtons() {
         const projectMenuButtons = {
             'newProjectBtn': () => {
@@ -313,11 +319,19 @@ class InitializationManager {
             }
         };
 
-        // Connect project menu buttons
+        // Connect project menu buttons with guard to prevent duplicate listeners
         Object.entries(projectMenuButtons).forEach(([id, handler]) => {
             const button = document.querySelector(`.grid-menu-item#${id}`);
             if (button) {
+                // ====================================================================
+                // FIX: Check if dropdown listener already attached
+                // ====================================================================
+                if (button.hasAttribute('data-dropdown-listener-attached')) {
+                    console.log(`  ⚠️ Dropdown listener already attached to ${id} - skipping`);
+                    return;
+                }
                 button.addEventListener('click', handler);
+                button.setAttribute('data-dropdown-listener-attached', 'true');
                 console.log(`  - Connected: ${id}`);
             }
         });
@@ -340,11 +354,17 @@ class InitializationManager {
             }
         };
 
-        // Connect settings menu buttons
+        // Connect settings menu buttons with guard
         Object.entries(settingsMenuButtons).forEach(([id, handler]) => {
             const button = document.getElementById(id);
             if (button) {
+                // Guard to prevent duplicate listeners
+                if (button.hasAttribute('data-dropdown-listener-attached')) {
+                    console.log(`  ⚠️ Dropdown listener already attached to ${id} - skipping`);
+                    return;
+                }
                 button.addEventListener('click', handler);
+                button.setAttribute('data-dropdown-listener-attached', 'true');
                 console.log(`  - Connected: ${id}`);
             }
         });
@@ -355,44 +375,62 @@ class InitializationManager {
         // User Profile button
         const userProfileBtn = document.getElementById('userProfileBtn');
         if (userProfileBtn) {
-            userProfileBtn.addEventListener('click', () => {
-                this.closeAllDropdowns();
-                this.showUserView('profile');
-            });
-            console.log('  - Connected: userProfileBtn');
+            // Guard to prevent duplicate listeners
+            if (!userProfileBtn.hasAttribute('data-dropdown-listener-attached')) {
+                userProfileBtn.addEventListener('click', () => {
+                    this.closeAllDropdowns();
+                    this.showUserView('profile');
+                });
+                userProfileBtn.setAttribute('data-dropdown-listener-attached', 'true');
+                console.log('  - Connected: userProfileBtn');
+            } else {
+                console.log('  ⚠️ Dropdown listener already attached to userProfileBtn - skipping');
+            }
         }
 
         // Feature Toggles button
         const featureTogglesBtn = document.getElementById('featureTogglesBtn');
         if (featureTogglesBtn) {
-            featureTogglesBtn.addEventListener('click', () => {
-                this.closeAllDropdowns();
-                const currentUser = window.userManager?.getCurrentUser();
-                if (currentUser && currentUser.role === 'admin') {
-                    // Show admin UI for feature toggles
-                    if (window.featureToggleManager && typeof window.featureToggleManager.showAdminUI === 'function') {
-                        window.featureToggleManager.showAdminUI();
+            // Guard to prevent duplicate listeners
+            if (!featureTogglesBtn.hasAttribute('data-dropdown-listener-attached')) {
+                featureTogglesBtn.addEventListener('click', () => {
+                    this.closeAllDropdowns();
+                    const currentUser = window.userManager?.getCurrentUser();
+                    if (currentUser && currentUser.role === 'admin') {
+                        // Show admin UI for feature toggles
+                        if (window.featureToggleManager && typeof window.featureToggleManager.showAdminUI === 'function') {
+                            window.featureToggleManager.showAdminUI();
+                        }
+                    } else {
+                        // Show user view for feature toggles
+                        this.showUserView('features');
                     }
-                } else {
-                    // Show user view for feature toggles
-                    this.showUserView('features');
-                }
-            });
-            console.log('  - Connected: featureTogglesBtn');
+                });
+                featureTogglesBtn.setAttribute('data-dropdown-listener-attached', 'true');
+                console.log('  - Connected: featureTogglesBtn');
+            } else {
+                console.log('  ⚠️ Dropdown listener already attached to featureTogglesBtn - skipping');
+            }
         }
 
         // Logout button
         const logoutBtn = document.getElementById('logoutBtn');
         if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => {
-                this.closeAllDropdowns();
-                if (window.userManager && typeof window.userManager.logout === 'function') {
-                    window.userManager.logout();
-                } else {
-                    console.warn('Logout function not available');
-                }
-            });
-            console.log('  - Connected: logoutBtn');
+            // Guard to prevent duplicate listeners
+            if (!logoutBtn.hasAttribute('data-dropdown-listener-attached')) {
+                logoutBtn.addEventListener('click', () => {
+                    this.closeAllDropdowns();
+                    if (window.userManager && typeof window.userManager.logout === 'function') {
+                        window.userManager.logout();
+                    } else {
+                        console.warn('Logout function not available');
+                    }
+                });
+                logoutBtn.setAttribute('data-dropdown-listener-attached', 'true');
+                console.log('  - Connected: logoutBtn');
+            } else {
+                console.log('  ⚠️ Dropdown listener already attached to logoutBtn - skipping');
+            }
         }
     }
 
