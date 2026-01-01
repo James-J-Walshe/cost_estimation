@@ -211,33 +211,12 @@ class DOMManager {
             }
         });
 
-        // Save/Load buttons - with guard to prevent duplicate listeners
-        const actionButtons = [
-            { id: 'saveBtn', handler: window.saveProject },
-            { id: 'loadBtn', handler: window.loadProject },
-            { id: 'exportBtn', handler: window.exportToExcel },
-            { id: 'newProjectBtn', handler: window.newProject },
-            { id: 'downloadBtn', handler: window.downloadProject }
-        ];
-
-        actionButtons.forEach(btn => {
-            const element = document.getElementById(btn.id);
-            console.log(`Looking for action button ${btn.id}:`, element);
-            if (element && btn.handler) {
-                // Guard to prevent duplicate listener attachment
-                if (element.hasAttribute('data-action-listener-attached')) {
-                    console.log(`⚠️ Action listener already attached to ${btn.id} - skipping`);
-                    return;
-                }
-                element.addEventListener('click', btn.handler);
-                element.setAttribute('data-action-listener-attached', 'true');
-                console.log(`Event listener added to ${btn.id}`);
-            } else if (element) {
-                console.warn(`Handler not found for button ${btn.id}`);
-            } else {
-                console.warn(`Action button ${btn.id} not found in DOM`);
-            }
-        });
+        // ====================================================================
+        // FIX for Issue #130: Action buttons (Save, Load, Export, etc.) are 
+        // handled by init_manager.js dropdown menu system. Removing duplicate
+        // listeners here to prevent double save/load/export actions.
+        // ====================================================================
+        console.log('Action buttons (saveBtn, loadBtn, etc.) handled by init_manager dropdown menus');
         
         console.log('Button listener initialization complete');
     }
