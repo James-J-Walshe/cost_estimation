@@ -42,6 +42,18 @@ window.projectData = projectData;
 
 // Basic functionality fallback
 function initializeBasicFunctionality() {
+    // ====================================================================
+    // FIX for Issue #130: Prevent duplicate event listener attachment
+    // This check ensures listeners are only attached once, even if this
+    // function is called multiple times (e.g., by both dom_manager.js 
+    // and script.js via init_manager.js)
+    // ====================================================================
+    if (window._basicFunctionalityInitialized) {
+        console.log('⚠️ Basic functionality already initialized - skipping to prevent duplicate listeners');
+        return;
+    }
+    window._basicFunctionalityInitialized = true;
+    
     console.log('Initializing basic functionality...');
 
     // Initialize tab functionality
@@ -78,6 +90,16 @@ function initializeBasicFunctionality() {
 }
 
 function initializeBasicEventListeners() {
+    // ====================================================================
+    // FIX for Issue #130: Prevent duplicate event listener attachment
+    // Check if DOM Manager has already initialized these listeners
+    // ====================================================================
+    if (window._basicEventListenersInitialized) {
+        console.log('⚠️ Basic event listeners already initialized - skipping to prevent duplicates');
+        return;
+    }
+    window._basicEventListenersInitialized = true;
+    
     const addButtons = [
         { id: 'addInternalResource', type: 'internalResource', title: 'Add Internal Resource' },
         { id: 'addVendorCost', type: 'vendorCost', title: 'Add Vendor Cost' },
@@ -143,11 +165,19 @@ function initializeBasicEventListeners() {
         }
     });
 
-    if (modalForm) {
+    // ====================================================================
+    // FIX for Issue #130: Only attach form submit listener if not already attached
+    // This was the primary cause of duplicate tool cost entries
+    // ====================================================================
+    if (modalForm && !modalForm.hasAttribute('data-submit-listener-attached')) {
         modalForm.addEventListener('submit', (e) => {
             e.preventDefault();
             handleModalSubmit();
         });
+        modalForm.setAttribute('data-submit-listener-attached', 'true');
+        console.log('Modal form submit listener attached');
+    } else if (modalForm) {
+        console.log('⚠️ Modal form submit listener already attached - skipping');
     }
 
     // Project info form listeners
