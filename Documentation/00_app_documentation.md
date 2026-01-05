@@ -4,6 +4,7 @@
 - [Project Overview](#project-overview)
 - [Architecture Pattern](#architecture-pattern)
 - [Initialization Manager Pattern](#initialization-manager-pattern)
+- [Event Listener Guard Pattern](#event-listener-guard-pattern) ⭐ NEW
 - [File Structure](#file-structure)
 - [Development Guidelines](#development-guidelines)
 - [Common Patterns](#common-patterns)
@@ -12,7 +13,7 @@
   - [Merge Functionality](#merge-functionality) ⭐
   - [Rate Card Editing](#rate-card-editing) ⭐
   - [Hover Widget Navigation](#hover-widget-navigation) ⭐
-  - [Modal Close Button Fix](#modal-close-button-fix) ⭐ NEW
+  - [Modal Close Button Fix](#modal-close-button-fix) ⭐
 - [Troubleshooting](#troubleshooting)
 
 ---
@@ -32,7 +33,8 @@ A web-based ICT project estimation tool for calculating and managing project cos
 - Rate card conflict resolution ⭐
 - Inline rate card editing ⭐
 - Hover widget navigation between Zyantik applications ⭐
-- Modal close button fix for all pop-ups ⭐ NEW
+- Modal close button fix for all pop-ups ⭐
+- Event listener guard pattern to prevent duplicates ⭐ NEW
 - Data persistence via localStorage
 - Export capabilities
 
@@ -120,11 +122,12 @@ window.initManager.initialize();
    Step 12: Initialize Feature Toggle Manager
    Step 13: Initialize Currency Manager
    Step 14: Initialize Tool Costs Manager
-   Step 15: Initialize Merge Manager
-   Step 16: Initialize Edit Manager
-   Step 17: Initialize Hover Widget Navigation ⭐
-   Step 18: Initialize Modal Close Button Fix ⭐ NEW
-   Step 19: Final re-render after delay
+   Step 15: Initialize Header Dropdown Menus (handles action buttons) ⭐ UPDATED
+   Step 16: Initialize Merge Manager
+   Step 17: Initialize Edit Manager
+   Step 18: Initialize Hover Widget Navigation
+   Step 19: Initialize Modal Close Button Fix
+   Step 20: Final re-render after delay
    ```
 
 5. **Comprehensive Logging**
@@ -153,7 +156,7 @@ class InitializationManager {
             rateCardMerger: false,
             mergeManager: false,
             hoverWidget: false,
-            modalCloseFix: false          // ⭐ NEW
+            modalCloseFix: false
         };
     }
 
@@ -191,7 +194,7 @@ class InitializationManager {
 <!-- Load hover widget ⭐ -->
 <script src="hover-widget.js"></script>
 
-<!-- Load modal close fix ⭐ NEW -->
+<!-- Load modal close fix ⭐ -->
 <script src="modal_close_fix_v4.js"></script>
 
 <!-- Load initialization manager LAST -->
@@ -211,6 +214,321 @@ class InitializationManager {
 
 ---
 
+## Event Listener Guard Pattern ⭐ NEW
+
+### Overview
+
+The Event Listener Guard Pattern prevents duplicate event listeners from being attached to DOM elements. This is critical in a multi-module architecture where multiple files may attempt to attach listeners to the same buttons during initialization.
+
+**GitHub Issue:** #130  
+**Problem Solved:** Duplicate tool cost entries, triple save messages, and other duplication bugs caused by multiple event listeners firing for the same user action.
+
+### The Problem
+
+In a modular architecture, multiple files may initialize listeners for the same buttons:
+
+```
+dom_manager.js    → attaches listener to saveBtn
+script.js         → attaches listener to saveBtn  
+init_manager.js   → attaches listener to saveBtn (dropdown menu)
+
+Result: 3 listeners = 3 executions = 3 "Save successful" messages
+```
+
+❌ **ANTI-PATTERN: Multiple listeners without guards**
+
+```javascript
+// In dom_manager.js
+document.getElementById('saveBtn').addEventListener('click', saveProject);
+
+// In script.js - DUPLICATE!
+document.getElementById('saveBtn').addEventListener('click', saveProjectFallback);
+
+// In init_manager.js - ANOTHER DUPLICATE!
+document.getElementById('saveBtn').addEventListener('click', () => {
+    dataManager.saveProject();
+});
+```
+
+### The Solution
+
+✅ **CORRECT PATTERN: Data attribute guards**
+
+Use `data-*-listener-attached` attributes to mark elements that already have listeners:
+
+```javascript
+// Check before attaching
+if (element.hasAttribute('data-action-listener-attached')) {
+    console.log(`⚠️ Action listener already attached to ${id} - skipping`);
+    return;
+}
+
+// Attach listener
+element.addEventListener('click', handler);
+
+// Mark as attached
+element.setAttribute('data-action-listener-attached', 'true');
+console.log(`Event listener added to ${id}`);
+```
+
+### Implementation Details
+
+#### Guard Attribute Naming Convention
+
+| Attribute Name | Used For | Files Using It |
+|----------------|----------|----------------|
+| `data-add-listener-attached` | Add buttons (Add Resource, Add Tool Cost, etc.) | `dom_manager.js`, `script.js` |
+| `data-action-listener-attached` | Action buttons (Save, Load, Export, etc.) | `dom_manager.js`, `script.js` |
+| `data-dropdown-listener-attached` | Dropdown menu items | `init_manager.js` |
+| `data-submit-listener-attached` | Modal form submit | `dom_manager.js`, `script.js` |
+
+#### Button Responsibility Matrix
+
+**Current Architecture (Post-Fix):**
+
+| Button Type | Handled By | Other Files |
+|-------------|------------|-------------|
+| Add buttons (addInternalResource, addToolCost, etc.) | `dom_manager.js` | `script.js` skips (guard) |
+| Action buttons (saveBtn, loadBtn, exportBtn, etc.) | `init_manager.js` (dropdown menus) | `dom_manager.js` & `script.js` skip entirely |
+| Modal form submit | `dom_manager.js` | `script.js` skips (guard) |
+
+#### Code Examples
+
+**dom_manager.js - Add Button Guards:**
+
+```javascript
+initializeButtonListeners() {
+    const addButtons = [
+        { id: 'addInternalResource', type: 'internalResource', title: 'Add Internal Resource' },
+        { id: 'addVendorCost', type: 'vendorCost', title: 'Add Vendor Cost' },
+        { id: 'addToolCost', type: 'toolCost', title: 'Add Tool Cost' },
+        // ... more buttons
+    ];
+
+    addButtons.forEach(btn => {
+        const element = document.getElementById(btn.id);
+        if (element) {
+            // Guard to prevent duplicate listener attachment
+            if (element.hasAttribute('data-add-listener-attached')) {
+                console.log(`⚠️ Add listener already attached to ${btn.id} - skipping`);
+                return;
+            }
+            element.addEventListener('click', () => {
+                this.openModal(btn.title, btn.type);
+            });
+            element.setAttribute('data-add-listener-attached', 'true');
+            console.log(`Event listener added to ${btn.id}`);
+        }
+    });
+
+    // Action buttons handled by init_manager.js dropdown menus
+    console.log('Action buttons (saveBtn, loadBtn, etc.) handled by init_manager dropdown menus');
+}
+```
+
+**script.js - Matching Guards:**
+
+```javascript
+function initializeBasicEventListeners() {
+    // Add buttons with guard
+    addButtons.forEach(btn => {
+        const element = document.getElementById(btn.id);
+        if (element) {
+            if (element.hasAttribute('data-add-listener-attached')) {
+                console.log(`⚠️ Add listener already attached to ${btn.id} - skipping`);
+                return;
+            }
+            element.addEventListener('click', () => openModal(btn.title, btn.type));
+            element.setAttribute('data-add-listener-attached', 'true');
+            console.log(`Event listener added to ${btn.id}`);
+        }
+    });
+
+    // Action buttons handled by init_manager.js
+    console.log('Action buttons (saveBtn, loadBtn, etc.) handled by init_manager dropdown menus');
+}
+```
+
+**init_manager.js - Dropdown Menu Guards:**
+
+```javascript
+connectProjectMenuButtons() {
+    const projectMenuButtons = {
+        'saveBtn': () => {
+            this.closeAllDropdowns();
+            if (window.dataManager) {
+                window.dataManager.saveProject();
+            }
+        },
+        // ... more buttons
+    };
+
+    Object.entries(projectMenuButtons).forEach(([id, handler]) => {
+        const button = document.querySelector(`.grid-menu-item#${id}`);
+        if (button) {
+            // Guard to prevent duplicate dropdown listener
+            if (button.hasAttribute('data-dropdown-listener-attached')) {
+                console.log(`  ⚠️ Dropdown listener already attached to ${id} - skipping`);
+                return;
+            }
+            button.addEventListener('click', handler);
+            button.setAttribute('data-dropdown-listener-attached', 'true');
+            console.log(`  - Connected: ${id}`);
+        }
+    });
+}
+```
+
+**Modal Form Submit Guard:**
+
+```javascript
+// In dom_manager.js
+if (this.modalForm && !this.modalForm.hasAttribute('data-submit-listener-attached')) {
+    this.modalForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (window.handleModalSubmit) {
+            window.handleModalSubmit();
+        }
+    });
+    this.modalForm.setAttribute('data-submit-listener-attached', 'true');
+    console.log('Modal form submit listener attached by DOM Manager');
+} else if (this.modalForm) {
+    console.log('⚠️ Modal form submit listener already attached - skipping (DOM Manager)');
+}
+```
+
+### Console Log Patterns
+
+**Successful initialization (no duplicates):**
+```
+Looking for button addInternalResource: <button>
+Event listener added to addInternalResource
+Looking for button addToolCost: <button>
+Event listener added to addToolCost
+Action buttons (saveBtn, loadBtn, etc.) handled by init_manager dropdown menus
+Modal form submit listener attached by DOM Manager
+```
+
+**Duplicate prevention in action:**
+```
+⚠️ Add listener already attached to addInternalResource - skipping
+⚠️ Add listener already attached to addToolCost - skipping
+⚠️ Modal form submit listener already attached - skipping
+```
+
+### Debugging Duplicate Listeners
+
+**Step 1: Enable Stack Trace Monitoring**
+
+```javascript
+// Paste in console to trace duplicate calls
+const originalPush = Array.prototype.push;
+Array.prototype.push = function(...args) {
+    if (this === window.projectData.toolCosts) {
+        console.trace('🔴 Tool cost pushed! Stack trace:');
+    }
+    return originalPush.apply(this, args);
+};
+```
+
+**Step 2: Trace Function Calls**
+
+```javascript
+// Trace all calls to saveProject
+const originalSave = window.dataManager?.saveProject;
+if (window.dataManager) {
+    window.dataManager.saveProject = function() {
+        console.trace('🔴 saveProject called from:');
+        return originalSave?.call(this);
+    };
+}
+console.log('✅ Save tracing enabled - now click Save');
+```
+
+**Step 3: Analyze Stack Traces**
+
+Look for multiple sources calling the same function:
+```
+🔴 saveProject called from:
+    at window.saveProject (data_manager.js:565)   ← First call source
+    
+🔴 saveProject called from:
+    at saveBtn (init_manager.js:277)              ← Second call source (DUPLICATE!)
+```
+
+### Best Practices
+
+1. **Use Consistent Attribute Names**
+   - Prefix with `data-`
+   - Include descriptive suffix: `-listener-attached`
+   - Examples: `data-add-listener-attached`, `data-action-listener-attached`
+
+2. **Log Both Attachment and Skipping**
+   ```javascript
+   if (element.hasAttribute('data-listener-attached')) {
+       console.log(`⚠️ Listener already attached to ${id} - skipping`);  // Log skip
+       return;
+   }
+   element.addEventListener('click', handler);
+   element.setAttribute('data-listener-attached', 'true');
+   console.log(`Event listener added to ${id}`);  // Log attachment
+   ```
+
+3. **Centralize Responsibility**
+   - Decide which file "owns" each button type
+   - Other files should skip entirely, not just guard
+   - Document the responsibility matrix
+
+4. **Check Guards in Order**
+   - First file to initialize sets the attribute
+   - Subsequent files detect and skip
+   - Initialization order matters
+
+5. **Test After Changes**
+   - Add an item → should appear once
+   - Save project → should show one message
+   - Check console for duplicate warnings
+
+### Troubleshooting Event Listener Guards
+
+**Problem: Still seeing duplicate entries/messages**
+
+**Checklist:**
+1. ✅ All files using the same attribute name?
+2. ✅ Guard check happens BEFORE addEventListener?
+3. ✅ setAttribute called AFTER addEventListener?
+4. ✅ Console showing "⚠️ ... skipping" messages?
+5. ✅ Files deployed to correct locations?
+
+**Problem: Button not working at all**
+
+**Cause:** All files are skipping, none are attaching
+
+**Fix:**
+1. Check initialization order in index.html
+2. Ensure at least one file attaches without skipping
+3. Verify the "owner" file loads before others
+
+**Problem: Guards not working**
+
+**Debug:**
+```javascript
+// Check if attribute is set
+const btn = document.getElementById('saveBtn');
+console.log('Has guard?', btn.hasAttribute('data-action-listener-attached'));
+console.log('Guard value:', btn.getAttribute('data-action-listener-attached'));
+```
+
+### Files Modified for Issue #130
+
+| File | Location | Changes |
+|------|----------|---------|
+| `script.js` | root | Added guards to add buttons, removed action button listeners |
+| `dom_manager.js` | `js/` | Added guards to add buttons and modal form, removed action button listeners |
+| `init_manager.js` | `modules/` | Added guards to dropdown menu button connections |
+
+---
+
 ## File Structure
 
 ```
@@ -220,7 +538,7 @@ cost_estimation/
 ├── style.css                           # Main stylesheet
 ├── hover-widget.css                    # Hover widget styles
 ├── hover-widget.js                     # Hover widget navigation
-├── modal_close_fix_v4.js              # ⭐ Modal close button fix (NEW)
+├── modal_close_fix_v4.js              # ⭐ Modal close button fix
 ├── README.md                           # Project README
 ├── js/
 │   ├── dom_manager.js                 # DOM manipulation utilities
@@ -246,7 +564,7 @@ cost_estimation/
 
 ### File Responsibilities
 
-#### `modal_close_fix_v4.js` ⭐ NEW
+#### `modal_close_fix_v4.js` ⭐
 - **What:** Fixes inactive close button (X) in modal pop-ups
 - **Key features:**
   - Proper z-index hierarchy for close button
@@ -299,11 +617,13 @@ cost_estimation/
 - **What:** Central initialization orchestrator
 - **When to modify:** Adding new modules, changing startup sequence
 - **Key principle:** This is the ONLY file that should run initialization logic
+- **Button handling:** Owns all action buttons (Save, Load, Export) via dropdown menus ⭐ UPDATED
 - **Global export:** `window.initManager`
 
 #### `script.js`
 - **What:** Core application functions and business logic
 - **Key principle:** NO DOMContentLoaded listener - only function definitions
+- **Button handling:** Add buttons only (with guards), action buttons delegated to init_manager ⭐ UPDATED
 - **Must export to window:**
   - `window.projectData`
   - `window.updateSummary`
@@ -316,11 +636,17 @@ cost_estimation/
   - `window.initializeProjectInfoSaveButton`
   - All calculation functions
 
+#### `js/dom_manager.js`
+- **What:** DOM manipulation and event listener management
+- **Button handling:** Add buttons (primary owner), modal form submit ⭐ UPDATED
+- **Does NOT handle:** Action buttons (Save, Load, Export) - delegated to init_manager ⭐ UPDATED
+- **Key pattern:** Uses guard attributes to prevent duplicates
+
 ---
 
 ## Feature Documentation
 
-### Modal Close Button Fix ⭐ NEW
+### Modal Close Button Fix ⭐
 
 #### Overview
 
@@ -1071,7 +1397,51 @@ The Currency Manager module provides comprehensive currency management including
 
 ## Troubleshooting
 
-### Problem: Modal close button (X) inactive ⭐ NEW
+### Problem: Duplicate entries when adding items (e.g., Tool Costs appear twice) ⭐ NEW
+
+**GitHub Issue:** #130
+
+**Symptoms:**
+- Adding one tool cost creates two identical entries
+- Save button shows multiple success messages
+- Console may show multiple "Modal submit" logs
+
+**Cause:** Multiple event listeners attached to the same button across different modules.
+
+**Solution:** Implement Event Listener Guard Pattern (see [Event Listener Guard Pattern](#event-listener-guard-pattern))
+
+**Quick Fix:**
+1. Update `script.js`, `dom_manager.js`, and `init_manager.js` with guard patterns
+2. Ensure action buttons only handled by `init_manager.js`
+3. Clear browser cache and hard refresh
+
+**Verification:**
+```javascript
+// Console should show guards working:
+⚠️ Add listener already attached to addToolCost - skipping
+⚠️ Action listener already attached to saveBtn - skipping
+```
+
+---
+
+### Problem: Triple/Double save success messages ⭐ NEW
+
+**Cause:** Multiple listeners attached to saveBtn across modules
+
+**Solution:**
+1. `dom_manager.js` should NOT attach action button listeners
+2. `script.js` should NOT attach action button listeners  
+3. Only `init_manager.js` handles action buttons via dropdown menus
+
+**Code Pattern:**
+```javascript
+// In dom_manager.js and script.js - replace action button code with:
+console.log('Action buttons (saveBtn, loadBtn, etc.) handled by init_manager dropdown menus');
+```
+
+---
+
+### Problem: Modal close button (X) inactive
 
 **Symptoms:**
 - Close button (×) visible but doesn't respond to clicks
@@ -1104,7 +1474,7 @@ The Currency Manager module provides comprehensive currency management including
 
 ---
 
-### Problem: "Add" buttons inactive after fixing close button ⭐ NEW
+### Problem: "Add" buttons inactive after fixing close button
 
 **Cause:** Wrong version of fix (V2 or V3)
 
@@ -1219,7 +1589,12 @@ When creating a new module, ensure:
 - [ ] Data persistence tested (for data modifications)
 - [ ] **CSS loaded if module has styling** ⭐
 - [ ] **Responsive behavior tested** ⭐
-- [ ] **Modal interactions tested** ⭐ NEW
+- [ ] **Event listeners use guard pattern** ⭐ NEW
+  - [ ] Check for existing `data-*-listener-attached` attribute
+  - [ ] Set attribute after attaching listener
+  - [ ] Log both attachment and skipping
+  - [ ] Document which file "owns" each button
+- [ ] **Modal interactions tested** ⭐
   - [ ] Modal opens correctly
   - [ ] Close button (X) functional
   - [ ] Cancel button functional
@@ -1227,12 +1602,23 @@ When creating a new module, ensure:
   - [ ] Click outside closes modal
   - [ ] Modal can reopen after closing
   - [ ] No interference with other modals
+  - [ ] No duplicate entries on submit ⭐ NEW
 
 ---
 
 ## Version History
 
-### v3.3 - Modal Close Button Fix (Current) ⭐ NEW
+### v3.4 - Event Listener Guard Pattern (Current) ⭐ NEW
+- ✅ Fixed duplicate tool cost entries (Issue #130)
+- ✅ Fixed triple save success messages
+- ✅ Implemented guard pattern across all button listeners
+- ✅ Centralized action button handling in init_manager.js
+- ✅ Added `data-*-listener-attached` attribute system
+- ✅ Documented button responsibility matrix
+- ✅ Added debugging tools for duplicate detection
+- ✅ Updated script.js, dom_manager.js, init_manager.js
+
+### v3.3 - Modal Close Button Fix
 - ✅ Fixed inactive close button (X) in all modals
 - ✅ Added `modal_close_fix_v4.js` for proper event handling
 - ✅ Enhanced CSS with z-index hierarchy
@@ -1313,30 +1699,35 @@ When asking for help or suggesting improvements:
 3. **Reference this documentation** so context is clear
 4. **Describe which module you're working on**
 5. **Note any deviations from these patterns**
-6. **For merge issues, include:**
+6. **For duplicate entry issues, include:** ⭐ NEW
+   - Stack traces from duplicate detection code
+   - Console logs showing listener attachment
+   - Which files are attaching listeners
+   - Guard pattern implementation status
+7. **For merge issues, include:**
    - File structure of both master and specialist files
    - Console logs from merge process
    - Specific error messages
    - Step where merge failed
-7. **For rate card issues, include:**
+8. **For rate card issues, include:**
    - Rate card data structure
    - Validation error messages
    - Edit operation attempted
    - Console logs during edit
-8. **For editing issues, include:**
+9. **For editing issues, include:**
    - Item type being edited (rate-card, internal-resource, etc.)
    - Data values before and after edit
    - Validation error messages
    - Whether changes persisted
    - Console logs during edit operation
-9. **For hover widget issues, include:** ⭐
-   - Browser and version
-   - Screen size/resolution
-   - Console logs and errors
-   - Network tab showing file loads
-   - Screenshots of visual issues
-   - Steps to reproduce
-10. **For modal issues, include:** ⭐ NEW
+10. **For hover widget issues, include:** ⭐
+    - Browser and version
+    - Screen size/resolution
+    - Console logs and errors
+    - Network tab showing file loads
+    - Screenshots of visual issues
+    - Steps to reproduce
+11. **For modal issues, include:** ⭐
     - Which modal is affected (Add Resource, Settings, etc.)
     - Whether X button visible but inactive
     - Whether Cancel button works
@@ -1351,8 +1742,8 @@ This ensures efficient problem-solving and maintains architectural consistency.
 
 ---
 
-**Last Updated:** December 2024  
+**Last Updated:** January 2025  
 **Maintained By:** Project Development Team  
-**Architecture Pattern:** Centralized Initialization Manager  
-**Latest Version:** v3.3 with Modal Close Button Fix  
-**Latest Feature:** Modal Close Button Fix - All pop-ups now properly closeable
+**Architecture Pattern:** Centralized Initialization Manager with Event Listener Guards  
+**Latest Version:** v3.4 with Event Listener Guard Pattern  
+**Latest Feature:** Event Listener Guard Pattern - Prevents duplicate entries and messages (Issue #130)
