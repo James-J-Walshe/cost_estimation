@@ -1,4 +1,5 @@
 // Application State
+// Issue #134: addInternalResource now handled by Multi Resource Manager
 let projectData = {
     projectInfo: {
         projectName: '',
@@ -100,8 +101,12 @@ function initializeBasicEventListeners() {
     }
     window._basicEventListenersInitialized = true;
     
+    // ====================================================================
+    // Issue #134: addInternalResource is now handled by Multi Resource Manager
+    // Removed from this array to prevent duplicate listeners
+    // ====================================================================
     const addButtons = [
-        { id: 'addInternalResource', type: 'internalResource', title: 'Add Internal Resource' },
+        // { id: 'addInternalResource', type: 'internalResource', title: 'Add Internal Resource' }, // Issue #134: Handled by Multi Resource Manager
         { id: 'addVendorCost', type: 'vendorCost', title: 'Add Vendor Cost' },
         { id: 'addToolCost', type: 'toolCost', title: 'Add Tool Cost' },
         { id: 'addMiscCost', type: 'miscCost', title: 'Add Miscellaneous Cost' },
@@ -126,6 +131,9 @@ function initializeBasicEventListeners() {
             console.log(`Event listener added to ${btn.id}`);
         }
     });
+
+    // Issue #134: Log that addInternalResource is handled by Multi Resource Manager
+    console.log('addInternalResource handled by Multi Resource Manager (Issue #134)');
 
     // ====================================================================
     // FIX for Issue #130: Action buttons (Save, Load, Export, etc.) are 
