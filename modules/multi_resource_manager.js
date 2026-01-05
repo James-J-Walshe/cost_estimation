@@ -98,6 +98,18 @@ class MultiResourceManager {
         // Set form type for identification
         modalForm.setAttribute('data-type', 'multiResource');
 
+        // Hide the standard modal action buttons (Save/Cancel at bottom)
+        const standardModalActions = modalForm.querySelector('.modal-actions:not(.multi-resource-actions)');
+        if (standardModalActions) {
+            standardModalActions.style.display = 'none';
+        }
+        
+        // Also try to hide by ID if they exist
+        const cancelModal = document.getElementById('cancelModal');
+        const saveModal = modalForm.querySelector('button[type="submit"]');
+        if (cancelModal) cancelModal.style.display = 'none';
+        if (saveModal) saveModal.style.display = 'none';
+
         // Attach event listeners for this modal instance
         this.attachModalEventListeners();
 
@@ -121,8 +133,8 @@ class MultiResourceManager {
                         Please add rate cards in Settings before adding resources.
                     </div>
                 </div>
-                <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
-                    <button type="button" class="btn btn-secondary" id="multiResourceClose">Close</button>
+                <div class="multi-resource-actions" style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+                    <button type="button" class="btn btn-secondary" id="multiResourceClose" style="background-color: #6b7280; color: white; padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer;">Close</button>
                 </div>
             `;
         }
@@ -140,16 +152,16 @@ class MultiResourceManager {
                     ${this.generateRoleDropdown(1)}
                 </div>
                 
-                <div style="margin-top: 1rem;">
-                    <button type="button" class="btn btn-secondary" id="addAnotherResource" disabled>
-                        <span style="margin-right: 0.5rem;">+</span> Add Resource
+                <div id="addAnotherContainer" style="margin-top: 1rem;">
+                    <button type="button" class="btn btn-outline" id="addAnotherResource" disabled style="background-color: transparent; color: #6366f1; padding: 0.5rem 1rem; border: 1px solid #6366f1; border-radius: 6px; cursor: pointer; opacity: 0.5;">
+                        + Add Another Role
                     </button>
                 </div>
             </div>
             
-            <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
-                <button type="button" class="btn btn-primary" id="multiResourceSave">Save</button>
-                <button type="button" class="btn btn-secondary" id="multiResourceClose">Close</button>
+            <div class="multi-resource-actions" style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+                <button type="button" id="multiResourceClose" style="background-color: #6b7280; color: white; padding: 0.5rem 1.25rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">Close</button>
+                <button type="button" id="multiResourceSave" style="background-color: #6366f1; color: white; padding: 0.5rem 1.25rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">Save</button>
             </div>
         `;
     }
@@ -244,8 +256,10 @@ class MultiResourceManager {
             }
         });
 
-        // Enable/disable the Add Resource button
+        // Enable/disable the Add Resource button and update styling
         addAnotherBtn.disabled = !allSelected;
+        addAnotherBtn.style.opacity = allSelected ? '1' : '0.5';
+        addAnotherBtn.style.cursor = allSelected ? 'pointer' : 'not-allowed';
         
         console.log(`Dropdown change - All selected: ${allSelected}`);
     }
@@ -377,8 +391,23 @@ class MultiResourceManager {
      */
     closeModal() {
         const modal = document.getElementById('modal');
+        const modalForm = document.getElementById('modalForm');
+        
         if (modal) {
             modal.style.display = 'none';
+        }
+        
+        // Restore the standard modal action buttons for next use
+        if (modalForm) {
+            const standardModalActions = modalForm.querySelector('.modal-actions');
+            if (standardModalActions) {
+                standardModalActions.style.display = '';
+            }
+            
+            const cancelModal = document.getElementById('cancelModal');
+            const saveModal = modalForm.querySelector('button[type="submit"]');
+            if (cancelModal) cancelModal.style.display = '';
+            if (saveModal) saveModal.style.display = '';
         }
         
         // Reset state
