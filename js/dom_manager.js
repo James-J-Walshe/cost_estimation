@@ -300,8 +300,45 @@ class DOMManager {
             this.modalFields.innerHTML = this.getModalFields(type);
             this.modal.style.display = 'block';
             this.modalForm.setAttribute('data-type', type);
+            
+            // Handle vendor cost modal - hide standard buttons and attach close handler
+            if (type === 'vendorCost') {
+                // Hide standard modal buttons
+                const standardModalActions = this.modalForm.querySelector('.modal-actions:not(.vendor-cost-actions)');
+                if (standardModalActions) {
+                    standardModalActions.style.display = 'none';
+                }
+                const cancelModal = document.getElementById('cancelModal');
+                const saveModal = this.modalForm.querySelector('button[type="submit"]:not(#vendorCostSave)');
+                if (cancelModal) cancelModal.style.display = 'none';
+                if (saveModal) saveModal.style.display = 'none';
+                
+                // Attach close button handler
+                const closeBtn = document.getElementById('vendorCostClose');
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', () => {
+                        this.modal.style.display = 'none';
+                        // Restore standard buttons for next modal
+                        this.restoreStandardModalButtons();
+                    });
+                }
+            }
         } catch (error) {
             console.error('Error opening modal:', error);
+        }
+    }
+    
+    // Helper function to restore standard modal buttons
+    restoreStandardModalButtons() {
+        if (this.modalForm) {
+            const standardModalActions = this.modalForm.querySelector('.modal-actions');
+            if (standardModalActions) {
+                standardModalActions.style.display = '';
+            }
+            const cancelModal = document.getElementById('cancelModal');
+            const saveModal = this.modalForm.querySelector('button[type="submit"]');
+            if (cancelModal) cancelModal.style.display = '';
+            if (saveModal) saveModal.style.display = '';
         }
     }
 
@@ -338,39 +375,33 @@ class DOMManager {
                 </div>
             `,
             vendorCost: `
-                <div class="form-group">
-                    <label>Vendor:</label>
-                    <input type="text" name="vendor" class="form-control" required>
+                <div class="vendor-cost-container">
+                    <p style="margin-bottom: 1rem; color: #6b7280; font-size: 0.9rem;">
+                        Enter vendor details. You can add monthly cost allocations after saving.
+                    </p>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Vendor Name:</label>
+                        <input type="text" name="vendor" class="form-control" required style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Description:</label>
+                        <input type="text" name="description" class="form-control" required style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Category:</label>
+                        <select name="category" class="form-control" required style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;">
+                            <option value="">-- Select Category --</option>
+                            <option value="Implementation">Implementation</option>
+                            <option value="Consulting">Consulting</option>
+                            <option value="Training">Training</option>
+                            <option value="Support">Support</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Description:</label>
-                    <input type="text" name="description" class="form-control" required>
-                </div>
-                <div class="form-group">
-                    <label>Category:</label>
-                    <select name="category" class="form-control" required>
-                        <option value="Implementation">Implementation</option>
-                        <option value="Consulting">Consulting</option>
-                        <option value="Training">Training</option>
-                        <option value="Support">Support</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>${months[0]} Cost:</label>
-                    <input type="number" name="month1Cost" class="form-control" min="0" step="0.01" value="0">
-                </div>
-                <div class="form-group">
-                    <label>${months[1]} Cost:</label>
-                    <input type="number" name="month2Cost" class="form-control" min="0" step="0.01" value="0">
-                </div>
-                <div class="form-group">
-                    <label>${months[2]} Cost:</label>
-                    <input type="number" name="month3Cost" class="form-control" min="0" step="0.01" value="0">
-                </div>
-                <div class="form-group">
-                    <label>${months[3]} Cost:</label>
-                    <input type="number" name="month4Cost" class="form-control" min="0" step="0.01" value="0">
+                <div class="vendor-cost-actions" style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+                    <button type="button" id="vendorCostClose" style="background-color: #6b7280; color: white; padding: 0.5rem 1.25rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">Close</button>
+                    <button type="submit" id="vendorCostSave" style="background-color: #6366f1; color: white; padding: 0.5rem 1.25rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">Save</button>
                 </div>
             `,
             toolCost: `
