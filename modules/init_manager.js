@@ -691,10 +691,10 @@ class InitializationManager {
                 console.log('ℹ Multi Resource Manager not available');
             }
 
-            // Step 20: Initialize Analytics Manager (add after Currency Manager)
-            if (this.modules.analyticsManager && typeof window.analyticsManager.initialize === 'function') {
-                window.analyticsManager.initialize();
-                console.log('✓ Step XX: Analytics Manager initialized');
+            // Step 20: Initialize Analytics Manager
+            if (this.modules.analyticsManager && typeof window.analyticsManager.checkConsent === 'function') {
+                window.analyticsManager.checkConsent();
+                console.log('✓ Step XX: Analytics consent checked');
             }
                         
             // Step 21: Re-render after short delay for loaded data
