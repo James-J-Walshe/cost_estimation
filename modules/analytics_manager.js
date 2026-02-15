@@ -8,7 +8,7 @@ class AnalyticsManager {
         // =============================================
         // CONFIGURATION - UPDATE THIS VALUE
         // =============================================
-        this.measurementId = 'G-XXXXXXXXXX';  // ← Replace with your GA4 Measurement ID
+        this.measurementId = 'G-2KD38HBZB2';  // ← Replace with your GA4 Measurement ID
         
         this.initialized = false;
         this.debugMode = false; // Set to true during development
