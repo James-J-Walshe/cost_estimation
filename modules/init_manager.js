@@ -19,7 +19,8 @@ class InitializationManager {
             featureToggleManager: false,
             toolCostsManager: false,
             mergeManager: false,
-            multiResourceManager: false  // Issue #134: Multi Resource Manager
+            multiResourceManager: false,  // Issue #134: Multi Resource Manager
+            analyticsManager: false
         };
     }
 
@@ -76,6 +77,10 @@ class InitializationManager {
         
         // Check for DOM manager
         this.modules.domManager = !!(window.domManager || window.DOMManager);
+
+        // Check for Analytics Manager
+        this.modules.analyticsManager = !!(window.analyticsManager || window.AnalyticsManager);
+    
         
         // Check for table fixes
         this.modules.tableFixes = !!(window.tableFixes || window.TableFixes);
@@ -685,8 +690,14 @@ class InitializationManager {
             } else {
                 console.log('ℹ Multi Resource Manager not available');
             }
-            
-            // Step 20: Re-render after short delay for loaded data
+
+            // Step 20: Initialize Analytics Manager (add after Currency Manager)
+            if (this.modules.analyticsManager && typeof window.analyticsManager.initialize === 'function') {
+                window.analyticsManager.initialize();
+                console.log('✓ Step XX: Analytics Manager initialized');
+            }
+                        
+            // Step 21: Re-render after short delay for loaded data
             setTimeout(() => {
                 if (this.modules.tableRenderer) {
                     if (window.TableRenderer && typeof window.TableRenderer.renderAllTables === 'function') {
