@@ -1,39 +1,84 @@
 // modules/analytics_manager.js
-// Google Analytics 4 Integration Module
+// Google Analytics 4 Integration Module with GDPR Consent Management
 // Follows the Initialization Manager Pattern
 // Version: 1.0.0
+// 
+// SETUP INSTRUCTIONS:
+// 1. Replace 'G-XXXXXXXXXX' with your GA4 Measurement ID
+// 2. Add this script to index.html BEFORE init_manager.js
+// 3. Register in init_manager.js (see documentation below)
+//
+// INIT_MANAGER.JS REGISTRATION:
+// 
+// In constructor(), add to modules object:
+//     analyticsManager: false  // Don't forget comma on previous line!
+//
+// In checkModules(), add:
+//     this.modules.analyticsManager = !!(window.analyticsManager || window.AnalyticsManager);
+//
+// In initialize(), add after other module initializations:
+//     if (this.modules.analyticsManager && typeof window.analyticsManager.initialize === 'function') {
+//         window.analyticsManager.initialize();
+//         console.log('✓ Analytics Manager initialized');
+//     }
+//
+// ============================================================================
 
 class AnalyticsManager {
     constructor() {
         // =============================================
         // CONFIGURATION - UPDATE THIS VALUE
         // =============================================
-        this.measurementId = 'G-2KD38HBZB2';  // ← Replace with your GA4 Measurement ID
+        this.measurementId = 'G-XXXXXXXXXX';  // ← Replace with your GA4 Measurement ID
         
+        // Module state
         this.initialized = false;
-        this.debugMode = false; // Set to true during development
-        this.consentRequired = true; // Set to false to skip consent check
+        this.debugMode = false;
+        
+        // Consent settings
+        this.consentKey = 'zyantik_analytics_consent';
+        this.consentTimestampKey = 'zyantik_analytics_consent_timestamp';
         
         console.log('📊 Analytics Manager loaded');
     }
 
     // ========================================
-    // INITIALIZATION
+    // MAIN INITIALIZATION
     // ========================================
     
     /**
-     * Initialize GA4 - called by init_manager.js
-     * If consent is required, use checkConsent() instead
+     * Main entry point - called by init_manager.js
+     * Checks consent status and initializes accordingly
      */
     initialize() {
-        if (this.initialized) {
-            console.log('📊 Analytics Manager already initialized');
-            return;
+        console.log('📊 Analytics Manager initializing...');
+        
+        // Inject consent banner styles
+        this.injectStyles();
+        
+        // Check consent status
+        const consentStatus = this.getConsentStatus();
+        
+        if (consentStatus === null) {
+            // No consent recorded - show banner
+            console.log('📊 No consent recorded - showing banner');
+            this.showConsentBanner();
+        } else if (consentStatus === 'accepted') {
+            // User has consented - initialize GA4
+            console.log('📊 Consent previously accepted - initializing GA4');
+            this.initializeGA4();
+        } else {
+            // User declined - don't initialize
+            console.log('📊 Consent previously declined - analytics disabled');
         }
+    }
 
-        // Don't initialize if consent is required but not given
-        if (this.consentRequired && !this.hasConsent()) {
-            console.log('📊 Analytics initialization skipped - awaiting consent');
+    /**
+     * Initialize Google Analytics 4
+     */
+    initializeGA4() {
+        if (this.initialized) {
+            console.log('📊 GA4 already initialized');
             return;
         }
 
@@ -49,22 +94,23 @@ class AnalyticsManager {
                 window.dataLayer.push(arguments);
             };
             
-            // Initialize GA4
+            // Initialize GA4 with privacy settings
             window.gtag('js', new Date());
             window.gtag('config', this.measurementId, {
                 'debug_mode': this.debugMode,
                 'send_page_view': true,
-                'anonymize_ip': true  // Privacy enhancement
+                'anonymize_ip': true,
+                'cookie_flags': 'SameSite=None;Secure'
             });
 
             // Set up automatic event tracking
             this.setupEventTracking();
             
             this.initialized = true;
-            console.log('✓ Analytics Manager initialized with ID:', this.measurementId);
+            console.log('✓ GA4 initialized with Measurement ID:', this.measurementId);
             
         } catch (error) {
-            console.error('❌ Analytics Manager initialization failed:', error);
+            console.error('❌ GA4 initialization failed:', error);
         }
     }
 
@@ -72,29 +118,16 @@ class AnalyticsManager {
      * Dynamically load the GA4 script
      */
     loadGA4Script() {
+        // Check if already loaded
+        if (document.querySelector(`script[src*="googletagmanager.com/gtag/js?id=${this.measurementId}"]`)) {
+            console.log('📊 GA4 script already loaded');
+            return;
+        }
+
         const script = document.createElement('script');
         script.async = true;
         script.src = `https://www.googletagmanager.com/gtag/js?id=${this.measurementId}`;
         document.head.appendChild(script);
-    }
-
-    /**
-     * Set up automatic event tracking for common actions
-     */
-    setupEventTracking() {
-        // Track tab changes
-        this.setupTabTracking();
-        
-        // Track button clicks (add resources, export, etc.)
-        this.setupButtonTracking();
-        
-        // Track project actions
-        this.setupProjectTracking();
-        
-        // Track session engagement
-        this.setupEngagementTracking();
-        
-        console.log('📊 Event tracking configured');
     }
 
     // ========================================
@@ -102,221 +135,458 @@ class AnalyticsManager {
     // ========================================
     
     /**
-     * Check if user has given consent
-     * @returns {boolean}
+     * Get current consent status
+     * @returns {string|null} 'accepted', 'declined', or null
      */
-    hasConsent() {
-        return localStorage.getItem('zyantik_analytics_consent') === 'true';
+    getConsentStatus() {
+        return localStorage.getItem(this.consentKey);
     }
 
     /**
      * Set consent status
-     * @param {boolean} consent - Whether user consents to analytics
+     * @param {string} status - 'accepted' or 'declined'
      */
-    setConsent(consent) {
-        localStorage.setItem('zyantik_analytics_consent', consent ? 'true' : 'false');
-        
-        if (consent && !this.initialized) {
-            this.initialize();
-        }
+    setConsentStatus(status) {
+        localStorage.setItem(this.consentKey, status);
+        localStorage.setItem(this.consentTimestampKey, new Date().toISOString());
     }
 
     /**
-     * Check consent and show banner if needed
-     * Called by init_manager.js instead of initialize() when consent is required
+     * Check if user has given consent
+     * @returns {boolean}
      */
-    checkConsent() {
-        const consentStatus = localStorage.getItem('zyantik_analytics_consent');
-        
-        if (consentStatus === null) {
-            // No consent recorded - show banner
-            this.showConsentBanner();
-        } else if (consentStatus === 'true') {
-            // User has consented - initialize
-            this.initialize();
-        }
-        // If declined ('false'), don't initialize analytics
+    hasConsent() {
+        return this.getConsentStatus() === 'accepted';
     }
 
     /**
-     * Show the cookie consent banner
+     * Handle consent acceptance
+     */
+    acceptConsent() {
+        this.setConsentStatus('accepted');
+        this.hideConsentBanner();
+        this.initializeGA4();
+        
+        // Track that consent was given (first event)
+        setTimeout(() => {
+            this.trackEvent('consent', 'granted', 'analytics');
+        }, 500);
+        
+        console.log('📊 Consent accepted - analytics enabled');
+    }
+
+    /**
+     * Handle consent decline
+     */
+    declineConsent() {
+        this.setConsentStatus('declined');
+        this.hideConsentBanner();
+        console.log('📊 Consent declined - analytics disabled');
+    }
+
+    /**
+     * Reset consent (for testing or settings page)
+     */
+    resetConsent() {
+        localStorage.removeItem(this.consentKey);
+        localStorage.removeItem(this.consentTimestampKey);
+        this.initialized = false;
+        console.log('📊 Consent reset - will show banner on next page load');
+    }
+
+    /**
+     * Show consent banner
      */
     showConsentBanner() {
-        // Check if banner already exists
-        if (document.getElementById('cookieConsent')) {
-            document.getElementById('cookieConsent').style.display = 'block';
-            this.setupConsentListeners();
+        // Remove existing banner if present
+        const existingBanner = document.getElementById('analyticsConsentBanner');
+        if (existingBanner) {
+            existingBanner.remove();
+        }
+
+        // Create banner element
+        const banner = document.createElement('div');
+        banner.id = 'analyticsConsentBanner';
+        banner.className = 'analytics-consent-banner';
+        banner.innerHTML = `
+            <div class="consent-container">
+                <div class="consent-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
+                        <path d="M12 16v-4M12 8h.01"/>
+                    </svg>
+                </div>
+                <div class="consent-content">
+                    <div class="consent-title">Analytics & Cookies</div>
+                    <div class="consent-text">
+                        We use Google Analytics to understand how you use this tool and improve your experience. 
+                        This includes anonymous usage data like pages visited and features used. 
+                        No personal information is collected.
+                    </div>
+                </div>
+                <div class="consent-actions">
+                    <button id="consentDeclineBtn" class="consent-btn consent-btn-secondary">
+                        Decline
+                    </button>
+                    <button id="consentAcceptBtn" class="consent-btn consent-btn-primary">
+                        Accept
+                    </button>
+                </div>
+                <button id="consentCloseBtn" class="consent-close" aria-label="Close">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        `;
+
+        // Add to page
+        document.body.appendChild(banner);
+
+        // Set up event listeners
+        this.setupConsentListeners();
+
+        // Animate in
+        requestAnimationFrame(() => {
+            banner.classList.add('visible');
+        });
+    }
+
+    /**
+     * Hide consent banner
+     */
+    hideConsentBanner() {
+        const banner = document.getElementById('analyticsConsentBanner');
+        if (banner) {
+            banner.classList.remove('visible');
+            banner.classList.add('hiding');
+            
+            // Remove after animation
+            setTimeout(() => {
+                banner.remove();
+            }, 300);
+        }
+    }
+
+    /**
+     * Set up consent banner event listeners
+     */
+    setupConsentListeners() {
+        const acceptBtn = document.getElementById('consentAcceptBtn');
+        const declineBtn = document.getElementById('consentDeclineBtn');
+        const closeBtn = document.getElementById('consentCloseBtn');
+
+        if (acceptBtn) {
+            acceptBtn.addEventListener('click', () => this.acceptConsent());
+        }
+
+        if (declineBtn) {
+            declineBtn.addEventListener('click', () => this.declineConsent());
+        }
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this.declineConsent());
+        }
+
+        // Close on Escape key
+        const escapeHandler = (e) => {
+            if (e.key === 'Escape') {
+                const banner = document.getElementById('analyticsConsentBanner');
+                if (banner && banner.classList.contains('visible')) {
+                    this.declineConsent();
+                    document.removeEventListener('keydown', escapeHandler);
+                }
+            }
+        };
+        document.addEventListener('keydown', escapeHandler);
+    }
+
+    /**
+     * Inject consent banner and tracking styles
+     */
+    injectStyles() {
+        if (document.getElementById('analyticsManagerStyles')) {
             return;
         }
 
-        // Create banner dynamically
-        const banner = document.createElement('div');
-        banner.id = 'cookieConsent';
-        banner.className = 'cookie-consent';
-        banner.innerHTML = `
-            <div class="cookie-content">
-                <p>🍪 We use analytics to understand how you use this tool and improve your experience. No personal data is collected.</p>
-                <div class="cookie-buttons">
-                    <button id="acceptCookies" class="btn btn-primary">Accept</button>
-                    <button id="declineCookies" class="btn btn-secondary">Decline</button>
-                </div>
-            </div>
-        `;
-        
-        // Add styles if not already present
-        this.injectConsentStyles();
-        
-        document.body.appendChild(banner);
-        this.setupConsentListeners();
-    }
-
-    /**
-     * Set up consent button listeners
-     */
-    setupConsentListeners() {
-        const acceptBtn = document.getElementById('acceptCookies');
-        const declineBtn = document.getElementById('declineCookies');
-        const banner = document.getElementById('cookieConsent');
-
-        if (acceptBtn && !acceptBtn.hasAttribute('data-listener-attached')) {
-            acceptBtn.setAttribute('data-listener-attached', 'true');
-            acceptBtn.addEventListener('click', () => {
-                this.setConsent(true);
-                if (banner) banner.style.display = 'none';
-                console.log('📊 Analytics consent accepted');
-            });
-        }
-
-        if (declineBtn && !declineBtn.hasAttribute('data-listener-attached')) {
-            declineBtn.setAttribute('data-listener-attached', 'true');
-            declineBtn.addEventListener('click', () => {
-                this.setConsent(false);
-                if (banner) banner.style.display = 'none';
-                console.log('📊 Analytics consent declined');
-            });
-        }
-    }
-
-    /**
-     * Inject consent banner styles
-     */
-    injectConsentStyles() {
-        if (document.getElementById('cookieConsentStyles')) return;
-
         const styles = document.createElement('style');
-        styles.id = 'cookieConsentStyles';
+        styles.id = 'analyticsManagerStyles';
         styles.textContent = `
-            .cookie-consent {
+            /* ================================================
+               ANALYTICS CONSENT BANNER STYLES
+               Matches Zyantik dark navy theme
+               ================================================ */
+            
+            .analytics-consent-banner {
                 position: fixed;
                 bottom: 0;
                 left: 0;
                 right: 0;
-                background: #1a1a2e;
-                color: white;
-                padding: 1rem 2rem;
-                z-index: 10000;
-                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+                z-index: 99999;
+                transform: translateY(100%);
+                transition: transform 0.3s ease-out;
             }
-            .cookie-content {
-                max-width: 1200px;
-                margin: 0 auto;
+
+            .analytics-consent-banner.visible {
+                transform: translateY(0);
+            }
+
+            .analytics-consent-banner.hiding {
+                transform: translateY(100%);
+            }
+
+            .consent-container {
+                background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+                color: #ffffff;
+                padding: 1.25rem 1.5rem;
                 display: flex;
                 align-items: center;
-                justify-content: space-between;
                 gap: 1rem;
-                flex-wrap: wrap;
+                max-width: 100%;
+                box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                position: relative;
             }
-            .cookie-content p {
-                margin: 0;
-                flex: 1;
-                min-width: 200px;
-            }
-            .cookie-buttons {
+
+            .consent-icon {
+                flex-shrink: 0;
+                width: 40px;
+                height: 40px;
+                background: rgba(74, 144, 226, 0.2);
+                border-radius: 50%;
                 display: flex;
-                gap: 0.5rem;
+                align-items: center;
+                justify-content: center;
+                color: #4a90e2;
             }
-            @media (max-width: 600px) {
-                .cookie-consent {
-                    padding: 1rem;
-                }
-                .cookie-content {
+
+            .consent-content {
+                flex: 1;
+                min-width: 0;
+            }
+
+            .consent-title {
+                font-weight: 600;
+                font-size: 1rem;
+                margin-bottom: 0.25rem;
+                color: #ffffff;
+            }
+
+            .consent-text {
+                font-size: 0.875rem;
+                color: rgba(255, 255, 255, 0.8);
+                line-height: 1.4;
+            }
+
+            .consent-actions {
+                display: flex;
+                gap: 0.75rem;
+                flex-shrink: 0;
+            }
+
+            .consent-btn {
+                padding: 0.625rem 1.25rem;
+                border-radius: 6px;
+                font-size: 0.875rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                border: none;
+                white-space: nowrap;
+                font-family: inherit;
+            }
+
+            .consent-btn:focus {
+                outline: 2px solid #4a90e2;
+                outline-offset: 2px;
+            }
+
+            .consent-btn-primary {
+                background: #4a90e2;
+                color: #ffffff;
+            }
+
+            .consent-btn-primary:hover {
+                background: #357abd;
+                transform: translateY(-1px);
+            }
+
+            .consent-btn-secondary {
+                background: rgba(255, 255, 255, 0.1);
+                color: rgba(255, 255, 255, 0.9);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+
+            .consent-btn-secondary:hover {
+                background: rgba(255, 255, 255, 0.15);
+            }
+
+            .consent-close {
+                position: absolute;
+                top: 0.75rem;
+                right: 0.75rem;
+                width: 28px;
+                height: 28px;
+                background: rgba(255, 255, 255, 0.1);
+                border: none;
+                border-radius: 50%;
+                color: rgba(255, 255, 255, 0.6);
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s ease;
+                padding: 0;
+            }
+
+            .consent-close:hover {
+                background: rgba(255, 255, 255, 0.2);
+                color: #ffffff;
+            }
+
+            .consent-close:focus {
+                outline: 2px solid #4a90e2;
+                outline-offset: 2px;
+            }
+
+            /* Responsive adjustments */
+            @media (max-width: 768px) {
+                .consent-container {
                     flex-direction: column;
                     text-align: center;
+                    padding: 1.5rem 1rem 1rem;
+                    gap: 0.75rem;
                 }
-                .cookie-buttons {
+
+                .consent-icon {
+                    display: none;
+                }
+
+                .consent-content {
+                    padding-right: 1.5rem;
+                }
+
+                .consent-actions {
                     width: 100%;
                     justify-content: center;
                 }
+
+                .consent-btn {
+                    flex: 1;
+                    max-width: 150px;
+                }
+
+                .consent-close {
+                    top: 0.5rem;
+                    right: 0.5rem;
+                }
+            }
+
+            @media (max-width: 400px) {
+                .consent-actions {
+                    flex-direction: column;
+                }
+
+                .consent-btn {
+                    max-width: 100%;
+                }
             }
         `;
+
         document.head.appendChild(styles);
     }
 
     // ========================================
-    // TAB TRACKING
+    // EVENT TRACKING SETUP
     // ========================================
     
+    /**
+     * Set up all automatic event tracking
+     */
+    setupEventTracking() {
+        this.setupTabTracking();
+        this.setupButtonTracking();
+        this.setupProjectTracking();
+        this.setupEngagementTracking();
+        this.setupModalTracking();
+        
+        console.log('📊 Event tracking configured');
+    }
+
+    /**
+     * Track tab navigation
+     */
     setupTabTracking() {
-        // Use event delegation for tab buttons
         document.addEventListener('click', (e) => {
             const tabButton = e.target.closest('.tab-btn');
             if (tabButton) {
-                const tabName = tabButton.getAttribute('data-tab') || tabButton.textContent.trim();
+                const tabName = tabButton.getAttribute('data-tab') || 
+                               tabButton.textContent.trim().toLowerCase().replace(/\s+/g, '_');
                 this.trackEvent('navigation', 'tab_change', tabName);
             }
         });
     }
 
-    // ========================================
-    // BUTTON TRACKING
-    // ========================================
-    
+    /**
+     * Track button clicks for adding items
+     */
     setupButtonTracking() {
-        // Track "Add" buttons
-        const addButtons = [
-            { id: 'addInternalResource', label: 'add_internal_resource' },
-            { id: 'addVendorCost', label: 'add_vendor_cost' },
-            { id: 'addToolCost', label: 'add_tool_cost' },
-            { id: 'addMiscCost', label: 'add_misc_cost' },
-            { id: 'addRisk', label: 'add_risk' },
-            { id: 'addRateCard', label: 'add_rate_card' }
+        // Define buttons to track
+        const trackedButtons = [
+            { id: 'addInternalResource', action: 'add_internal_resource' },
+            { id: 'addVendorCost', action: 'add_vendor_cost' },
+            { id: 'addToolCost', action: 'add_tool_cost' },
+            { id: 'addMiscCost', action: 'add_misc_cost' },
+            { id: 'addRisk', action: 'add_risk' },
+            { id: 'addRateCard', action: 'add_rate_card' },
+            { id: 'addExchangeRate', action: 'add_exchange_rate' }
         ];
 
-        addButtons.forEach(({ id, label }) => {
+        // Attach listeners to existing buttons
+        trackedButtons.forEach(({ id, action }) => {
             const button = document.getElementById(id);
             if (button && !button.hasAttribute('data-ga-tracked')) {
                 button.setAttribute('data-ga-tracked', 'true');
                 button.addEventListener('click', () => {
-                    this.trackEvent('engagement', 'add_item', label);
+                    this.trackEvent('engagement', 'add_item', action);
                 });
             }
         });
 
-        // Track export/import using event delegation
+        // Use event delegation for dynamic buttons and export/import
         document.addEventListener('click', (e) => {
             const target = e.target;
-            const targetId = target.id || target.closest('[id]')?.id;
+            const closestButton = target.closest('button, .btn');
             
-            switch (targetId) {
-                case 'exportCSV':
-                    this.trackEvent('export', 'csv_export', 'project_data');
-                    break;
-                case 'exportJSON':
-                    this.trackEvent('export', 'json_export', 'project_data');
-                    break;
-                case 'importJSON':
-                    this.trackEvent('import', 'json_import', 'project_data');
-                    break;
+            if (!closestButton) return;
+            
+            const buttonId = closestButton.id;
+            const buttonText = closestButton.textContent.trim().toLowerCase();
+
+            // Export actions
+            if (buttonId === 'exportCSV' || buttonText.includes('export csv')) {
+                this.trackEvent('export', 'csv_export', 'project_data');
+            } else if (buttonId === 'exportJSON' || buttonText.includes('export json')) {
+                this.trackEvent('export', 'json_export', 'project_data');
+            }
+            
+            // Import actions
+            else if (buttonId === 'importJSON' || buttonText.includes('import')) {
+                this.trackEvent('import', 'json_import', 'project_data');
+            }
+            
+            // Print action
+            else if (buttonText.includes('print')) {
+                this.trackEvent('export', 'print', 'project_summary');
             }
         });
     }
 
-    // ========================================
-    // PROJECT TRACKING
-    // ========================================
-    
+    /**
+     * Track project-related actions
+     */
     setupProjectTracking() {
-        // Track project save
+        // Track project info save
         const saveButton = document.getElementById('saveProjectInfo');
         if (saveButton && !saveButton.hasAttribute('data-ga-tracked')) {
             saveButton.setAttribute('data-ga-tracked', 'true');
@@ -325,48 +595,117 @@ class AnalyticsManager {
             });
         }
 
-        // Track new project creation using event delegation
+        // Use event delegation for other project actions
         document.addEventListener('click', (e) => {
-            if (e.target.id === 'newProject' || e.target.closest('#newProject')) {
+            const target = e.target.closest('button, .btn, .menu-item');
+            if (!target) return;
+
+            const targetId = target.id;
+            const targetText = target.textContent.trim().toLowerCase();
+
+            // New project
+            if (targetId === 'newProject' || targetText.includes('new project')) {
                 this.trackEvent('project', 'new_project');
+            }
+            
+            // Clear data
+            else if (targetText.includes('clear') && targetText.includes('data')) {
+                this.trackEvent('project', 'clear_data');
             }
         });
     }
 
-    // ========================================
-    // ENGAGEMENT TRACKING
-    // ========================================
-    
+    /**
+     * Track user engagement metrics
+     */
     setupEngagementTracking() {
-        // Track time on page
         const startTime = Date.now();
-        
-        // Send engagement time when user leaves
-        window.addEventListener('beforeunload', () => {
-            const timeSpent = Math.round((Date.now() - startTime) / 1000);
-            this.trackEvent('engagement', 'session_duration', 'seconds', timeSpent);
+        let maxScrollDepth = 0;
+        const scrollMilestones = new Set();
+
+        // Track session duration on page unload
+        const trackSessionEnd = () => {
+            const duration = Math.round((Date.now() - startTime) / 1000);
+            this.trackEvent('engagement', 'session_duration', 'seconds', duration);
+        };
+
+        window.addEventListener('beforeunload', trackSessionEnd);
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                trackSessionEnd();
+            }
         });
 
         // Track scroll depth
-        let maxScroll = 0;
-        const scrollMilestones = new Set();
-        
+        let scrollTimeout;
         window.addEventListener('scroll', () => {
-            const scrollPercent = Math.round(
-                (window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100
-            );
-            
-            if (scrollPercent > maxScroll) {
-                maxScroll = scrollPercent;
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                if (docHeight <= 0) return;
                 
-                // Track milestones: 25%, 50%, 75%, 100%
-                [25, 50, 75, 100].forEach(milestone => {
-                    if (maxScroll >= milestone && !scrollMilestones.has(milestone)) {
-                        scrollMilestones.add(milestone);
-                        this.trackEvent('engagement', 'scroll_depth', `${milestone}%`);
-                    }
+                const scrollPercent = Math.round((window.scrollY / docHeight) * 100);
+                
+                if (scrollPercent > maxScrollDepth) {
+                    maxScrollDepth = scrollPercent;
+                    
+                    // Track milestones
+                    [25, 50, 75, 90, 100].forEach(milestone => {
+                        if (maxScrollDepth >= milestone && !scrollMilestones.has(milestone)) {
+                            scrollMilestones.add(milestone);
+                            this.trackEvent('engagement', 'scroll_depth', `${milestone}%`);
+                        }
+                    });
+                }
+            }, 100);
+        });
+
+        // Track first interaction
+        let hasInteracted = false;
+        const interactionEvents = ['click', 'keydown', 'touchstart'];
+        
+        const trackFirstInteraction = () => {
+            if (!hasInteracted) {
+                hasInteracted = true;
+                this.trackEvent('engagement', 'first_interaction');
+                
+                // Remove listeners after first interaction
+                interactionEvents.forEach(event => {
+                    document.removeEventListener(event, trackFirstInteraction);
                 });
             }
+        };
+
+        interactionEvents.forEach(event => {
+            document.addEventListener(event, trackFirstInteraction, { once: false });
+        });
+    }
+
+    /**
+     * Track modal opens
+     */
+    setupModalTracking() {
+        // Use MutationObserver to detect modal opens
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.nodeType === 1) {
+                        // Check if it's a modal
+                        if (node.classList?.contains('modal') || 
+                            node.classList?.contains('modal-overlay') ||
+                            node.id?.includes('Modal')) {
+                            
+                            const modalName = node.id || 'unknown_modal';
+                            this.trackEvent('ui', 'modal_open', modalName);
+                        }
+                    }
+                });
+            });
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
         });
     }
 
@@ -376,15 +715,15 @@ class AnalyticsManager {
     
     /**
      * Track a custom event
-     * @param {string} category - Event category (e.g., 'navigation', 'engagement')
-     * @param {string} action - Event action (e.g., 'tab_change', 'button_click')
-     * @param {string} label - Event label (optional)
-     * @param {number} value - Event value (optional)
+     * @param {string} category - Event category
+     * @param {string} action - Event action
+     * @param {string|null} label - Event label (optional)
+     * @param {number|null} value - Event value (optional)
      */
     trackEvent(category, action, label = null, value = null) {
         if (!this.initialized || typeof window.gtag !== 'function') {
             if (this.debugMode) {
-                console.log('📊 [Debug] Event not sent - GA not initialized:', { category, action, label, value });
+                console.log('📊 [Debug] Event queued (GA not ready):', { category, action, label, value });
             }
             return;
         }
@@ -394,23 +733,27 @@ class AnalyticsManager {
         };
 
         if (label !== null) {
-            eventParams['event_label'] = label;
+            eventParams['event_label'] = String(label);
         }
 
-        if (value !== null) {
-            eventParams['value'] = value;
+        if (value !== null && !isNaN(value)) {
+            eventParams['value'] = Number(value);
         }
 
-        window.gtag('event', action, eventParams);
+        try {
+            window.gtag('event', action, eventParams);
 
-        if (this.debugMode) {
-            console.log('📊 Event tracked:', { category, action, label, value });
+            if (this.debugMode) {
+                console.log('📊 Event tracked:', { action, ...eventParams });
+            }
+        } catch (error) {
+            console.error('📊 Error tracking event:', error);
         }
     }
 
     /**
-     * Track a page view (useful for SPA-style navigation)
-     * @param {string} pagePath - The page path
+     * Track a virtual page view (for SPA navigation)
+     * @param {string} pagePath - The page path (e.g., '/tab/summary')
      * @param {string} pageTitle - The page title
      */
     trackPageView(pagePath, pageTitle) {
@@ -418,40 +761,59 @@ class AnalyticsManager {
             return;
         }
 
-        window.gtag('config', this.measurementId, {
-            'page_path': pagePath,
-            'page_title': pageTitle
-        });
+        try {
+            window.gtag('config', this.measurementId, {
+                'page_path': pagePath,
+                'page_title': pageTitle
+            });
 
-        if (this.debugMode) {
-            console.log('📊 Page view tracked:', { pagePath, pageTitle });
+            if (this.debugMode) {
+                console.log('📊 Page view tracked:', { pagePath, pageTitle });
+            }
+        } catch (error) {
+            console.error('📊 Error tracking page view:', error);
         }
     }
 
     /**
-     * Track user properties (for segmentation)
-     * @param {object} properties - User properties object
+     * Set user properties for segmentation
+     * @param {object} properties - Key-value pairs of user properties
      */
     setUserProperties(properties) {
         if (!this.initialized || typeof window.gtag !== 'function') {
             return;
         }
 
-        window.gtag('set', 'user_properties', properties);
+        try {
+            window.gtag('set', 'user_properties', properties);
 
-        if (this.debugMode) {
-            console.log('📊 User properties set:', properties);
+            if (this.debugMode) {
+                console.log('📊 User properties set:', properties);
+            }
+        } catch (error) {
+            console.error('📊 Error setting user properties:', error);
         }
     }
 
     /**
-     * Track feature usage with additional context
-     * @param {string} featureName - Name of the feature used
-     * @param {object} details - Additional details
+     * Track feature usage with context
+     * @param {string} featureName - Name of the feature
+     * @param {object} details - Additional context
      */
     trackFeatureUsage(featureName, details = {}) {
-        const detailsStr = Object.keys(details).length > 0 ? JSON.stringify(details) : null;
-        this.trackEvent('feature_usage', featureName, detailsStr);
+        const detailsStr = Object.keys(details).length > 0 
+            ? JSON.stringify(details) 
+            : null;
+        this.trackEvent('feature', featureName, detailsStr);
+    }
+
+    /**
+     * Track errors
+     * @param {string} errorType - Type of error
+     * @param {string} errorMessage - Error message
+     */
+    trackError(errorType, errorMessage) {
+        this.trackEvent('error', errorType, errorMessage);
     }
 
     // ========================================
@@ -459,23 +821,23 @@ class AnalyticsManager {
     // ========================================
     
     /**
-     * Enable debug mode for development
+     * Enable debug mode
      */
     enableDebugMode() {
         this.debugMode = true;
-        console.log('📊 Analytics debug mode enabled');
+        console.log('📊 Debug mode enabled - events will be logged to console');
     }
 
     /**
-     * Disable debug mode for production
+     * Disable debug mode
      */
     disableDebugMode() {
         this.debugMode = false;
-        console.log('📊 Analytics debug mode disabled');
+        console.log('📊 Debug mode disabled');
     }
 
     /**
-     * Check if analytics is properly initialized
+     * Check if analytics is initialized
      * @returns {boolean}
      */
     isInitialized() {
@@ -483,23 +845,67 @@ class AnalyticsManager {
     }
 
     /**
-     * Get current consent status
-     * @returns {string|null} 'true', 'false', or null if not set
+     * Get consent timestamp
+     * @returns {string|null}
      */
-    getConsentStatus() {
-        return localStorage.getItem('zyantik_analytics_consent');
+    getConsentTimestamp() {
+        return localStorage.getItem(this.consentTimestampKey);
     }
 
     /**
-     * Reset consent (for testing or user request)
+     * Show privacy settings (can be called from settings page)
+     * @returns {object} Current privacy settings
      */
-    resetConsent() {
-        localStorage.removeItem('zyantik_analytics_consent');
-        console.log('📊 Analytics consent reset');
+    showPrivacySettings() {
+        const status = this.getConsentStatus();
+        const timestamp = this.getConsentTimestamp();
+        
+        console.log('📊 Privacy Settings:');
+        console.log('   Consent Status:', status || 'Not set');
+        console.log('   Consent Date:', timestamp ? new Date(timestamp).toLocaleString() : 'N/A');
+        console.log('   Analytics Active:', this.initialized);
+        
+        return {
+            status: status,
+            timestamp: timestamp,
+            active: this.initialized
+        };
+    }
+
+    /**
+     * Withdraw consent (for privacy settings page)
+     */
+    withdrawConsent() {
+        this.setConsentStatus('declined');
+        
+        // Disable GA4
+        if (typeof window.gtag === 'function') {
+            window.gtag('config', this.measurementId, {
+                'send_page_view': false
+            });
+            window[`ga-disable-${this.measurementId}`] = true;
+        }
+        
+        this.initialized = false;
+        console.log('📊 Consent withdrawn - analytics disabled');
+    }
+
+    /**
+     * Re-prompt for consent (useful for settings page)
+     */
+    promptConsent() {
+        this.resetConsent();
+        this.showConsentBanner();
     }
 }
 
-// Create and export global instance
+// ============================================================================
+// CREATE GLOBAL INSTANCE
+// ============================================================================
+
 window.analyticsManager = new AnalyticsManager();
 
-console.log('✓ Analytics Manager module loaded');
+// Also expose the class for potential extension
+window.AnalyticsManager = AnalyticsManager;
+
+console.log('✓ Analytics Manager module loaded (with consent management)');
