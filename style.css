@@ -2207,6 +2207,20 @@ header {
     }
 }
 
+/* Issue #139 — Named Resource: TBC placeholder styling */
+.tbc-label {
+    color: #9ca3af;
+    font-style: italic;
+    font-size: 0.85em;
+}
+
+/* Person Name column — reasonable width since it's free text */
+#internalResourcesTable td:nth-child(2),
+#internalResourcesYearHeader th:nth-child(2),
+#internalResourcesTableHeader th:nth-child(2) {
+    min-width: 140px;
+}
+
 /* ==========================================================================
    END OF STYLESHEET
    ========================================================================== */
