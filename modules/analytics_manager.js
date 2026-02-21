@@ -1,10 +1,10 @@
 // modules/analytics_manager.js
 // Google Analytics 4 Integration Module with GDPR Consent Management
 // Follows the Initialization Manager Pattern
-// Version: 1.0.0
+// Version: 1.1.0 - Added tracking prevention handling
 // 
 // SETUP INSTRUCTIONS:
-// 1. Replace 'G-XXXXXXXXXX' with your GA4 Measurement ID
+// 1. Replace 'G-2KD38HBZB2' with your GA4 Measurement ID
 // 2. Add this script to index.html BEFORE init_manager.js
 // 3. Register in init_manager.js (see documentation below)
 //
@@ -29,17 +29,103 @@ class AnalyticsManager {
         // =============================================
         // CONFIGURATION - UPDATE THIS VALUE
         // =============================================
-        this.measurementId = 'G-XXXXXXXXXX';  // ← Replace with your GA4 Measurement ID
+        this.measurementId = 'G-2KD38HBZB2';  // ← Replace with your GA4 Measurement ID
         
         // Module state
         this.initialized = false;
         this.debugMode = false;
+        this.storageAvailable = true;  // Track if localStorage is accessible
+        this._memoryStorage = {};  // Fallback storage
         
         // Consent settings
         this.consentKey = 'zyantik_analytics_consent';
         this.consentTimestampKey = 'zyantik_analytics_consent_timestamp';
         
+        // Check storage availability on construction
+        this.checkStorageAvailability();
+        
         console.log('📊 Analytics Manager loaded');
+    }
+
+    // ========================================
+    // STORAGE AVAILABILITY CHECK
+    // ========================================
+    
+    /**
+     * Check if localStorage is available (may be blocked by tracking prevention)
+     */
+    checkStorageAvailability() {
+        try {
+            const testKey = '__analytics_storage_test__';
+            localStorage.setItem(testKey, 'test');
+            localStorage.removeItem(testKey);
+            this.storageAvailable = true;
+            console.log('📊 localStorage is available');
+        } catch (e) {
+            this.storageAvailable = false;
+            console.warn('📊 localStorage blocked (tracking prevention) - using session/memory storage');
+        }
+    }
+
+    /**
+     * Safe localStorage getter with fallbacks
+     * @param {string} key - The key to retrieve
+     * @returns {string|null} The value or null
+     */
+    safeGetItem(key) {
+        // Try localStorage first
+        if (this.storageAvailable) {
+            try {
+                return localStorage.getItem(key);
+            } catch (e) {
+                console.warn('📊 localStorage read failed:', e.message);
+            }
+        }
+        
+        // Fallback to sessionStorage
+        try {
+            return sessionStorage.getItem(key);
+        } catch (e) {
+            // Final fallback to memory
+            return this._memoryStorage[key] || null;
+        }
+    }
+
+    /**
+     * Safe localStorage setter with fallbacks
+     * @param {string} key - The key to set
+     * @param {string} value - The value to store
+     */
+    safeSetItem(key, value) {
+        // Try localStorage first
+        if (this.storageAvailable) {
+            try {
+                localStorage.setItem(key, value);
+                return;
+            } catch (e) {
+                console.warn('📊 localStorage write failed:', e.message);
+            }
+        }
+        
+        // Fallback to sessionStorage
+        try {
+            sessionStorage.setItem(key, value);
+            return;
+        } catch (e) {
+            // Final fallback to memory
+            this._memoryStorage[key] = value;
+        }
+    }
+
+    /**
+     * Safe localStorage remover with fallbacks
+     * @param {string} key - The key to remove
+     */
+    safeRemoveItem(key) {
+        // Try all storage types
+        try { localStorage.removeItem(key); } catch (e) {}
+        try { sessionStorage.removeItem(key); } catch (e) {}
+        delete this._memoryStorage[key];
     }
 
     // ========================================
@@ -52,12 +138,14 @@ class AnalyticsManager {
      */
     initialize() {
         console.log('📊 Analytics Manager initializing...');
+        console.log('📊 Storage available:', this.storageAvailable);
         
         // Inject consent banner styles
         this.injectStyles();
         
         // Check consent status
         const consentStatus = this.getConsentStatus();
+        console.log('📊 Current consent status:', consentStatus);
         
         if (consentStatus === null) {
             // No consent recorded - show banner
@@ -139,7 +227,7 @@ class AnalyticsManager {
      * @returns {string|null} 'accepted', 'declined', or null
      */
     getConsentStatus() {
-        return localStorage.getItem(this.consentKey);
+        return this.safeGetItem(this.consentKey);
     }
 
     /**
@@ -147,8 +235,8 @@ class AnalyticsManager {
      * @param {string} status - 'accepted' or 'declined'
      */
     setConsentStatus(status) {
-        localStorage.setItem(this.consentKey, status);
-        localStorage.setItem(this.consentTimestampKey, new Date().toISOString());
+        this.safeSetItem(this.consentKey, status);
+        this.safeSetItem(this.consentTimestampKey, new Date().toISOString());
     }
 
     /**
@@ -188,8 +276,8 @@ class AnalyticsManager {
      * Reset consent (for testing or settings page)
      */
     resetConsent() {
-        localStorage.removeItem(this.consentKey);
-        localStorage.removeItem(this.consentTimestampKey);
+        this.safeRemoveItem(this.consentKey);
+        this.safeRemoveItem(this.consentTimestampKey);
         this.initialized = false;
         console.log('📊 Consent reset - will show banner on next page load');
     }
@@ -242,13 +330,17 @@ class AnalyticsManager {
 
         // Add to page
         document.body.appendChild(banner);
+        console.log('📊 Consent banner added to DOM');
 
         // Set up event listeners
         this.setupConsentListeners();
 
-        // Animate in
+        // Animate in after a brief delay to ensure DOM is ready
         requestAnimationFrame(() => {
-            banner.classList.add('visible');
+            requestAnimationFrame(() => {
+                banner.classList.add('visible');
+                console.log('📊 Consent banner now visible');
+            });
         });
     }
 
@@ -263,7 +355,9 @@ class AnalyticsManager {
             
             // Remove after animation
             setTimeout(() => {
-                banner.remove();
+                if (banner.parentNode) {
+                    banner.remove();
+                }
             }, 300);
         }
     }
@@ -278,14 +372,17 @@ class AnalyticsManager {
 
         if (acceptBtn) {
             acceptBtn.addEventListener('click', () => this.acceptConsent());
+            console.log('📊 Accept button listener attached');
         }
 
         if (declineBtn) {
             declineBtn.addEventListener('click', () => this.declineConsent());
+            console.log('📊 Decline button listener attached');
         }
 
         if (closeBtn) {
             closeBtn.addEventListener('click', () => this.declineConsent());
+            console.log('📊 Close button listener attached');
         }
 
         // Close on Escape key
@@ -325,14 +422,17 @@ class AnalyticsManager {
                 z-index: 99999;
                 transform: translateY(100%);
                 transition: transform 0.3s ease-out;
+                pointer-events: none;
             }
 
             .analytics-consent-banner.visible {
                 transform: translateY(0);
+                pointer-events: auto;
             }
 
             .analytics-consent-banner.hiding {
                 transform: translateY(100%);
+                pointer-events: none;
             }
 
             .consent-container {
@@ -494,6 +594,7 @@ class AnalyticsManager {
         `;
 
         document.head.appendChild(styles);
+        console.log('📊 Consent banner styles injected');
     }
 
     // ========================================
@@ -845,11 +946,19 @@ class AnalyticsManager {
     }
 
     /**
+     * Check if storage is available
+     * @returns {boolean}
+     */
+    isStorageAvailable() {
+        return this.storageAvailable;
+    }
+
+    /**
      * Get consent timestamp
      * @returns {string|null}
      */
     getConsentTimestamp() {
-        return localStorage.getItem(this.consentTimestampKey);
+        return this.safeGetItem(this.consentTimestampKey);
     }
 
     /**
@@ -861,11 +970,13 @@ class AnalyticsManager {
         const timestamp = this.getConsentTimestamp();
         
         console.log('📊 Privacy Settings:');
+        console.log('   Storage Available:', this.storageAvailable);
         console.log('   Consent Status:', status || 'Not set');
         console.log('   Consent Date:', timestamp ? new Date(timestamp).toLocaleString() : 'N/A');
         console.log('   Analytics Active:', this.initialized);
         
         return {
+            storageAvailable: this.storageAvailable,
             status: status,
             timestamp: timestamp,
             active: this.initialized
