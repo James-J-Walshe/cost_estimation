@@ -14,11 +14,16 @@
     box-sizing: border-box;
 }
 
+html {
+    overflow-x: hidden;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     background-color: #f5f7fa;
     color: #2d3748;
     line-height: 1.6;
+    overflow-x: hidden;
 }
 
 .app-container {
@@ -905,6 +910,31 @@ small {
     font-weight: 600;
     padding: 1rem;
     text-align: left;
+}
+
+/* Sticky Actions column — always visible at the right edge of the table */
+.table-container .data-table th:last-child,
+.table-container .data-table td:last-child {
+    position: sticky;
+    right: 0;
+    z-index: 2;
+    box-shadow: -3px 0 6px rgba(0, 0, 0, 0.08);
+}
+
+.table-container .data-table thead tr.year-header-row th:last-child {
+    background-color: #667eea;
+}
+
+.table-container .data-table thead tr.month-header-row th:last-child {
+    background-color: #f8fafc;
+}
+
+.table-container .data-table tbody tr td:last-child {
+    background-color: white;
+}
+
+.table-container .data-table tbody tr:hover td:last-child {
+    background-color: #f9fafb;
 }
 
 /* ==========================================================================
