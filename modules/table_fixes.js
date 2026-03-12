@@ -587,13 +587,15 @@ function saveWholeRowProfessional(button, itemId, itemType) {
         } else if (itemType === 'vendor-cost') {
             renderVendorCostsTableFixed();
         }
-        
+
+        window.tableRenderer?.applyFrozenColumns?.();
+
         updateResourcePlanTabProfessional();
-        
+
         if (window.updateSummary) {
             window.updateSummary();
         }
-        
+
         console.log('Professional row saved successfully');
         
     } catch (error) {
@@ -607,12 +609,14 @@ function saveWholeRowProfessional(button, itemId, itemType) {
 function cancelWholeRowProfessional(button, itemId, itemType) {
     const row = button.closest('tr');
     console.log(`Cancelling professional row edit for ${itemType} ${itemId}`);
-    
+
     if (itemType === 'internal-resource') {
         renderInternalResourcesTableFixed();
     } else if (itemType === 'vendor-cost') {
         renderVendorCostsTableFixed();
     }
+
+    window.tableRenderer?.applyFrozenColumns?.();
 }
 
 // SOLUTION 9: Enhanced resource plan update
@@ -764,7 +768,9 @@ function applyCompleteProfessionalStylingFixes() {
             // Render tables with ALL fixes
             renderInternalResourcesTableFixed();
             renderVendorCostsTableFixed();
-            
+
+            window.tableRenderer?.applyFrozenColumns?.();
+
             console.log('All table rendering overrides applied successfully');
         } catch (error) {
             console.error('Error applying table rendering overrides:', error);

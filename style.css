@@ -942,6 +942,58 @@ small {
     background-color: #f9fafb;
 }
 
+/* ==========================================================================
+   FROZEN COLUMNS — left info cols + right summary cols stay visible while
+   only the month columns scroll. Positioning is applied via JS (applyFrozenColumns);
+   these rules supply the opaque backgrounds needed to prevent content bleed-through.
+   ========================================================================== */
+
+/* Left frozen cells */
+.col-sticky-left {
+    background-color: white;
+}
+
+thead tr.year-header-row .col-sticky-left {
+    background-color: #667eea;
+    color: white;
+}
+
+.data-table tbody tr:hover .col-sticky-left {
+    background-color: #f9fafb;
+}
+
+/* Shadow separator on the right edge of the last left column */
+.col-sticky-left-last {
+    border-right: 2px solid #d1d5db !important;
+    box-shadow: 4px 0 8px rgba(0, 0, 0, 0.07);
+}
+
+/* Right frozen cells (Total Cost + Actions) */
+.col-sticky-right {
+    background-color: white;
+}
+
+thead tr.year-header-row .col-sticky-right {
+    background-color: #667eea;
+    color: white;
+}
+
+.data-table tbody tr:hover .col-sticky-right {
+    background-color: #f9fafb;
+}
+
+/* Shadow separator on the left edge of the first right column (Total Cost) */
+.col-sticky-right-first {
+    border-left: 2px solid #d1d5db !important;
+    box-shadow: -4px 0 8px rgba(0, 0, 0, 0.07);
+}
+
+/* Edit mode — month cells already get #fff3cd inline; keep other frozen cells white */
+.editing-row .col-sticky-left,
+.editing-row .col-sticky-right {
+    background-color: white;
+}
+
 /* Mirrored top scrollbar — lets users scroll the table without reaching the bottom */
 .table-top-scrollbar {
     overflow-x: auto;
