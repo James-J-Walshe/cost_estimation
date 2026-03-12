@@ -909,29 +909,49 @@ small {
     text-align: left;
 }
 
-/* Sticky Actions column — always visible at the right edge of the table */
-.table-container .data-table th:last-child,
-.table-container .data-table td:last-child {
+/* Consistent width for month columns */
+.data-table thead tr.month-header-row th {
+    min-width: 70px;
+}
+
+/* Sticky Actions column — targeted by class to avoid mis-targeting month headers */
+.table-container .data-table th.col-actions,
+.table-container .data-table td.col-actions {
     position: sticky;
     right: 0;
     z-index: 2;
+    border-left: 2px solid #e5e7eb;
+    min-width: 90px;
+}
+
+/* Actions header sits in the year row (rowspan=2) — give it a neutral background
+   so it stands apart from the purple year band */
+.table-container .data-table thead th.col-actions {
+    background-color: #f8fafc;
+    color: transparent; /* hide "Actions" label per design request */
+    font-size: 0;
     box-shadow: -3px 0 6px rgba(0, 0, 0, 0.08);
 }
 
-.table-container .data-table thead tr.year-header-row th:last-child {
-    background-color: #667eea;
-}
-
-.table-container .data-table thead tr.month-header-row th:last-child {
-    background-color: #f8fafc;
-}
-
-.table-container .data-table tbody tr td:last-child {
+.table-container .data-table tbody tr td.col-actions {
     background-color: white;
+    box-shadow: -3px 0 6px rgba(0, 0, 0, 0.06);
 }
 
-.table-container .data-table tbody tr:hover td:last-child {
+.table-container .data-table tbody tr:hover td.col-actions {
     background-color: #f9fafb;
+}
+
+/* Mirrored top scrollbar — lets users scroll the table without reaching the bottom */
+.table-top-scrollbar {
+    overflow-x: auto;
+    overflow-y: hidden;
+    height: 12px;
+    margin-bottom: 2px;
+}
+
+.table-top-scrollbar-inner {
+    height: 1px;
 }
 
 /* ==========================================================================
