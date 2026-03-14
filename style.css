@@ -2315,8 +2315,7 @@ header {
 
 /* Person Name column — reasonable width since it's free text */
 #internalResourcesTable td:nth-child(2),
-#internalResourcesYearHeader th:nth-child(2),
-#internalResourcesTableHeader th:nth-child(2) {
+#internalResourcesYearHeader th:nth-child(2) {
     min-width: 140px;
 }
 
