@@ -457,12 +457,12 @@ function editWholeRowProfessional(button) {
                 ? ''
                 : personNameCell.textContent.trim();
 
-            personNameCell.style.cssText = `
-                background-color: #fff3cd !important;
-                border: 1px solid #ffc107 !important;
-                padding: 8px !important;
-                text-align: left !important;
-            `;
+            // Use individual properties (not cssText) so that position:sticky /
+            // left:Xpx set by applyFrozenColumns() are NOT wiped out.
+            personNameCell.style.backgroundColor = '#fff3cd';
+            personNameCell.style.border = '1px solid #ffc107';
+            personNameCell.style.padding = '8px';
+            personNameCell.style.textAlign = 'left';
             personNameCell.innerHTML = `
                 <input type="text"
                        class="row-edit-input person-name-input"
@@ -587,13 +587,16 @@ function saveWholeRowProfessional(button, itemId, itemType) {
         } else if (itemType === 'vendor-cost') {
             renderVendorCostsTableFixed();
         }
-        
+
+        window.tableRenderer?.addTopScrollbars?.();
+        window.tableRenderer?.applyFrozenColumns?.();
+
         updateResourcePlanTabProfessional();
-        
+
         if (window.updateSummary) {
             window.updateSummary();
         }
-        
+
         console.log('Professional row saved successfully');
         
     } catch (error) {
@@ -607,12 +610,15 @@ function saveWholeRowProfessional(button, itemId, itemType) {
 function cancelWholeRowProfessional(button, itemId, itemType) {
     const row = button.closest('tr');
     console.log(`Cancelling professional row edit for ${itemType} ${itemId}`);
-    
+
     if (itemType === 'internal-resource') {
         renderInternalResourcesTableFixed();
     } else if (itemType === 'vendor-cost') {
         renderVendorCostsTableFixed();
     }
+
+    window.tableRenderer?.addTopScrollbars?.();
+    window.tableRenderer?.applyFrozenColumns?.();
 }
 
 // SOLUTION 9: Enhanced resource plan update
@@ -764,7 +770,10 @@ function applyCompleteProfessionalStylingFixes() {
             // Render tables with ALL fixes
             renderInternalResourcesTableFixed();
             renderVendorCostsTableFixed();
-            
+
+            window.tableRenderer?.addTopScrollbars?.();
+            window.tableRenderer?.applyFrozenColumns?.();
+
             console.log('All table rendering overrides applied successfully');
         } catch (error) {
             console.error('Error applying table rendering overrides:', error);

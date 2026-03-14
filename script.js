@@ -81,6 +81,14 @@ function initializeBasicFunctionality() {
                 if (targetTab === 'summary') {
                     updateSummary();
                 }
+
+                // Refresh top scrollbar and frozen columns when returning to
+                // wide tables — the 2-second table_fixes re-render can leave
+                // the scrollbar width stale until this is explicitly refreshed.
+                if (targetTab === 'internal-resources' || targetTab === 'vendor-costs') {
+                    window.tableRenderer?.addTopScrollbars?.();
+                    window.tableRenderer?.applyFrozenColumns?.();
+                }
             });
         });
         console.log('Tab functionality initialized');

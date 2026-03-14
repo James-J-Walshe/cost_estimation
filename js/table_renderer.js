@@ -154,7 +154,7 @@ class TableRenderer {
         // Add total and actions columns
         if (includeActions) {
             yearRowHTML += `<th rowspan="2" class="fixed-column">Total Cost</th>`;
-            yearRowHTML += `<th rowspan="2" class="fixed-column">Actions</th>`;
+            yearRowHTML += `<th rowspan="2" class="fixed-column col-actions"></th>`;
         } else {
             yearRowHTML += `<th rowspan="2" class="fixed-column">Total</th>`;
         }
@@ -214,10 +214,157 @@ class TableRenderer {
             this.renderExternalRatesTable();
             this.renderUnifiedRateCardsTable();
             this.renderForecastTable();
+            this.addTopScrollbars();
+            this.applyFrozenColumns();
             console.log('All tables rendered successfully with dynamic two-row headers');
         } catch (error) {
             console.error('Error rendering tables:', error);
         }
+    }
+
+    // Freeze info columns on the left (Role, Name, Rate Card, Daily Rate) and
+    // summary columns on the right (Total Cost, Actions) so only the month
+    // columns scroll horizontally.
+    applyFrozenColumns() {
+        const configs = [
+            { yearHeaderId: 'internalResourcesYearHeader', tbodyId: 'internalResourcesTable' },
+            { yearHeaderId: 'vendorCostsYearHeader',       tbodyId: 'vendorCostsTable'       },
+        ];
+
+        requestAnimationFrame(() => {
+            configs.forEach(({ yearHeaderId, tbodyId }) => {
+                const yearRow = document.getElementById(yearHeaderId);
+                const tbody   = document.getElementById(tbodyId);
+                if (!yearRow || !tbody) return;
+
+                // Count left fixed columns: rowspan=2 cells before the first year-group colspan
+                const yearCells = Array.from(yearRow.children);
+                let leftCount = 0;
+                for (const cell of yearCells) {
+                    if (!cell.hasAttribute('colspan') && cell.hasAttribute('rowspan')) {
+                        leftCount++;
+                    } else {
+                        break;
+                    }
+                }
+                if (leftCount === 0) return;
+
+                // Use the first data row for width measurement; bail if table is empty
+                const refRow = tbody.querySelector('tr');
+                if (!refRow || refRow.cells.length === 0) return;
+                if (refRow.querySelector('.empty-state')) return;
+
+                const refCells = Array.from(refRow.cells);
+                const n = refCells.length;
+
+                // Cumulative left offsets
+                const leftOffsets = [];
+                let cumLeft = 0;
+                for (let i = 0; i < leftCount; i++) {
+                    leftOffsets.push(cumLeft);
+                    cumLeft += refCells[i]?.offsetWidth || 100;
+                }
+
+                // Width of the Actions column (last cell) for Total Cost right offset
+                const actionsWidth = refCells[n - 1]?.offsetWidth || 90;
+
+                // --- Year-header-row: left cells ---
+                yearCells.forEach((cell, i) => {
+                    if (i >= leftCount) return;
+                    cell.style.position = 'sticky';
+                    cell.style.left = leftOffsets[i] + 'px';
+                    cell.style.zIndex = '4';
+                    cell.classList.add('col-sticky-left');
+                    if (i === leftCount - 1) cell.classList.add('col-sticky-left-last');
+                });
+
+                // --- Year-header-row: right cells (after year-group colspans) ---
+                let pastGroups = false;
+                const rightYearCells = [];
+                yearCells.forEach(cell => {
+                    if (cell.hasAttribute('colspan')) { pastGroups = true; return; }
+                    if (pastGroups) rightYearCells.push(cell);
+                });
+                let cumRight = 0;
+                for (let i = rightYearCells.length - 1; i >= 0; i--) {
+                    rightYearCells[i].style.position = 'sticky';
+                    rightYearCells[i].style.right = cumRight + 'px';
+                    rightYearCells[i].style.zIndex = '4';
+                    rightYearCells[i].classList.add('col-sticky-right');
+                    if (i === 0) rightYearCells[i].classList.add('col-sticky-right-first');
+                    cumRight += rightYearCells[i].offsetWidth || 90;
+                }
+
+                // --- Data rows ---
+                tbody.querySelectorAll('tr').forEach(row => {
+                    const cells  = Array.from(row.cells);
+                    const rowLen = cells.length;
+                    cells.forEach((cell, i) => {
+                        if (i < leftCount) {
+                            cell.style.position = 'sticky';
+                            cell.style.left = leftOffsets[i] + 'px';
+                            cell.style.zIndex = '3';
+                            cell.classList.add('col-sticky-left');
+                            if (i === leftCount - 1) cell.classList.add('col-sticky-left-last');
+                        } else if (i === rowLen - 2) {
+                            // Total Cost
+                            cell.style.position = 'sticky';
+                            cell.style.right = actionsWidth + 'px';
+                            cell.style.zIndex = '2';
+                            cell.classList.add('col-sticky-right');
+                            cell.classList.add('col-sticky-right-first');
+                        } else if (i === rowLen - 1) {
+                            // Actions
+                            cell.style.position = 'sticky';
+                            cell.style.right = '0px';
+                            cell.style.zIndex = '2';
+                            cell.classList.add('col-sticky-right');
+                        }
+                    });
+                });
+            });
+        });
+    }
+
+    // Add a mirrored scrollbar above each table-container so users can scroll
+    // horizontally without having to first scroll to the bottom of the table.
+    addTopScrollbars() {
+        document.querySelectorAll('.table-container').forEach(container => {
+            // Remove any existing top scrollbar to avoid duplicates on re-render
+            const prev = container.previousElementSibling;
+            if (prev && prev.classList.contains('table-top-scrollbar')) {
+                prev.remove();
+            }
+
+            const table = container.querySelector('table');
+            if (!table) return;
+
+            const topScroll = document.createElement('div');
+            topScroll.className = 'table-top-scrollbar';
+            const inner = document.createElement('div');
+            inner.className = 'table-top-scrollbar-inner';
+            topScroll.appendChild(inner);
+
+            // Match inner width to the full scrollable width of the table
+            inner.style.width = table.scrollWidth + 'px';
+
+            // Sync scroll in both directions, guarded to prevent loops
+            let syncing = false;
+            topScroll.addEventListener('scroll', () => {
+                if (syncing) return;
+                syncing = true;
+                container.scrollLeft = topScroll.scrollLeft;
+                syncing = false;
+            });
+            container.addEventListener('scroll', () => {
+                if (syncing) return;
+                syncing = true;
+                topScroll.scrollLeft = container.scrollLeft;
+                syncing = false;
+            });
+
+            container.parentNode.insertBefore(topScroll, container);
+        });
     }
 
     // Unified rate cards table rendering
@@ -255,7 +402,7 @@ class TableRenderer {
                 <td>${rate.role}</td>
                 <td><span class="category-badge category-${rate.category.toLowerCase()}">${rate.category}</span></td>
                 <td>${rate.rate.toLocaleString()}</td>
-                <td>${this.createActionButtons(rate.id || rate.role, 'rate-card')}</td>
+                <td class="col-actions">${this.createActionButtons(rate.id || rate.role, 'rate-card')}</td>
             `;
             tbody.appendChild(row);
         });
@@ -307,7 +454,7 @@ class TableRenderer {
             
             rowHTML += `
                 <td>${totalCost.toLocaleString()}</td>
-                <td>${this.createActionButtons(resource.id, 'internal-resource')}</td>
+                <td class="col-actions">${this.createActionButtons(resource.id, 'internal-resource')}</td>
             `;
             
             row.innerHTML = rowHTML;
@@ -357,7 +504,7 @@ class TableRenderer {
             
             rowHTML += `
                 <td>${totalCost.toLocaleString()}</td>
-                <td>${this.createActionButtons(vendor.id, 'vendor-cost')}</td>
+                <td class="col-actions">${this.createActionButtons(vendor.id, 'vendor-cost')}</td>
             `;
             
             row.innerHTML = rowHTML;
@@ -394,7 +541,7 @@ class TableRenderer {
                     <td>${formatted.startDate}</td>
                     <td>${formatted.endDate}${formatted.isOngoing ? ' <span style="color: #059669;">♾️</span>' : ''}</td>
                     <td>$${formatted.totalCost.toLocaleString()}</td>
-                    <td>${this.createActionButtons(tool.id, 'tool-cost')}</td>
+                    <td class="col-actions">${this.createActionButtons(tool.id, 'tool-cost')}</td>
                 `;
             } else {
                 // Fallback for old structure
@@ -406,7 +553,7 @@ class TableRenderer {
                     <td>${tool.users}</td>
                     <td>${tool.duration}</td>
                     <td>${totalCost.toLocaleString()}</td>
-                    <td>${this.createActionButtons(tool.id, 'tool-cost')}</td>
+                    <td class="col-actions">${this.createActionButtons(tool.id, 'tool-cost')}</td>
                 `;
             }
             
@@ -434,7 +581,7 @@ class TableRenderer {
                 <td>${misc.item}</td>
                 <td>${misc.description}</td>
                 <td>${misc.cost.toLocaleString()}</td>
-                <td>${this.createActionButtons(misc.id, 'misc-cost')}</td>
+                <td class="col-actions">${this.createActionButtons(misc.id, 'misc-cost')}</td>
             `;
             tbody.appendChild(row);
         });
@@ -462,7 +609,7 @@ class TableRenderer {
                 <td>${risk.impact}</td>
                 <td>${riskScore}</td>
                 <td>${(risk.mitigationCost || 0).toLocaleString()}</td>
-                <td>${this.createActionButtons(risk.id, 'risk')}</td>
+                <td class="col-actions">${this.createActionButtons(risk.id, 'risk')}</td>
             `;
             tbody.appendChild(row);
         });
@@ -491,7 +638,7 @@ class TableRenderer {
             row.innerHTML = `
                 <td>${rate.role}</td>
                 <td>${rate.rate.toLocaleString()}</td>
-                <td>${this.createActionButtons(rate.id || rate.role, 'rate-card')}</td>
+                <td class="col-actions">${this.createActionButtons(rate.id || rate.role, 'rate-card')}</td>
             `;
             tbody.appendChild(row);
         });
@@ -520,7 +667,7 @@ class TableRenderer {
             row.innerHTML = `
                 <td>${rate.role}</td>
                 <td>${rate.rate.toLocaleString()}</td>
-                <td>${this.createActionButtons(rate.id || rate.role, 'rate-card')}</td>
+                <td class="col-actions">${this.createActionButtons(rate.id || rate.role, 'rate-card')}</td>
             `;
             tbody.appendChild(row);
         });
