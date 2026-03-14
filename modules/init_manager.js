@@ -20,7 +20,8 @@ class InitializationManager {
             toolCostsManager: false,
             mergeManager: false,
             multiResourceManager: false,  // Issue #134: Multi Resource Manager
-            analyticsManager: false
+            analyticsManager: false,
+            aiProjectExtractor: false
         };
     }
 
@@ -105,6 +106,9 @@ class InitializationManager {
 
         // Issue #134: Check for Multi Resource Manager
         this.modules.multiResourceManager = !!(window.multiResourceManager || window.MultiResourceManager);
+
+        // Check for AI Project Extractor
+        this.modules.aiProjectExtractor = !!(window.aiProjectExtractor);
 
         const loaded = Object.entries(this.modules)
             .filter(([_, status]) => status)
@@ -696,8 +700,14 @@ class InitializationManager {
                 window.analyticsManager.initialize();
                 console.log('✓ Step 20: Analytics Manager initialized');
             }
-                        
-            // Step 21: Re-render after short delay for loaded data
+
+            // Step 21: Initialize AI Project Extractor
+            if (this.modules.aiProjectExtractor && typeof window.aiProjectExtractor.initialize === 'function') {
+                window.aiProjectExtractor.initialize();
+                console.log('✓ Step 21: AI Project Extractor initialized');
+            }
+
+            // Step 22: Re-render after short delay for loaded data
             setTimeout(() => {
                 if (this.modules.tableRenderer) {
                     if (window.TableRenderer && typeof window.TableRenderer.renderAllTables === 'function') {
@@ -709,11 +719,11 @@ class InitializationManager {
                 if (typeof window.updateSummary === 'function') {
                     window.updateSummary();
                 }
-                console.log('✓ Step 20: Final render complete');
+                console.log('✓ Step 22: Final render complete');
             }, 100);
 
             this.initialized = true;
-            console.log('✅ Application initialization complete with Multi Resource Manager support');
+            console.log('✅ Application initialization complete');
 
         } catch (error) {
             console.error('❌ Error during initialization:', error);
