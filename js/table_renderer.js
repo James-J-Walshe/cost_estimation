@@ -577,9 +577,9 @@ class TableRenderer {
         projectData.miscCosts.forEach(misc => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td>${misc.category}</td>
                 <td>${misc.item}</td>
                 <td>${misc.description}</td>
+                <td>${misc.category}</td>
                 <td>${misc.cost.toLocaleString()}</td>
                 <td class="col-actions">${this.createActionButtons(misc.id, 'misc-cost')}</td>
             `;

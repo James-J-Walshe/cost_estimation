@@ -91,11 +91,11 @@ class EditManager {
         this.editingStates.set(itemId, { type: itemType, row: row });
 
         // Store original values
-        const originalData = this.extractRowData(row, itemType);
+        const originalData = this.extractRowData(row, itemType, itemId);
         this.originalValues.set(itemId, originalData);
 
         // Convert cells to edit inputs
-        this.convertToEditInputs(row, itemType, originalData);
+        this.convertToEditInputs(row, itemType, originalData, itemId);
 
         // Replace edit button with save/cancel buttons
         const editBtn = row.querySelector('.edit-btn');
@@ -135,7 +135,7 @@ class EditManager {
     /**
      * Extract data from row based on item type with dynamic month support
      */
-    extractRowData(row, itemType) {
+    extractRowData(row, itemType, itemId) {
         const data = {};
         const cells = row.querySelectorAll('td');
         
@@ -171,25 +171,34 @@ class EditManager {
                 });
                 break;
                 
-            case 'tool-cost':
-                data.tool = cells[0]?.textContent?.trim() || '';
-                data.licenseType = cells[1]?.textContent?.trim() || '';
-                data.monthlyCost = parseFloat(cells[2]?.textContent?.replace(/[^0-9.-]/g, '')) || 0;
-                data.users = parseFloat(cells[3]?.textContent?.replace(/[^0-9.-]/g, '')) || 0;
-                data.duration = parseFloat(cells[4]?.textContent?.replace(/[^0-9.-]/g, '')) || 0;
+            case 'tool-cost': {
+                // Read directly from projectData to avoid parsing formatted display values
+                const toolData = window.projectData?.toolCosts?.find(t => t.id === itemId);
+                if (toolData) {
+                    data.tool = toolData.tool || '';
+                    data.procurementType = toolData.procurementType || '';
+                    data.billingFrequency = toolData.billingFrequency || '';
+                    data.costPerPeriod = toolData.costPerPeriod || 0;
+                    data.quantity = toolData.quantity || 1;
+                    data.startDate = toolData.startDate || '';
+                    data.endDate = toolData.endDate || '';
+                    data.isOngoing = toolData.isOngoing || false;
+                }
                 break;
-                
+            }
+
             case 'misc-cost':
-                data.category = cells[0]?.textContent?.trim() || '';
-                data.item = cells[1]?.textContent?.trim() || '';
-                data.description = cells[2]?.textContent?.trim() || '';
+                // Columns rendered as: Item, Description, Category, Cost
+                data.item = cells[0]?.textContent?.trim() || '';
+                data.description = cells[1]?.textContent?.trim() || '';
+                data.category = cells[2]?.textContent?.trim() || '';
                 data.cost = parseFloat(cells[3]?.textContent?.replace(/[^0-9.-]/g, '')) || 0;
                 break;
-                
+
             case 'risk':
                 data.description = cells[0]?.textContent?.trim() || '';
-                data.probability = cells[1]?.textContent?.trim() || '';
-                data.impact = cells[2]?.textContent?.trim() || '';
+                data.probability = parseFloat(cells[1]?.textContent?.replace(/[^0-9.-]/g, '')) || 1;
+                data.impact = parseFloat(cells[2]?.textContent?.replace(/[^0-9.-]/g, '')) || 1;
                 data.mitigationCost = parseFloat(cells[4]?.textContent?.replace(/[^0-9.-]/g, '')) || 0;
                 break;
                 
@@ -208,7 +217,7 @@ class EditManager {
     /**
      * Convert row cells to input fields with dynamic month support
      */
-    convertToEditInputs(row, itemType, data) {
+    convertToEditInputs(row, itemType, data, itemId) {
         const cells = row.querySelectorAll('td:not(:last-child)'); // Exclude action column
         
         // Get month info for dynamic input creation
@@ -254,32 +263,41 @@ class EditManager {
                 break;
                 
             case 'tool-cost':
+                // Columns: Tool, Type, Billing, Cost/Period, Quantity, Start Date, End Date, Total (read-only)
                 cells[0].innerHTML = `<input type="text" class="edit-input" value="${data.tool}" data-field="tool">`;
-                cells[1].innerHTML = `<select class="edit-input" data-field="licenseType">
-                    ${this.getToolLicenseOptions(data.licenseType)}
+                cells[1].innerHTML = `<select class="edit-input" data-field="procurementType">
+                    ${this.getProcurementTypeOptions(data.procurementType)}
                 </select>`;
-                cells[2].innerHTML = `<input type="number" class="edit-input" value="${data.monthlyCost}" data-field="monthlyCost" step="0.01" min="0">`;
-                cells[3].innerHTML = `<input type="number" class="edit-input" value="${data.users}" data-field="users" step="1" min="1">`;
-                cells[4].innerHTML = `<input type="number" class="edit-input" value="${data.duration}" data-field="duration" step="1" min="1">`;
+                cells[2].innerHTML = `<select class="edit-input" data-field="billingFrequency">
+                    ${this.getBillingFrequencyOptions(data.billingFrequency)}
+                </select>`;
+                cells[3].innerHTML = `<input type="number" class="edit-input" value="${data.costPerPeriod}" data-field="costPerPeriod" step="0.01" min="0">`;
+                cells[4].innerHTML = `<input type="number" class="edit-input" value="${data.quantity}" data-field="quantity" step="1" min="1">`;
+                cells[5].innerHTML = `<input type="month" class="edit-input" value="${data.startDate}" data-field="startDate">`;
+                if (data.isOngoing) {
+                    cells[6].innerHTML = `<span>Ongoing</span><input type="hidden" class="edit-input" value="" data-field="endDate">`;
+                } else {
+                    cells[6].innerHTML = `<input type="month" class="edit-input" value="${data.endDate}" data-field="endDate">`;
+                }
+                // cells[7] is Total Cost (computed) — leave as-is
                 break;
-                
+
             case 'misc-cost':
-                cells[0].innerHTML = `<select class="edit-input" data-field="category">
+                // Columns rendered as: Item, Description, Category, Cost
+                cells[0].innerHTML = `<input type="text" class="edit-input" value="${data.item}" data-field="item">`;
+                cells[1].innerHTML = `<input type="text" class="edit-input" value="${data.description}" data-field="description">`;
+                cells[2].innerHTML = `<select class="edit-input" data-field="category">
                     ${this.getMiscCategoryOptions(data.category)}
                 </select>`;
-                cells[1].innerHTML = `<input type="text" class="edit-input" value="${data.item}" data-field="item">`;
-                cells[2].innerHTML = `<input type="text" class="edit-input" value="${data.description}" data-field="description">`;
                 cells[3].innerHTML = `<input type="number" class="edit-input" value="${data.cost}" data-field="cost" step="0.01" min="0">`;
                 break;
-                
+
             case 'risk':
+                // Probability and impact are stored as integers 1–5
                 cells[0].innerHTML = `<textarea class="edit-input" data-field="description" rows="2">${data.description}</textarea>`;
-                cells[1].innerHTML = `<select class="edit-input" data-field="probability">
-                    ${this.getProbabilityOptions(data.probability)}
-                </select>`;
-                cells[2].innerHTML = `<select class="edit-input" data-field="impact">
-                    ${this.getImpactOptions(data.impact)}
-                </select>`;
+                cells[1].innerHTML = `<input type="number" class="edit-input" value="${data.probability}" data-field="probability" min="1" max="5" step="1">`;
+                cells[2].innerHTML = `<input type="number" class="edit-input" value="${data.impact}" data-field="impact" min="1" max="5" step="1">`;
+                // cells[3] is Risk Score (computed) — leave as-is
                 cells[4].innerHTML = `<input type="number" class="edit-input" value="${data.mitigationCost}" data-field="mitigationCost" step="0.01" min="0">`;
                 break;
                 
@@ -413,7 +431,7 @@ class EditManager {
             case 'vendor-cost':
                 return data.vendor && data.description;
             case 'tool-cost':
-                return data.tool && data.monthlyCost >= 0 && data.users >= 1 && data.duration >= 1;
+                return data.tool && data.costPerPeriod >= 0 && data.quantity >= 1;
             case 'misc-cost':
                 return data.item && data.cost >= 0;
             case 'risk':
@@ -517,6 +535,35 @@ class EditManager {
             options += `<option value="${category}" ${selected}>${category}</option>`;
         });
         
+        return options;
+    }
+
+    /**
+     * Get procurement type options for tool costs
+     */
+    getProcurementTypeOptions(selected) {
+        const types = ['Software License', 'Hardware', 'Cloud Services'];
+        let options = '<option value="">-- Select Type --</option>';
+        types.forEach(type => {
+            options += `<option value="${type}" ${type === selected ? 'selected' : ''}>${type}</option>`;
+        });
+        return options;
+    }
+
+    /**
+     * Get billing frequency options for tool costs
+     */
+    getBillingFrequencyOptions(selected) {
+        const freqs = [
+            { value: 'one-time', label: 'One-time' },
+            { value: 'monthly', label: 'Monthly' },
+            { value: 'quarterly', label: 'Quarterly' },
+            { value: 'annual', label: 'Annual' }
+        ];
+        let options = '<option value="">-- Select Frequency --</option>';
+        freqs.forEach(f => {
+            options += `<option value="${f.value}" ${f.value === selected ? 'selected' : ''}>${f.label}</option>`;
+        });
         return options;
     }
 

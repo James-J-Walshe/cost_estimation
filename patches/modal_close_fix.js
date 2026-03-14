@@ -12,15 +12,17 @@
     function closeModal() {
         const modal = document.getElementById('modal');
         if (!modal) return;
-        
+
         console.log('🚪 Closing modal properly...');
-        
+
         // Set display to none (standard way)
         modal.style.display = 'none';
-        
-        // DO NOT use visibility or opacity - these prevent reopening
-        // Just display: none is sufficient
-        
+
+        // Restore standard Save/Cancel buttons in case they were hidden (e.g. after vendor cost modal)
+        if (window.restoreStandardModalButtons) {
+            window.restoreStandardModalButtons();
+        }
+
         console.log('✅ Modal closed');
     }
     

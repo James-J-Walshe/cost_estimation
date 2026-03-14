@@ -1233,6 +1233,7 @@ function getModalFields(type) {
             <div class="form-group">
                 <label>Quantity (Licenses/Units):</label>
                 <input type="number" name="quantity" class="form-control" id="quantity" min="1" step="1" value="1" required>
+                <small class="form-text text-muted">Total cost = Cost per period × Quantity</small>
             </div>
             <div class="form-group">
                 <label>Start Date:</label>
@@ -1497,21 +1498,15 @@ function togglePercentageInput() {
     const riskBasedContent = document.getElementById('riskBasedContent');
     
     if (method === 'percentage') {
-        // Show percentage input, hide risk content
+        // Show percentage input; risk table stays visible regardless
         if (percentageGroup) {
             percentageGroup.style.display = 'block';
         }
-        if (riskBasedContent) {
-            riskBasedContent.style.display = 'none';
-        }
         console.log('Switched to percentage-based view');
     } else {
-        // Hide percentage input, show risk content
+        // Hide percentage input; risk table stays visible
         if (percentageGroup) {
             percentageGroup.style.display = 'none';
-        }
-        if (riskBasedContent) {
-            riskBasedContent.style.display = 'block';
         }
         console.log('Switched to risk-based view');
     }
