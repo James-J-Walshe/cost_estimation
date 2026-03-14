@@ -909,10 +909,14 @@ class TableRenderer {
 // Data update integration for edit functionality
 function updateItemById(itemId, newData, itemType) {
     const projectData = window.projectData || {};
-    
+    // DOM dataset values are always strings; stored IDs (Date.now()) are numbers.
+    // Normalise so === comparison works regardless of which type is passed in.
+    const numId = Number(itemId);
+    const id = isNaN(numId) ? itemId : numId;
+
     switch (itemType) {
         case 'internal-resource':
-            const resourceIndex = projectData.internalResources.findIndex(r => r.id === itemId);
+            const resourceIndex = projectData.internalResources.findIndex(r => r.id === id);
             if (resourceIndex !== -1) {
                 Object.assign(projectData.internalResources[resourceIndex], newData);
                 const rate = projectData.rateCards.find(r => r.role === newData.role);
@@ -924,43 +928,43 @@ function updateItemById(itemId, newData, itemType) {
             break;
             
         case 'vendor-cost':
-            const vendorIndex = projectData.vendorCosts.findIndex(v => v.id === itemId);
+            const vendorIndex = projectData.vendorCosts.findIndex(v => v.id === id);
             if (vendorIndex !== -1) {
                 Object.assign(projectData.vendorCosts[vendorIndex], newData);
             }
             break;
-            
+
         case 'tool-cost':
-            const toolIndex = projectData.toolCosts.findIndex(t => t.id === itemId);
+            const toolIndex = projectData.toolCosts.findIndex(t => t.id === id);
             if (toolIndex !== -1) {
                 Object.assign(projectData.toolCosts[toolIndex], newData);
             }
             break;
-            
+
         case 'misc-cost':
-            const miscIndex = projectData.miscCosts.findIndex(m => m.id === itemId);
+            const miscIndex = projectData.miscCosts.findIndex(m => m.id === id);
             if (miscIndex !== -1) {
                 Object.assign(projectData.miscCosts[miscIndex], newData);
             }
             break;
-            
+
         case 'risk':
-            const riskIndex = projectData.risks.findIndex(r => r.id === itemId);
+            const riskIndex = projectData.risks.findIndex(r => r.id === id);
             if (riskIndex !== -1) {
                 Object.assign(projectData.risks[riskIndex], newData);
             }
             break;
-            
+
         case 'rate-card':
-            const rateIndex = projectData.rateCards.findIndex(r => 
-                (r.id && r.id === itemId) || r.role === itemId
+            const rateIndex = projectData.rateCards.findIndex(r =>
+                (r.id && r.id === id) || r.role === itemId
             );
             if (rateIndex !== -1) {
                 Object.assign(projectData.rateCards[rateIndex], newData);
-                
+
                 if (newData.category === 'Internal') {
-                    const internalIndex = projectData.internalRates?.findIndex(r => 
-                        (r.id && r.id === itemId) || r.role === itemId
+                    const internalIndex = projectData.internalRates?.findIndex(r =>
+                        (r.id && r.id === id) || r.role === itemId
                     );
                     if (internalIndex !== -1 && projectData.internalRates) {
                         Object.assign(projectData.internalRates[internalIndex], {
@@ -969,8 +973,8 @@ function updateItemById(itemId, newData, itemType) {
                         });
                     }
                 } else if (newData.category === 'External') {
-                    const externalIndex = projectData.externalRates?.findIndex(r => 
-                        (r.id && r.id === itemId) || r.role === itemId
+                    const externalIndex = projectData.externalRates?.findIndex(r =>
+                        (r.id && r.id === id) || r.role === itemId
                     );
                     if (externalIndex !== -1 && projectData.externalRates) {
                         Object.assign(projectData.externalRates[externalIndex], {
