@@ -1,12 +1,12 @@
 // modules/ai_project_extractor.js
-// AI Project Extractor - Uses Claude API to extract project details from text or images
-// Populates project name, dates, and suggests a resource profile
+// AI Project Extractor - Uses Claude API to extract project details from text,
+// images, and documents simultaneously for maximum context.
 
 class AIProjectExtractor {
     constructor() {
         this.modalId = 'aiExtractorModal';
-        this.activeMode = 'text'; // 'text' or 'image'
-        this.imageData = null;    // { base64, mediaType }
+        this.images    = [];   // [{ base64, mediaType, name }]
+        this.documents = [];   // [{ base64, mediaType, name, textContent }]
         console.log('🤖 AI Project Extractor loaded');
     }
 
@@ -31,6 +31,8 @@ class AIProjectExtractor {
     showModal() {
         const existing = document.getElementById(this.modalId);
         if (existing) existing.remove();
+        this.images    = [];
+        this.documents = [];
 
         const container = document.createElement('div');
         container.id = this.modalId;
@@ -40,17 +42,13 @@ class AIProjectExtractor {
         this.injectStyles();
         this.wireModalEvents(container);
 
-        // Fade in
-        const overlay = container.querySelector('.aipe-overlay');
         requestAnimationFrame(() => {
-            overlay.style.opacity = '1';
+            container.querySelector('.aipe-overlay').style.opacity = '1';
         });
     }
 
     buildModalHTML() {
         const savedKey = localStorage.getItem('claudeApiKey') || '';
-        const maskedKey = savedKey ? savedKey : '';
-
         return `
         <div class="aipe-overlay" style="opacity:0;">
             <div class="aipe-modal">
@@ -63,56 +61,61 @@ class AIProjectExtractor {
                 </div>
 
                 <div class="aipe-body">
+
                     <!-- API Key -->
                     <div class="aipe-section">
                         <label class="aipe-label">Claude API Key</label>
                         <div class="aipe-api-row">
                             <input type="password" id="aipeApiKey" class="aipe-input"
-                                   value="${maskedKey}" placeholder="sk-ant-api03-…" autocomplete="off">
+                                   value="${savedKey}" placeholder="sk-ant-api03-…" autocomplete="off">
                             <button type="button" id="aipeToggleKey" class="aipe-icon-btn" title="Show/hide key">👁</button>
                         </div>
-                        <p class="aipe-hint">
-                            Stored locally in your browser.
-                            Get your key at <strong>console.anthropic.com</strong>
-                        </p>
+                        <p class="aipe-hint">Stored locally in your browser. Get your key at <strong>console.anthropic.com</strong></p>
                     </div>
 
-                    <!-- Mode tabs -->
-                    <div class="aipe-tabs">
-                        <button class="aipe-tab active" data-mode="text">📝 Text Description</button>
-                        <button class="aipe-tab" data-mode="image">🖼️ Image / Timeline</button>
-                    </div>
+                    <p class="aipe-intro">Provide as much information as you have — any combination of text, images, and documents will be used together to extract your project details.</p>
 
-                    <!-- Text panel -->
-                    <div id="aipeTextPanel" class="aipe-panel">
+                    <!-- ① Text description -->
+                    <div class="aipe-section">
+                        <label class="aipe-label">📝 Project Description <span class="aipe-optional">optional</span></label>
                         <textarea id="aipeText" class="aipe-textarea"
                             placeholder="Describe your project here. For example:&#10;&#10;'We need to deliver a new customer portal by end of Q4 2025. The project starts in July 2025. We'll need a project manager full-time, two developers for 6 months, a business analyst for the first 3 months, and QA for the final 2 months. The project is called Customer Portal Upgrade and will be led by Sarah Johnson.'"></textarea>
                     </div>
 
-                    <!-- Image panel -->
-                    <div id="aipeImagePanel" class="aipe-panel" style="display:none;">
-                        <div class="aipe-drop-zone" id="aipeDropZone">
-                            <div class="aipe-drop-icon">📎</div>
-                            <p>Drop an image here, or <strong>click to browse</strong></p>
-                            <p class="aipe-hint">Supports PNG, JPG, GIF, WEBP (max 5MB)</p>
-                            <input type="file" id="aipeFileInput" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none;">
+                    <!-- ② Images -->
+                    <div class="aipe-section">
+                        <label class="aipe-label">🖼️ Images / Timeline Screenshots <span class="aipe-optional">optional</span></label>
+                        <div class="aipe-drop-zone" id="aipeImageDropZone">
+                            <div class="aipe-drop-icon">🖼️</div>
+                            <p>Drop images here, or <strong>click to browse</strong></p>
+                            <p class="aipe-hint">PNG, JPG, GIF, WEBP · up to 5 images · max 5 MB each</p>
+                            <input type="file" id="aipeImageInput" accept="image/png,image/jpeg,image/gif,image/webp" multiple style="display:none;">
                         </div>
-                        <img id="aipeImagePreview" class="aipe-img-preview" style="display:none;" alt="Preview">
-                        <button type="button" id="aipeClearImage" class="aipe-clear-img" style="display:none;">✕ Remove image</button>
+                        <div id="aipeImageList" class="aipe-file-list"></div>
+                    </div>
+
+                    <!-- ③ Documents -->
+                    <div class="aipe-section">
+                        <label class="aipe-label">📄 Documents <span class="aipe-optional">optional</span></label>
+                        <div class="aipe-drop-zone" id="aipeDocDropZone">
+                            <div class="aipe-drop-icon">📄</div>
+                            <p>Drop documents here, or <strong>click to browse</strong></p>
+                            <p class="aipe-hint">PDF, Word (.docx), plain text (.txt, .md) · up to 3 files · max 10 MB each</p>
+                            <input type="file" id="aipeDocInput" accept=".pdf,.docx,.doc,.txt,.md,.csv" multiple style="display:none;">
+                        </div>
+                        <div id="aipeDocList" class="aipe-file-list"></div>
                     </div>
 
                     <!-- Submit -->
                     <div class="aipe-actions">
-                        <button type="button" id="aipeSubmit" class="aipe-btn-primary">
-                            🔍 Extract Project Details
-                        </button>
+                        <button type="button" id="aipeSubmit" class="aipe-btn-primary">🔍 Extract Project Details</button>
                         <button type="button" id="aipeCancel" class="aipe-btn-secondary">Cancel</button>
                     </div>
 
                     <!-- Loading -->
                     <div id="aipeLoading" class="aipe-loading" style="display:none;">
                         <div class="aipe-spinner"></div>
-                        <p>Analysing with Claude AI…</p>
+                        <p id="aipeLoadingMsg">Analysing with Claude AI…</p>
                     </div>
 
                     <!-- Results -->
@@ -121,7 +124,7 @@ class AIProjectExtractor {
                             <h3>✅ Extracted Project Details</h3>
                             <p class="aipe-hint">Review the details below, then click <strong>Apply</strong> to populate your project.</p>
                         </div>
-                        <div id="aipeResultsContent" class="aipe-results-content"></div>
+                        <div id="aipeResultsContent"></div>
                         <div class="aipe-results-actions">
                             <button type="button" id="aipeApply" class="aipe-btn-primary">Apply to Project</button>
                             <button type="button" id="aipeRetry" class="aipe-btn-secondary">Try Again</button>
@@ -130,6 +133,7 @@ class AIProjectExtractor {
 
                     <!-- Error -->
                     <div id="aipeError" class="aipe-error" style="display:none;"></div>
+
                 </div>
             </div>
         </div>`;
@@ -143,31 +147,38 @@ class AIProjectExtractor {
             if (e.target.classList.contains('aipe-overlay')) this.closeModal();
         });
 
-        // Escape key
         this._escHandler = (e) => { if (e.key === 'Escape') this.closeModal(); };
         document.addEventListener('keydown', this._escHandler);
 
-        // API key toggle visibility
+        // API key visibility toggle
         container.querySelector('#aipeToggleKey').addEventListener('click', () => {
             const inp = container.querySelector('#aipeApiKey');
             inp.type = inp.type === 'password' ? 'text' : 'password';
         });
 
-        // Mode tabs
-        container.querySelectorAll('.aipe-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                container.querySelectorAll('.aipe-tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                this.activeMode = tab.dataset.mode;
-                container.querySelector('#aipeTextPanel').style.display = this.activeMode === 'text' ? 'block' : 'none';
-                container.querySelector('#aipeImagePanel').style.display = this.activeMode === 'image' ? 'block' : 'none';
-            });
-        });
+        // Image drop zone
+        this.wireDropZone(
+            container.querySelector('#aipeImageDropZone'),
+            container.querySelector('#aipeImageInput'),
+            container.querySelector('#aipeImageList'),
+            'image',
+            container
+        );
 
-        // Image upload
-        const dropZone = container.querySelector('#aipeDropZone');
-        const fileInput = container.querySelector('#aipeFileInput');
+        // Document drop zone
+        this.wireDropZone(
+            container.querySelector('#aipeDocDropZone'),
+            container.querySelector('#aipeDocInput'),
+            container.querySelector('#aipeDocList'),
+            'document',
+            container
+        );
 
+        // Submit
+        container.querySelector('#aipeSubmit').addEventListener('click', () => this.handleSubmit(container));
+    }
+
+    wireDropZone(dropZone, fileInput, listEl, type, container) {
         dropZone.addEventListener('click', () => fileInput.click());
 
         dropZone.addEventListener('dragover', (e) => {
@@ -178,46 +189,124 @@ class AIProjectExtractor {
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropZone.classList.remove('drag-over');
-            const file = e.dataTransfer.files[0];
-            if (file) this.loadImageFile(file, container);
+            [...e.dataTransfer.files].forEach(f => this.loadFile(f, type, listEl, container));
         });
 
         fileInput.addEventListener('change', () => {
-            const file = fileInput.files[0];
-            if (file) this.loadImageFile(file, container);
-        });
-
-        container.querySelector('#aipeClearImage').addEventListener('click', () => {
-            this.imageData = null;
-            container.querySelector('#aipeImagePreview').style.display = 'none';
-            container.querySelector('#aipeClearImage').style.display = 'none';
-            container.querySelector('#aipeDropZone').style.display = 'flex';
+            [...fileInput.files].forEach(f => this.loadFile(f, type, listEl, container));
             fileInput.value = '';
         });
-
-        // Submit
-        container.querySelector('#aipeSubmit').addEventListener('click', () => this.handleSubmit(container));
     }
 
-    loadImageFile(file, container) {
+    // ─── File Loading ─────────────────────────────────────────────────────────
+
+    loadFile(file, type, listEl, container) {
+        if (type === 'image') {
+            this.loadImageFile(file, listEl, container);
+        } else {
+            this.loadDocumentFile(file, listEl, container);
+        }
+    }
+
+    loadImageFile(file, listEl, container) {
+        if (this.images.length >= 5) {
+            this.showError('Maximum 5 images allowed.', container);
+            return;
+        }
         if (file.size > 5 * 1024 * 1024) {
-            this.showError('Image must be smaller than 5MB.', container);
+            this.showError(`Image "${file.name}" exceeds 5 MB limit.`, container);
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const base64 = e.target.result.split(',')[1];
+            const entry = { base64, mediaType: file.type, name: file.name };
+            this.images.push(entry);
+            this.addFileChip(listEl, file.name, () => {
+                this.images = this.images.filter(i => i !== entry);
+            });
+        };
+        reader.readAsDataURL(file);
+    }
+
+    async loadDocumentFile(file, listEl, container) {
+        if (this.documents.length >= 3) {
+            this.showError('Maximum 3 documents allowed.', container);
+            return;
+        }
+        if (file.size > 10 * 1024 * 1024) {
+            this.showError(`File "${file.name}" exceeds 10 MB limit.`, container);
             return;
         }
 
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const dataUrl = e.target.result;
-            const base64 = dataUrl.split(',')[1];
-            this.imageData = { base64, mediaType: file.type };
+        const ext = file.name.split('.').pop().toLowerCase();
 
-            const preview = container.querySelector('#aipeImagePreview');
-            preview.src = dataUrl;
-            preview.style.display = 'block';
-            container.querySelector('#aipeClearImage').style.display = 'inline-block';
-            container.querySelector('#aipeDropZone').style.display = 'none';
-        };
-        reader.readAsDataURL(file);
+        if (ext === 'pdf') {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const base64 = e.target.result.split(',')[1];
+                const entry = { base64, mediaType: 'application/pdf', name: file.name, textContent: null };
+                this.documents.push(entry);
+                this.addFileChip(listEl, file.name, () => {
+                    this.documents = this.documents.filter(d => d !== entry);
+                });
+            };
+            reader.readAsDataURL(file);
+
+        } else if (ext === 'docx' || ext === 'doc') {
+            try {
+                const textContent = await this.extractWordText(file, container);
+                const entry = { base64: null, mediaType: null, name: file.name, textContent };
+                this.documents.push(entry);
+                this.addFileChip(listEl, file.name, () => {
+                    this.documents = this.documents.filter(d => d !== entry);
+                });
+            } catch (err) {
+                this.showError(`Could not read "${file.name}": ${err.message}`, container);
+            }
+
+        } else {
+            // Plain text: txt, md, csv
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const entry = { base64: null, mediaType: null, name: file.name, textContent: e.target.result };
+                this.documents.push(entry);
+                this.addFileChip(listEl, file.name, () => {
+                    this.documents = this.documents.filter(d => d !== entry);
+                });
+            };
+            reader.readAsText(file);
+        }
+    }
+
+    async extractWordText(file, container) {
+        // Load mammoth.js from CDN dynamically (only when a Word doc is uploaded)
+        if (!window.mammoth) {
+            this.updateLoadingMsg('Loading Word document parser…', container);
+            await new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js';
+                s.onload = resolve;
+                s.onerror = () => reject(new Error('Could not load Word parser. Try saving the file as PDF or TXT.'));
+                document.head.appendChild(s);
+            });
+            this.updateLoadingMsg('Analysing with Claude AI…', container);
+        }
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await window.mammoth.extractRawText({ arrayBuffer });
+        return result.value;
+    }
+
+    addFileChip(listEl, name, onRemove) {
+        const chip = document.createElement('div');
+        chip.className = 'aipe-file-chip';
+        chip.innerHTML = `<span class="aipe-chip-name" title="${this.esc(name)}">${this.esc(name)}</span>
+                          <button type="button" class="aipe-chip-remove" title="Remove">✕</button>`;
+        chip.querySelector('.aipe-chip-remove').addEventListener('click', () => {
+            onRemove();
+            chip.remove();
+        });
+        listEl.appendChild(chip);
     }
 
     closeModal() {
@@ -229,8 +318,8 @@ class AIProjectExtractor {
             overlay.style.transition = 'opacity 0.2s ease';
             setTimeout(() => modal.remove(), 200);
         }
-        this.imageData = null;
-        this.activeMode = 'text';
+        this.images    = [];
+        this.documents = [];
     }
 
     // ─── API Call ─────────────────────────────────────────────────────────────
@@ -242,29 +331,21 @@ class AIProjectExtractor {
             return;
         }
 
-        if (this.activeMode === 'text') {
-            const text = container.querySelector('#aipeText').value.trim();
-            if (!text) {
-                this.showError('Please enter a project description.', container);
-                return;
-            }
-        } else {
-            if (!this.imageData) {
-                this.showError('Please upload an image.', container);
-                return;
-            }
+        const text = container.querySelector('#aipeText').value.trim();
+        const hasInput = text || this.images.length > 0 || this.documents.length > 0;
+        if (!hasInput) {
+            this.showError('Please provide at least one input: a description, an image, or a document.', container);
+            return;
         }
 
-        // Save the API key
         localStorage.setItem('claudeApiKey', apiKey);
 
-        // Show loading
         this.setLoadingState(true, container);
         this.hideError(container);
         container.querySelector('#aipeResults').style.display = 'none';
 
         try {
-            const result = await this.callClaudeAPI(apiKey, container);
+            const result = await this.callClaudeAPI(apiKey, text, container);
             this.setLoadingState(false, container);
             this.showResults(result, container);
         } catch (err) {
@@ -273,8 +354,8 @@ class AIProjectExtractor {
         }
     }
 
-    async callClaudeAPI(apiKey, container) {
-        const systemPrompt = `You are an expert project analyst. Extract structured project details from the user's input (text description or image of a project timeline/plan).
+    async callClaudeAPI(apiKey, text, container) {
+        const systemPrompt = `You are an expert project analyst. Extract structured project details from all provided inputs (text, images, and documents). Combine all sources — prioritise the most specific information available across all inputs.
 
 Return ONLY a valid JSON object with this exact structure (no markdown, no explanation):
 {
@@ -294,7 +375,7 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no expla
     }
   ],
   "confidence": "high or medium or low",
-  "notes": "string - any important caveats or assumptions"
+  "notes": "string - any important caveats or assumptions made"
 }
 
 Available roles (use exact names):
@@ -303,33 +384,50 @@ External: Senior Consultant, Technical Architect, Implementation Specialist, Sup
 
 Rules:
 - Dates must be YYYY-MM format (e.g. "2025-07")
-- If a date cannot be determined, make a reasonable estimate and note it
+- If a date cannot be determined, make a reasonable estimate and note it in "notes"
 - allocationPercent: 100 = full time (20 days/month), 50 = half time (10 days/month)
 - startMonthOffset and endMonthOffset are 0-indexed from project start
-- Only suggest roles that are genuinely needed
-- projectManager field: extract the name if mentioned, otherwise leave empty`;
+- Only suggest roles that are genuinely needed based on the inputs
+- projectManager: extract the person's name if mentioned, otherwise leave empty
+- Synthesise information across all inputs; later or more specific inputs take precedence`;
 
-        let userContent;
+        // Build multipart content array
+        const userContent = [];
 
-        if (this.activeMode === 'text') {
-            const text = container.querySelector('#aipeText').value.trim();
-            userContent = [{ type: 'text', text: `Extract project details from this description:\n\n${text}` }];
-        } else {
-            userContent = [
-                {
-                    type: 'image',
-                    source: {
-                        type: 'base64',
-                        media_type: this.imageData.mediaType,
-                        data: this.imageData.base64
-                    }
-                },
-                {
-                    type: 'text',
-                    text: 'Extract project details from this project timeline or plan image.'
-                }
-            ];
+        // Add text description first
+        if (text) {
+            userContent.push({ type: 'text', text: `Project description:\n\n${text}` });
         }
+
+        // Add images
+        this.images.forEach((img, i) => {
+            if (i === 0) userContent.push({ type: 'text', text: `Project image${this.images.length > 1 ? ` ${i + 1} of ${this.images.length}` : ''}:` });
+            else userContent.push({ type: 'text', text: `Project image ${i + 1} of ${this.images.length}:` });
+            userContent.push({
+                type: 'image',
+                source: { type: 'base64', media_type: img.mediaType, data: img.base64 }
+            });
+        });
+
+        // Add documents
+        for (const doc of this.documents) {
+            if (doc.base64) {
+                // PDF — use document API
+                userContent.push({ type: 'text', text: `Document: ${doc.name}` });
+                userContent.push({
+                    type: 'document',
+                    source: { type: 'base64', media_type: doc.mediaType, data: doc.base64 }
+                });
+            } else if (doc.textContent) {
+                // Plain text (Word extracted or text file)
+                userContent.push({
+                    type: 'text',
+                    text: `Document "${doc.name}":\n\n${doc.textContent.substring(0, 8000)}`
+                });
+            }
+        }
+
+        userContent.push({ type: 'text', text: 'Extract all available project details from the above inputs and return the JSON.' });
 
         const response = await fetch('https://api.anthropic.com/v1/messages', {
             method: 'POST',
@@ -349,14 +447,11 @@ Rules:
 
         if (!response.ok) {
             const errBody = await response.json().catch(() => ({}));
-            const errMsg = errBody?.error?.message || `HTTP ${response.status}`;
-            throw new Error(errMsg);
+            throw new Error(errBody?.error?.message || `HTTP ${response.status}`);
         }
 
         const data = await response.json();
         const rawText = data.content?.[0]?.text || '';
-
-        // Strip any accidental markdown fences
         const cleaned = rawText.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
 
         try {
@@ -374,21 +469,20 @@ Rules:
         const resourceRows = (result.suggestedResources || []).map(r => {
             const daysPerMonth = Math.round((r.allocationPercent / 100) * 20);
             const duration = (r.endMonthOffset - r.startMonthOffset + 1);
-            return `
-                <tr>
-                    <td><strong>${r.role}</strong></td>
-                    <td>${r.category}</td>
-                    <td>${r.allocationPercent}% (${daysPerMonth} days/mo)</td>
-                    <td>${duration} month${duration !== 1 ? 's' : ''}</td>
-                    <td class="aipe-rationale">${r.rationale || ''}</td>
-                </tr>`;
+            return `<tr>
+                <td><strong>${this.esc(r.role)}</strong></td>
+                <td>${this.esc(r.category)}</td>
+                <td>${r.allocationPercent}% <span class="aipe-days">(${daysPerMonth} days/mo)</span></td>
+                <td>${duration} month${duration !== 1 ? 's' : ''}</td>
+                <td class="aipe-rationale">${this.esc(r.rationale || '')}</td>
+            </tr>`;
         }).join('');
 
-        const confidenceBadge = {
-            high: '<span class="aipe-badge aipe-badge-high">High confidence</span>',
-            medium: '<span class="aipe-badge aipe-badge-medium">Medium confidence</span>',
-            low: '<span class="aipe-badge aipe-badge-low">Low confidence</span>'
-        }[result.confidence] || '';
+        const badges = { high: 'aipe-badge-high', medium: 'aipe-badge-medium', low: 'aipe-badge-low' };
+        const confidenceLabel = { high: 'High confidence', medium: 'Medium confidence', low: 'Low confidence' };
+        const confidenceBadge = result.confidence
+            ? `<span class="aipe-badge ${badges[result.confidence] || ''}">${confidenceLabel[result.confidence] || result.confidence}</span>`
+            : '';
 
         container.querySelector('#aipeResultsContent').innerHTML = `
             <div class="aipe-result-grid">
@@ -406,7 +500,7 @@ Rules:
                 </div>
                 <div class="aipe-result-item">
                     <span class="aipe-result-label">Duration</span>
-                    <span class="aipe-result-value">${projectMonthCount} months</span>
+                    <span class="aipe-result-value">${projectMonthCount} month${projectMonthCount !== 1 ? 's' : ''}</span>
                 </div>
                 <div class="aipe-result-item">
                     <span class="aipe-result-label">Project Manager</span>
@@ -422,15 +516,9 @@ Rules:
             <h4 class="aipe-section-title">Suggested Resource Profile</h4>
             <div class="aipe-table-wrap">
                 <table class="aipe-resource-table">
-                    <thead>
-                        <tr>
-                            <th>Role</th>
-                            <th>Category</th>
-                            <th>Allocation</th>
-                            <th>Duration</th>
-                            <th>Rationale</th>
-                        </tr>
-                    </thead>
+                    <thead><tr>
+                        <th>Role</th><th>Category</th><th>Allocation</th><th>Duration</th><th>Rationale</th>
+                    </tr></thead>
                     <tbody>${resourceRows}</tbody>
                 </table>
             </div>` : ''}
@@ -440,16 +528,13 @@ Rules:
         `;
 
         container.querySelector('#aipeResults').style.display = 'block';
-
-        // Apply button
-        const applyBtn = container.querySelector('#aipeApply');
-        applyBtn.onclick = () => this.applyToProject(result, container);
-
-        // Retry button
-        const retryBtn = container.querySelector('#aipeRetry');
-        retryBtn.onclick = () => {
+        container.querySelector('#aipeApply').onclick = () => this.applyToProject(result, container);
+        container.querySelector('#aipeRetry').onclick = () => {
             container.querySelector('#aipeResults').style.display = 'none';
         };
+
+        // Scroll results into view
+        container.querySelector('#aipeResults').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     // ─── Apply ────────────────────────────────────────────────────────────────
@@ -461,34 +546,27 @@ Rules:
             return;
         }
 
-        // Apply project info
-        if (result.projectName)      pd.projectInfo.projectName      = result.projectName;
-        if (result.startDate)        pd.projectInfo.startDate        = result.startDate;
-        if (result.endDate)          pd.projectInfo.endDate          = result.endDate;
-        if (result.projectManager)   pd.projectInfo.projectManager   = result.projectManager;
+        if (result.projectName)        pd.projectInfo.projectName        = result.projectName;
+        if (result.startDate)          pd.projectInfo.startDate          = result.startDate;
+        if (result.endDate)            pd.projectInfo.endDate            = result.endDate;
+        if (result.projectManager)     pd.projectInfo.projectManager     = result.projectManager;
         if (result.projectDescription) pd.projectInfo.projectDescription = result.projectDescription;
 
-        // Sync form fields
         this.syncFormFields(pd.projectInfo);
 
-        // Apply resource profile
-        const resources = result.suggestedResources || [];
-        if (resources.length > 0) {
-            this.applyResources(resources, pd);
+        if ((result.suggestedResources || []).length > 0) {
+            this.applyResources(result.suggestedResources, pd);
         }
 
-        // Re-render
-        if (typeof window.updateSummary === 'function') window.updateSummary();
-        if (typeof window.updateMonthHeaders === 'function') window.updateMonthHeaders();
-        if (window.tableRenderer?.renderAllTables) window.tableRenderer.renderAllTables();
+        if (typeof window.updateSummary === 'function')           window.updateSummary();
+        if (typeof window.updateMonthHeaders === 'function')      window.updateMonthHeaders();
+        if (window.tableRenderer?.renderAllTables)                window.tableRenderer.renderAllTables();
         if (typeof window.renderResourcePlanForecast === 'function') window.renderResourcePlanForecast();
 
-        // Save to localStorage
         try { localStorage.setItem('ictProjectData', JSON.stringify(pd)); } catch (_) {}
 
         this.closeModal();
 
-        // Navigate to project info in settings so the user can review
         if (window.initManager?.showSettingsView) {
             window.initManager.showSettingsView('project-info');
         }
@@ -497,15 +575,8 @@ Rules:
     }
 
     syncFormFields(info) {
-        const fieldMap = {
-            projectName: 'projectName',
-            startDate: 'startDate',
-            endDate: 'endDate',
-            projectManager: 'projectManager',
-            projectDescription: 'projectDescription'
-        };
-        Object.entries(fieldMap).forEach(([key, id]) => {
-            const el = document.getElementById(id);
+        ['projectName', 'startDate', 'endDate', 'projectManager', 'projectDescription'].forEach(key => {
+            const el = document.getElementById(key);
             if (el && info[key]) el.value = info[key];
         });
     }
@@ -530,11 +601,10 @@ Rules:
                 dailyRate: rateCard.rate
             };
 
-            // Populate month day fields for each project month
             for (let m = 1; m <= Math.min(totalMonths, 24); m++) {
-                const monthIndex = m - 1; // 0-based
-                const inRange = monthIndex >= (r.startMonthOffset || 0) &&
-                                monthIndex <= (r.endMonthOffset !== undefined ? r.endMonthOffset : totalMonths - 1);
+                const idx = m - 1;
+                const inRange = idx >= (r.startMonthOffset || 0) &&
+                                idx <= (r.endMonthOffset !== undefined ? r.endMonthOffset : totalMonths - 1);
                 resource[`month${m}Days`] = inRange ? daysPerMonth : 0;
             }
 
@@ -554,8 +624,13 @@ Rules:
     }
 
     setLoadingState(loading, container) {
-        container.querySelector('#aipeLoading').style.display  = loading ? 'flex' : 'none';
-        container.querySelector('#aipeSubmit').disabled        = loading;
+        container.querySelector('#aipeLoading').style.display = loading ? 'flex' : 'none';
+        container.querySelector('#aipeSubmit').disabled       = loading;
+    }
+
+    updateLoadingMsg(msg, container) {
+        const el = container?.querySelector('#aipeLoadingMsg');
+        if (el) el.textContent = msg;
     }
 
     showError(msg, container) {
@@ -570,10 +645,8 @@ Rules:
 
     esc(str) {
         return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
     // ─── Styles ───────────────────────────────────────────────────────────────
@@ -584,323 +657,155 @@ Rules:
         style.id = 'aipe-styles';
         style.textContent = `
         .aipe-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.6);
-            z-index: 10500;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-            transition: opacity 0.25s ease;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            z-index: 10500; display: flex; align-items: center; justify-content: center;
+            padding: 16px; transition: opacity 0.25s ease;
         }
         .aipe-modal {
-            background: #fff;
-            border-radius: 12px;
-            width: 100%;
-            max-width: 680px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-            display: flex;
-            flex-direction: column;
+            background: #fff; border-radius: 12px; width: 100%; max-width: 700px;
+            max-height: 92vh; overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25); display: flex; flex-direction: column;
         }
         .aipe-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 20px 24px 16px;
-            border-bottom: 1px solid #e5e7eb;
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            border-radius: 12px 12px 0 0;
-            color: white;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 18px 24px; border-radius: 12px 12px 0 0;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white;
+            position: sticky; top: 0; z-index: 1;
         }
-        .aipe-header-title {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .aipe-header-title h2 {
-            margin: 0;
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: white;
-        }
-        .aipe-icon { font-size: 1.4rem; }
+        .aipe-header-title { display: flex; align-items: center; gap: 10px; }
+        .aipe-header-title h2 { margin: 0; font-size: 1.15rem; font-weight: 600; color: white; }
+        .aipe-icon { font-size: 1.3rem; }
         .aipe-close {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            border-radius: 6px;
-            color: white;
-            width: 30px;
-            height: 30px;
-            cursor: pointer;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.15s;
+            background: rgba(255,255,255,0.2); border: none; border-radius: 6px;
+            color: white; width: 30px; height: 30px; cursor: pointer; font-size: 1rem;
+            display: flex; align-items: center; justify-content: center; transition: background 0.15s;
         }
         .aipe-close:hover { background: rgba(255,255,255,0.35); }
-        .aipe-body {
-            padding: 20px 24px 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+        .aipe-body { padding: 20px 24px 24px; display: flex; flex-direction: column; gap: 18px; }
+        .aipe-intro {
+            margin: 0; padding: 10px 14px; background: #f0f9ff;
+            border: 1px solid #bae6fd; border-radius: 8px;
+            font-size: 0.85rem; color: #0369a1; line-height: 1.5;
         }
-        .aipe-section { display: flex; flex-direction: column; gap: 6px; }
-        .aipe-label {
-            font-weight: 600;
-            font-size: 0.875rem;
-            color: #374151;
+        .aipe-section { display: flex; flex-direction: column; gap: 8px; }
+        .aipe-label { font-weight: 600; font-size: 0.875rem; color: #374151; }
+        .aipe-optional {
+            font-weight: 400; font-size: 0.75rem; color: #9ca3af;
+            margin-left: 6px; font-style: italic;
         }
-        .aipe-api-row {
-            display: flex;
-            gap: 8px;
-        }
+        .aipe-api-row { display: flex; gap: 8px; }
         .aipe-input {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 0.875rem;
-            font-family: monospace;
+            flex: 1; padding: 8px 12px; border: 1px solid #d1d5db;
+            border-radius: 6px; font-size: 0.875rem; font-family: monospace;
         }
-        .aipe-input:focus {
-            outline: none;
-            border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
-        }
+        .aipe-input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
         .aipe-icon-btn {
-            padding: 8px 10px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            background: #f9fafb;
-            cursor: pointer;
-            font-size: 1rem;
+            padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px;
+            background: #f9fafb; cursor: pointer; font-size: 1rem;
         }
         .aipe-icon-btn:hover { background: #f3f4f6; }
         .aipe-hint { font-size: 0.78rem; color: #9ca3af; margin: 0; }
-        .aipe-tabs {
-            display: flex;
-            gap: 8px;
-            border-bottom: 2px solid #e5e7eb;
-            padding-bottom: 0;
-        }
-        .aipe-tab {
-            padding: 8px 16px;
-            border: none;
-            background: none;
-            cursor: pointer;
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: #6b7280;
-            border-bottom: 2px solid transparent;
-            margin-bottom: -2px;
-            transition: color 0.15s, border-color 0.15s;
-        }
-        .aipe-tab:hover { color: #4f46e5; }
-        .aipe-tab.active {
-            color: #4f46e5;
-            border-bottom-color: #4f46e5;
-        }
-        .aipe-panel {}
         .aipe-textarea {
-            width: 100%;
-            min-height: 140px;
-            padding: 10px 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 0.875rem;
-            line-height: 1.5;
-            resize: vertical;
-            font-family: inherit;
+            width: 100%; min-height: 110px; padding: 10px 12px;
+            border: 1px solid #d1d5db; border-radius: 8px;
+            font-size: 0.875rem; line-height: 1.5; resize: vertical; font-family: inherit;
             box-sizing: border-box;
         }
-        .aipe-textarea:focus {
-            outline: none;
-            border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
-        }
+        .aipe-textarea:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
         .aipe-drop-zone {
-            border: 2px dashed #d1d5db;
-            border-radius: 10px;
-            padding: 32px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            transition: border-color 0.15s, background 0.15s;
+            border: 2px dashed #d1d5db; border-radius: 10px; padding: 22px 20px;
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+            cursor: pointer; transition: border-color 0.15s, background 0.15s;
         }
         .aipe-drop-zone:hover, .aipe-drop-zone.drag-over {
-            border-color: #6366f1;
-            background: rgba(99,102,241,0.04);
+            border-color: #6366f1; background: rgba(99,102,241,0.04);
         }
-        .aipe-drop-icon { font-size: 2rem; }
-        .aipe-drop-zone p { margin: 0; color: #6b7280; font-size: 0.875rem; text-align: center; }
-        .aipe-img-preview {
-            max-width: 100%;
-            max-height: 260px;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
-            object-fit: contain;
-            display: block;
+        .aipe-drop-icon { font-size: 1.8rem; }
+        .aipe-drop-zone p { margin: 0; color: #6b7280; font-size: 0.85rem; text-align: center; }
+        .aipe-file-list { display: flex; flex-wrap: wrap; gap: 8px; min-height: 0; }
+        .aipe-file-chip {
+            display: flex; align-items: center; gap: 6px; padding: 4px 10px;
+            background: #f0fdf4; border: 1px solid #86efac; border-radius: 20px;
+            font-size: 0.8rem; color: #166534; max-width: 220px;
         }
-        .aipe-clear-img {
-            display: inline-block;
-            margin-top: 6px;
-            padding: 4px 10px;
-            border: 1px solid #fca5a5;
-            border-radius: 6px;
-            background: #fef2f2;
-            color: #b91c1c;
-            font-size: 0.8rem;
-            cursor: pointer;
+        .aipe-chip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .aipe-chip-remove {
+            background: none; border: none; cursor: pointer; color: #6b7280;
+            font-size: 0.75rem; line-height: 1; padding: 0; flex-shrink: 0;
         }
-        .aipe-actions {
-            display: flex;
-            gap: 10px;
-        }
+        .aipe-chip-remove:hover { color: #b91c1c; }
+        .aipe-actions { display: flex; gap: 10px; }
         .aipe-btn-primary {
-            flex: 1;
-            padding: 10px 20px;
+            flex: 1; padding: 10px 20px;
             background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.15s;
+            color: white; border: none; border-radius: 8px;
+            font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.15s;
         }
         .aipe-btn-primary:hover:not(:disabled) { opacity: 0.9; }
         .aipe-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
         .aipe-btn-secondary {
-            padding: 10px 20px;
-            background: #f3f4f6;
-            color: #374151;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background 0.15s;
+            padding: 10px 20px; background: #f3f4f6; color: #374151;
+            border: 1px solid #d1d5db; border-radius: 8px;
+            font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: background 0.15s;
         }
         .aipe-btn-secondary:hover { background: #e5e7eb; }
         .aipe-loading {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 16px;
-            background: #f8f9ff;
-            border-radius: 8px;
-            color: #4f46e5;
-            font-weight: 500;
+            display: flex; align-items: center; gap: 12px; padding: 14px 16px;
+            background: #f8f9ff; border-radius: 8px; color: #4f46e5; font-weight: 500;
         }
         .aipe-spinner {
-            width: 22px;
-            height: 22px;
-            border: 3px solid #c7d2fe;
-            border-top-color: #4f46e5;
-            border-radius: 50%;
-            animation: aipe-spin 0.7s linear infinite;
-            flex-shrink: 0;
+            width: 20px; height: 20px; border: 3px solid #c7d2fe;
+            border-top-color: #4f46e5; border-radius: 50%;
+            animation: aipe-spin 0.7s linear infinite; flex-shrink: 0;
         }
         @keyframes aipe-spin { to { transform: rotate(360deg); } }
         .aipe-error {
-            padding: 12px 16px;
-            background: #fef2f2;
-            border: 1px solid #fca5a5;
-            border-radius: 8px;
-            color: #b91c1c;
-            font-size: 0.875rem;
+            padding: 12px 16px; background: #fef2f2;
+            border: 1px solid #fca5a5; border-radius: 8px;
+            color: #b91c1c; font-size: 0.875rem;
         }
         .aipe-results-header h3 { margin: 0 0 4px; font-size: 1rem; color: #065f46; }
         .aipe-result-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 16px;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;
         }
         .aipe-result-wide { grid-column: 1 / -1; }
         .aipe-result-item {
-            background: #f9fafb;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 10px 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
+            background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
+            padding: 10px 14px; display: flex; flex-direction: column; gap: 2px;
         }
         .aipe-result-label {
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            color: #9ca3af;
+            font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.05em; color: #9ca3af;
         }
-        .aipe-result-value {
-            font-size: 0.9rem;
-            color: #111827;
-            font-weight: 500;
-        }
-        .aipe-section-title {
-            margin: 8px 0 10px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #374151;
-        }
+        .aipe-result-value { font-size: 0.9rem; color: #111827; font-weight: 500; }
+        .aipe-section-title { margin: 4px 0 10px; font-size: 0.9rem; font-weight: 600; color: #374151; }
         .aipe-table-wrap { overflow-x: auto; }
-        .aipe-resource-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.82rem;
-        }
+        .aipe-resource-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
         .aipe-resource-table th {
-            background: #f3f4f6;
-            padding: 8px 10px;
-            text-align: left;
-            font-weight: 600;
-            color: #6b7280;
-            border-bottom: 2px solid #e5e7eb;
+            background: #f3f4f6; padding: 8px 10px; text-align: left;
+            font-weight: 600; color: #6b7280; border-bottom: 2px solid #e5e7eb;
         }
-        .aipe-resource-table td {
-            padding: 8px 10px;
-            border-bottom: 1px solid #f3f4f6;
-            color: #374151;
-        }
+        .aipe-resource-table td { padding: 8px 10px; border-bottom: 1px solid #f3f4f6; color: #374151; }
         .aipe-resource-table tr:last-child td { border-bottom: none; }
         .aipe-rationale { color: #9ca3af; font-style: italic; }
+        .aipe-days { color: #9ca3af; font-size: 0.78rem; }
         .aipe-notes {
-            margin-top: 12px;
-            padding: 10px 14px;
-            background: #fffbeb;
-            border: 1px solid #fcd34d;
-            border-radius: 8px;
-            font-size: 0.82rem;
-            color: #92400e;
+            margin-top: 12px; padding: 10px 14px; background: #fffbeb;
+            border: 1px solid #fcd34d; border-radius: 8px;
+            font-size: 0.82rem; color: #92400e;
         }
         .aipe-badge {
-            display: inline-block;
-            margin-top: 10px;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
+            display: inline-block; margin-top: 10px; padding: 3px 10px;
+            border-radius: 12px; font-size: 0.75rem; font-weight: 600;
         }
         .aipe-badge-high   { background: #d1fae5; color: #065f46; }
         .aipe-badge-medium { background: #fef3c7; color: #92400e; }
         .aipe-badge-low    { background: #fee2e2; color: #b91c1c; }
-        .aipe-results-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 16px;
-        }
+        .aipe-results-actions { display: flex; gap: 10px; margin-top: 16px; }
         @media (max-width: 540px) {
             .aipe-result-grid { grid-template-columns: 1fr; }
             .aipe-result-wide { grid-column: auto; }
-            .aipe-modal { max-height: 95vh; }
+            .aipe-modal { max-height: 96vh; }
         }
         `;
         document.head.appendChild(style);
