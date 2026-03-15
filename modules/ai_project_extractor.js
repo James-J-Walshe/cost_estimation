@@ -600,9 +600,12 @@ Rules:
     }
 
     syncFormFields(info) {
+        const dateFields = new Set(['startDate', 'endDate']);
         ['projectName', 'startDate', 'endDate', 'projectManager', 'projectDescription'].forEach(key => {
             const el = document.getElementById(key);
-            if (el && info[key]) el.value = info[key];
+            if (!el || !info[key]) return;
+            // type="date" inputs require YYYY-MM-DD; projectData stores YYYY-MM, so append -01
+            el.value = dateFields.has(key) ? `${info[key]}-01` : info[key];
         });
     }
 
