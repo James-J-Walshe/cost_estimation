@@ -276,11 +276,11 @@ class EditManager {
                 </select>`;
                 cells[3].innerHTML = `<input type="number" class="edit-input" value="${data.costPerPeriod}" data-field="costPerPeriod" step="0.01" min="0">`;
                 cells[4].innerHTML = `<input type="number" class="edit-input" value="${data.quantity}" data-field="quantity" step="1" min="1">`;
-                cells[5].innerHTML = `<input type="month" class="edit-input" value="${data.startDate}" data-field="startDate">`;
+                cells[5].innerHTML = `<input type="date" class="edit-input" value="${data.startDate}" data-field="startDate">`;
                 if (data.isOngoing) {
                     cells[6].innerHTML = `<span>Ongoing</span><input type="hidden" class="edit-input" value="" data-field="endDate">`;
                 } else {
-                    cells[6].innerHTML = `<input type="month" class="edit-input" value="${data.endDate}" data-field="endDate">`;
+                    cells[6].innerHTML = `<input type="date" class="edit-input" value="${data.endDate}" data-field="endDate">`;
                 }
                 // cells[7] is Total Cost (computed) — leave as-is
                 break;
