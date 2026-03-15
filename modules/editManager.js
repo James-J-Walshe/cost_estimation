@@ -172,8 +172,11 @@ class EditManager {
                 break;
                 
             case 'tool-cost': {
-                // Read directly from projectData to avoid parsing formatted display values
-                const toolData = window.projectData?.toolCosts?.find(t => t.id === itemId);
+                // Read directly from projectData to avoid parsing formatted display values.
+                // itemId from the DOM is always a string; stored IDs (Date.now()) are numbers.
+                const _numId = Number(itemId);
+                const _id = isNaN(_numId) ? itemId : _numId;
+                const toolData = window.projectData?.toolCosts?.find(t => t.id === _id);
                 if (toolData) {
                     data.tool = toolData.tool || '';
                     data.procurementType = toolData.procurementType || '';
