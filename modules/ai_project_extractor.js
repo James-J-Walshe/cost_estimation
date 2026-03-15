@@ -469,10 +469,18 @@ Rules:
 
         const data = await response.json();
         const rawText = data.content?.[0]?.text || '';
-        const cleaned = rawText.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+
+        // Robustly extract JSON: find the outermost { ... } block,
+        // handling any code-fence variation Claude might use
+        const firstBrace = rawText.indexOf('{');
+        const lastBrace  = rawText.lastIndexOf('}');
+        if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
+            throw new Error(`No JSON object found in AI response. Raw output: ${rawText.substring(0, 200)}`);
+        }
+        const jsonStr = rawText.slice(firstBrace, lastBrace + 1);
 
         try {
-            return JSON.parse(cleaned);
+            return JSON.parse(jsonStr);
         } catch {
             throw new Error(`Could not parse AI response. Raw output: ${rawText.substring(0, 200)}`);
         }
