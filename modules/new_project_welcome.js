@@ -118,8 +118,26 @@ class NewProjectWelcome {
                         </svg>
                     </div>
                     <div class="option-content">
-                        <h3>Start New Project</h3>
+                        <h3>Start New Project Manually</h3>
                         <p>Begin a fresh project by entering your project information and building your cost estimate from scratch.</p>
+                    </div>
+                    <div class="option-arrow">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9,18 15,12 9,6"></polyline>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="welcome-option welcome-option-ai" id="startWithAI">
+                    <div class="option-icon option-icon-ai">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path>
+                        </svg>
+                    </div>
+                    <div class="option-content">
+                        <h3>Start with AI Extraction ✨</h3>
+                        <p>Paste a description, upload a timeline image, or attach a document — let AI propose your project details and resource profile automatically.</p>
                     </div>
                     <div class="option-arrow">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -317,6 +335,21 @@ class NewProjectWelcome {
                 color: #374151;
             }
             
+            .welcome-option-ai {
+                border-color: #c4b5fd;
+                background: linear-gradient(135deg, #faf5ff 0%, #f5f3ff 100%);
+            }
+
+            .welcome-option-ai:hover {
+                border-color: #8b5cf6;
+                background: linear-gradient(135deg, #f3e8ff 0%, #ede9fe 100%);
+                box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);
+            }
+
+            .option-icon-ai {
+                background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            }
+
             /* Mobile responsiveness */
             @media (max-width: 640px) {
                 .welcome-modal-content {
@@ -364,7 +397,7 @@ class NewProjectWelcome {
             });
         }
         
-        // Start new project option
+        // Start new project option (manual)
         const startNewBtn = this.welcomeModal.querySelector('#startNewProject');
         if (startNewBtn) {
             startNewBtn.addEventListener('click', () => {
@@ -372,7 +405,16 @@ class NewProjectWelcome {
                 this.handleStartNewProject();
             });
         }
-        
+
+        // Start with AI option
+        const startAIBtn = this.welcomeModal.querySelector('#startWithAI');
+        if (startAIBtn) {
+            startAIBtn.addEventListener('click', () => {
+                console.log('Start with AI clicked');
+                this.handleStartWithAI();
+            });
+        }
+
         // Skip/close button
         const closeBtn = this.welcomeModal.querySelector('#welcomeCloseBtn');
         if (closeBtn) {
@@ -440,6 +482,31 @@ class NewProjectWelcome {
         } catch (error) {
             console.error('Error handling start new project:', error);
             this.showErrorMessage('Error starting new project. Please try again.');
+        }
+    }
+
+    // Handle starting a new project via AI extraction
+    handleStartWithAI() {
+        try {
+            console.log('Initiating AI-assisted new project flow');
+
+            // Close the welcome modal
+            this.closeWelcomeModal();
+
+            // Clear project data first so AI results populate a clean slate
+            this.clearProjectData();
+
+            // Launch the AI extractor modal
+            if (window.aiProjectExtractor && typeof window.aiProjectExtractor.showModal === 'function') {
+                window.aiProjectExtractor.showModal();
+            } else {
+                console.warn('AI Project Extractor not available — falling back to manual setup');
+                this.triggerStandardSettings();
+            }
+
+        } catch (error) {
+            console.error('Error handling start with AI:', error);
+            this.showErrorMessage('Error launching AI extractor. Please try again.');
         }
     }
 
