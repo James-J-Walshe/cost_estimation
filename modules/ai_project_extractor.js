@@ -62,7 +62,7 @@ class AIProjectExtractor {
 
                 <div class="aipe-body">
 
-                    <!-- API Key -->
+                    <!-- API Key + Model -->
                     <div class="aipe-section">
                         <label class="aipe-label">Claude API Key</label>
                         <div class="aipe-api-row">
@@ -71,6 +71,15 @@ class AIProjectExtractor {
                             <button type="button" id="aipeToggleKey" class="aipe-icon-btn" title="Show/hide key">👁</button>
                         </div>
                         <p class="aipe-hint">Stored locally in your browser. Get your key at <strong>console.anthropic.com</strong></p>
+                    </div>
+                    <div class="aipe-section">
+                        <label class="aipe-label">Model</label>
+                        <select id="aipeModel" class="aipe-select">
+                            <option value="claude-haiku-4-5-20251001" ${this.getSavedModel() === 'claude-haiku-4-5-20251001' ? 'selected' : ''}>Claude Haiku 4.5 — Fast &amp; economical</option>
+                            <option value="claude-sonnet-4-6"         ${this.getSavedModel() === 'claude-sonnet-4-6'         ? 'selected' : ''}>Claude Sonnet 4.6 — Balanced</option>
+                            <option value="claude-opus-4-6"           ${this.getSavedModel() === 'claude-opus-4-6'           ? 'selected' : ''}>Claude Opus 4.6 — Most capable</option>
+                        </select>
+                        <p class="aipe-hint">A more capable model may extract richer detail from complex documents or images.</p>
                     </div>
 
                     <p class="aipe-intro">Provide as much information as you have — any combination of text, images, and documents will be used together to extract your project details.</p>
@@ -339,13 +348,15 @@ class AIProjectExtractor {
         }
 
         localStorage.setItem('claudeApiKey', apiKey);
+        const model = container.querySelector('#aipeModel').value;
+        localStorage.setItem('claudeModel', model);
 
         this.setLoadingState(true, container);
         this.hideError(container);
         container.querySelector('#aipeResults').style.display = 'none';
 
         try {
-            const result = await this.callClaudeAPI(apiKey, text, container);
+            const result = await this.callClaudeAPI(apiKey, model, text, container);
             this.setLoadingState(false, container);
             this.showResults(result, container);
         } catch (err) {
@@ -354,8 +365,12 @@ class AIProjectExtractor {
         }
     }
 
-    async callClaudeAPI(apiKey, text, container) {
+    async callClaudeAPI(apiKey, model, text, container) {
+        const today = new Date().toISOString().slice(0, 7); // YYYY-MM
+
         const systemPrompt = `You are an expert project analyst. Extract structured project details from all provided inputs (text, images, and documents). Combine all sources — prioritise the most specific information available across all inputs.
+
+Today's date is ${today}.
 
 Return ONLY a valid JSON object with this exact structure (no markdown, no explanation):
 {
@@ -383,8 +398,10 @@ Internal: Project Manager, Business Analyst, Technical Lead, Developer, Tester
 External: Senior Consultant, Technical Architect, Implementation Specialist, Support Specialist
 
 Rules:
-- Dates must be YYYY-MM format (e.g. "2025-07")
-- If a date cannot be determined, make a reasonable estimate and note it in "notes"
+- Dates MUST always be provided in YYYY-MM format — never leave them blank.
+- If dates are explicitly stated in the inputs, use those.
+- If dates are not stated, derive them from any available evidence (e.g. "Q3 2025 launch" → endDate 2025-09, startDate estimated 6 months earlier). Use today's date (${today}) as your reference point for relative dates like "next quarter" or "in 3 months".
+- Explain any date estimates in the "notes" field.
 - allocationPercent: 100 = full time (20 days/month), 50 = half time (10 days/month)
 - startMonthOffset and endMonthOffset are 0-indexed from project start
 - Only suggest roles that are genuinely needed based on the inputs
@@ -438,7 +455,7 @@ Rules:
                 'anthropic-dangerous-direct-browser-access': 'true'
             },
             body: JSON.stringify({
-                model: 'claude-haiku-4-5-20251001',
+                model: model,
                 max_tokens: 1024,
                 system: systemPrompt,
                 messages: [{ role: 'user', content: userContent }]
@@ -616,6 +633,10 @@ Rules:
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
+    getSavedModel() {
+        return localStorage.getItem('claudeModel') || 'claude-haiku-4-5-20251001';
+    }
+
     monthsBetween(startStr, endStr) {
         if (!startStr || !endStr) return 0;
         const [sy, sm] = startStr.split('-').map(Number);
@@ -704,6 +725,11 @@ Rules:
             background: #f9fafb; cursor: pointer; font-size: 1rem;
         }
         .aipe-icon-btn:hover { background: #f3f4f6; }
+        .aipe-select {
+            width: 100%; padding: 8px 12px; border: 1px solid #d1d5db;
+            border-radius: 6px; font-size: 0.875rem; background: #fff; cursor: pointer;
+        }
+        .aipe-select:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
         .aipe-hint { font-size: 0.78rem; color: #9ca3af; margin: 0; }
         .aipe-textarea {
             width: 100%; min-height: 110px; padding: 10px 12px;
