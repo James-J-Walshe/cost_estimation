@@ -346,7 +346,34 @@ class EditManager {
                 row.classList.remove('saving');
                 return;
             }
-            
+
+            // For tool costs, warn if dates extend beyond the project end date
+            if (editState.type === 'tool-cost') {
+                const projEnd = window.projectData?.projectInfo?.endDate;
+                if (projEnd && newData.startDate) {
+                    const toolStartYM = newData.startDate.substring(0, 7);
+                    const isOngoing = !newData.endDate || newData.endDate === '';
+                    const toolEndYM = !isOngoing ? newData.endDate.substring(0, 7) : null;
+                    const fmtMonth = ym => new Date(ym + '-01').toLocaleDateString('en-GB', { year: 'numeric', month: 'long' });
+                    const fmtDay   = d  => new Date(d).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
+
+                    let warningMsg = null;
+                    if (toolStartYM > projEnd) {
+                        warningMsg = `⚠️ Date Warning\n\nThe tool start date (${fmtDay(newData.startDate)}) is after the project end date (${fmtMonth(projEnd)}).\n\nNo costs will be calculated for this tool.\n\nDo you want to save anyway?`;
+                    } else if (toolEndYM && toolEndYM > projEnd) {
+                        warningMsg = `⚠️ Date Warning\n\nThe tool end date (${fmtDay(newData.endDate)}) is after the project end date (${fmtMonth(projEnd)}).\n\nCosts will only be calculated up to the end of the project. The remaining period will not be included.\n\nDo you want to continue?`;
+                    }
+
+                    if (warningMsg) {
+                        row.classList.remove('saving');
+                        if (!confirm(warningMsg)) {
+                            return;
+                        }
+                        row.classList.add('saving');
+                    }
+                }
+            }
+
             // Update the data
             this.updateItemData(itemId, newData, editState.type);
             

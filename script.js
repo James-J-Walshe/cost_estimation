@@ -1374,7 +1374,30 @@ function handleModalSubmit() {
                         return;
                     }
                 }
-                
+
+                // Warn if tool dates extend beyond the project end date
+                {
+                    const projEnd = projectData.projectInfo?.endDate;
+                    if (projEnd && data.startDate) {
+                        const toolStartYM = data.startDate.substring(0, 7);
+                        const isOngoing = data.isOngoing === 'on';
+                        const toolEndYM = !isOngoing && data.endDate ? data.endDate.substring(0, 7) : null;
+                        const fmtMonth = ym => new Date(ym + '-01').toLocaleDateString('en-GB', { year: 'numeric', month: 'long' });
+                        const fmtDay   = d  => new Date(d).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
+
+                        let warningMsg = null;
+                        if (toolStartYM > projEnd) {
+                            warningMsg = `⚠️ Date Warning\n\nThe tool start date (${fmtDay(data.startDate)}) is after the project end date (${fmtMonth(projEnd)}).\n\nNo costs will be calculated for this tool.\n\nDo you want to add it anyway?`;
+                        } else if (toolEndYM && toolEndYM > projEnd) {
+                            warningMsg = `⚠️ Date Warning\n\nThe tool end date (${fmtDay(data.endDate)}) is after the project end date (${fmtMonth(projEnd)}).\n\nCosts will only be calculated up to the end of the project. The remaining period will not be included.\n\nDo you want to continue?`;
+                        }
+
+                        if (warningMsg && !confirm(warningMsg)) {
+                            return;
+                        }
+                    }
+                }
+
                 projectData.toolCosts.push({
                     id: Date.now(),
                     tool: data.tool,
