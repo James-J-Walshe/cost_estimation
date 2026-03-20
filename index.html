@@ -75,6 +75,14 @@
                                         </svg>
                                         <span>Merge File</span>
                                     </button>
+                                    <button class="grid-menu-item" id="aiExtractBtn">
+                                        <svg viewBox="0 0 24 24">
+                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" fill="currentColor" style="display:none"/>
+                                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z" fill="none"/>
+                                            <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M11,17V16H9L12,13L15,16H13V17H11M12,7L9,10H11V11H13V10H15L12,7Z" fill="currentColor"/>
+                                        </svg>
+                                        <span>AI Extract</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -445,8 +453,8 @@
                         </div>
                     </div>
 
-                    <!-- Risk-based Content (Conditional Display) -->
-                    <div id="riskBasedContent" style="display: none;">
+                    <!-- Risk Register (always visible; mitigation costs feed into risk-based contingency) -->
+                    <div id="riskBasedContent">
                         <div class="section-actions">
                             <button id="addRisk" class="btn btn-primary">Add Risk</button>
                         </div>
@@ -763,8 +771,8 @@
                     <!-- Dynamic form fields -->
                 </div>
                 <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelModal">Close</button>
                     <button type="submit" class="btn btn-primary">Save</button>
-                    <button type="button" class="btn btn-secondary" id="cancelModal">Cancel</button>
                 </div>
             </form>
         </div>
@@ -786,7 +794,8 @@
     <script src="modules/merge_manager.js"></script>
     <script src="modules/multi_resource_manager.js"></script> 
     <script src="modules/analytics_manager.js"></script>
-    
+    <script src="modules/ai_project_extractor.js"></script>
+
     <!-- Load main script (contains functions but no auto-init) -->
     <script src="script.js"></script>
     

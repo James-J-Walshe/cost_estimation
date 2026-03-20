@@ -7,6 +7,8 @@
  * 3. Professional tick/cross buttons matching pen/bin styling
  * 4. Proper header structure without inline style conflicts
  * 5. CSS injection to defeat conflicting gradient rules
+ * 
+ * Issue #139: Added optional personName field to Internal Resources
  */
 
 // SOLUTION 1: CSS Override Injection to Force Blue Headers
@@ -71,6 +73,19 @@ function injectForceBlueHeadersCSS() {
             background-color: #667eea !important;
             background-image: none !important;
             color: white !important;
+        }
+
+        /* Issue #139: TBC placeholder styling for unnamed resources */
+        .tbc-label {
+            color: #9ca3af;
+            font-style: italic;
+            font-size: 0.85em;
+        }
+
+        /* Issue #139: Person Name column minimum width */
+        #internalResourcesTable td:nth-child(2),
+        #internalResourcesYearHeader th:nth-child(2) {
+            min-width: 140px;
         }
     `;
     
@@ -143,6 +158,7 @@ function renderTableHeadersCorrectly() {
     };
     
     // Update Internal Resources table headers
+    // Issue #139: Added 'Person Name' as second fixed column
     const internalYearHeader = document.getElementById('internalResourcesYearHeader');
     const internalMonthHeader = document.getElementById('internalResourcesTableHeader');
     
@@ -151,9 +167,10 @@ function renderTableHeadersCorrectly() {
         internalYearHeader.className = 'year-header-row';
         internalMonthHeader.className = 'month-header-row';
         
-        // Build year header row
+        // Build year header row — Issue #139: Person Name added after Role
         let yearRowHTML = `
             <th rowspan="2" class="fixed-column">Role</th>
+            <th rowspan="2" class="fixed-column">Person Name</th>
             <th rowspan="2" class="fixed-column">Rate Card</th>
             <th rowspan="2" class="fixed-column">Daily Rate</th>
         `;
@@ -180,7 +197,7 @@ function renderTableHeadersCorrectly() {
         console.log('Internal Resources headers rendered correctly');
     }
     
-    // Update Vendor Costs table headers
+    // Update Vendor Costs table headers — unchanged by Issue #139
     const vendorYearHeader = document.getElementById('vendorCostsYearHeader');
     const vendorMonthHeader = document.getElementById('vendorCostsTableHeader');
     
@@ -213,39 +230,40 @@ function renderTableHeadersCorrectly() {
         
         console.log('Vendor Costs headers rendered correctly');
 
-            const forecastYearHeader = document.getElementById('forecastTableYearHeader');
-    const forecastMonthHeader = document.getElementById('forecastTableHeader');
-    
-    if (forecastYearHeader && forecastMonthHeader) {
-        forecastYearHeader.className = 'year-header-row';
-        forecastMonthHeader.className = 'month-header-row';
+        const forecastYearHeader = document.getElementById('forecastTableYearHeader');
+        const forecastMonthHeader = document.getElementById('forecastTableHeader');
         
-        let yearRowHTML = `
-            <th rowspan="2" class="fixed-column">Category</th>
-        `;
-        
-        monthInfo.yearGroups.forEach(yearGroup => {
-            yearRowHTML += `<th colspan="${yearGroup.count}">${yearGroup.year}</th>`;
-        });
-        
-        yearRowHTML += `
-            <th rowspan="2" class="fixed-column">Total</th>
-        `;
-        
-        let monthRowHTML = '';
-        monthInfo.months.forEach(month => {
-            monthRowHTML += `<th>${month}</th>`;
-        });
-        
-        forecastYearHeader.innerHTML = yearRowHTML;
-        forecastMonthHeader.innerHTML = monthRowHTML;
-        
-        console.log('Forecast table headers rendered correctly');
-    }
+        if (forecastYearHeader && forecastMonthHeader) {
+            forecastYearHeader.className = 'year-header-row';
+            forecastMonthHeader.className = 'month-header-row';
+            
+            let yearRowHTML = `
+                <th rowspan="2" class="fixed-column">Category</th>
+            `;
+            
+            monthInfo.yearGroups.forEach(yearGroup => {
+                yearRowHTML += `<th colspan="${yearGroup.count}">${yearGroup.year}</th>`;
+            });
+            
+            yearRowHTML += `
+                <th rowspan="2" class="fixed-column">Total</th>
+            `;
+            
+            let monthRowHTML = '';
+            monthInfo.months.forEach(month => {
+                monthRowHTML += `<th>${month}</th>`;
+            });
+            
+            forecastYearHeader.innerHTML = yearRowHTML;
+            forecastMonthHeader.innerHTML = monthRowHTML;
+            
+            console.log('Forecast table headers rendered correctly');
+        }
     }
 }
 
 // SOLUTION 4: Enhanced rendering with CORRECT CSS and NO inline overrides
+// Issue #139: Added Person Name column (index 1) to Internal Resources rows
 function renderInternalResourcesTableFixed() {
     console.log('Starting renderInternalResourcesTableFixed with CORRECT structure...');
     
@@ -264,7 +282,8 @@ function renderInternalResourcesTableFixed() {
     
     if (!projectData.internalResources || projectData.internalResources.length === 0) {
         const monthInfo = window.tableRenderer ? window.tableRenderer.calculateProjectMonths() : { count: 16 };
-        const colspan = 3 + monthInfo.count + 2;
+        // Issue #139: colspan increased by 1 to account for Person Name column
+        const colspan = 4 + monthInfo.count + 2;
         tbody.innerHTML = `<tr><td colspan="${colspan}" class="empty-state" style="padding: 2rem; text-align: center; color: #6b7280;">No internal resources added yet</td></tr>`;
         return;
     }
@@ -303,9 +322,16 @@ function renderInternalResourcesTableFixed() {
         row.setAttribute('data-id', resource.id);
         row.setAttribute('data-type', 'internal-resource');
         
+        // Issue #139: Person Name cell added as second column (index 1)
+        // Shows name if present, otherwise renders a grey italic TBC placeholder
+        const personNameCell = resource.personName
+            ? resource.personName
+            : '<span class="tbc-label">TBC</span>';
+
         // CRITICAL: Remove inline styles - let CSS handle styling
         row.innerHTML = `
             <td>${resource.role || 'Unknown Role'}</td>
+            <td>${personNameCell}</td>
             <td><span class="category-badge category-internal">${resource.rateCard || 'Internal'}</span></td>
             <td style="text-align: right;">$${(resource.dailyRate || 0).toLocaleString()}</td>
             ${monthCells}
@@ -331,6 +357,7 @@ function renderInternalResourcesTableFixed() {
 }
 
 // SOLUTION 5: Enhanced vendor costs rendering with CORRECT CSS
+// Issue #139: Vendor Costs tab is unchanged — no personName field here
 function renderVendorCostsTableFixed() {
     console.log('Starting renderVendorCostsTableFixed with CORRECT structure...');
     
@@ -408,6 +435,7 @@ function renderVendorCostsTableFixed() {
 }
 
 // SOLUTION 6: Professional whole row editing with auto-expanding inputs
+// Issue #139: Added inline editing for personName field on internal-resource rows
 function editWholeRowProfessional(button) {
     const row = button.closest('tr');
     const itemId = button.getAttribute('data-id');
@@ -418,8 +446,35 @@ function editWholeRowProfessional(button) {
     console.log(`Starting professional whole row edit for ${itemType} ${itemId}`);
     
     row.classList.add('editing-row');
+
+    // Issue #139: Make the Person Name cell editable for internal resources
+    // Cell index 1 = Person Name column (Role=0, PersonName=1, RateCard=2, DailyRate=3)
+    if (itemType === 'internal-resource') {
+        const personNameCell = row.cells[1];
+        if (personNameCell) {
+            // If the cell contains the TBC placeholder, treat current value as empty
+            const currentValue = personNameCell.querySelector('.tbc-label')
+                ? ''
+                : personNameCell.textContent.trim();
+
+            // Use individual properties (not cssText) so that position:sticky /
+            // left:Xpx set by applyFrozenColumns() are NOT wiped out.
+            personNameCell.style.backgroundColor = '#fff3cd';
+            personNameCell.style.border = '1px solid #ffc107';
+            personNameCell.style.padding = '8px';
+            personNameCell.style.textAlign = 'left';
+            personNameCell.innerHTML = `
+                <input type="text"
+                       class="row-edit-input person-name-input"
+                       data-field="personName"
+                       value="${currentValue}"
+                       placeholder="Person name (optional)"
+                       style="width:100%;padding:4px;border:1px solid #d1d5db;border-radius:4px;font-size:0.875rem;box-sizing:border-box;">
+            `;
+        }
+    }
     
-    // Store original data
+    // Store original data from month cells
     const originalData = {};
     const monthCells = row.querySelectorAll('.month-cell');
     
@@ -428,7 +483,7 @@ function editWholeRowProfessional(button) {
         originalData[fieldName] = cell.textContent.replace(/[$,]/g, '');
     });
     
-    // Convert cells to auto-expanding inputs
+    // Convert month cells to auto-expanding inputs
     monthCells.forEach((cell, index) => {
         const fieldName = cell.getAttribute('data-field');
         const currentValue = cell.textContent.replace(/[$,]/g, '');
@@ -477,6 +532,9 @@ function editWholeRowProfessional(button) {
 }
 
 // SOLUTION 7: Professional save function
+// Issue #139: Fixed value parsing to handle text fields (personName) alongside numeric fields.
+// Previously parseFloat() was applied to all fields, which would silently coerce
+// a name like "Jane Smith" to 0. Now text inputs are saved as strings.
 function saveWholeRowProfessional(button, itemId, itemType) {
     const row = button.closest('tr');
     console.log(`Saving professional whole row for ${itemType} ${itemId}`);
@@ -500,9 +558,15 @@ function saveWholeRowProfessional(button, itemId, itemType) {
         
         inputs.forEach(input => {
             const fieldName = input.getAttribute('data-field');
-            const newValue = parseFloat(input.value) || 0;
-            const oldValue = item[fieldName] || 0;
-            
+
+            // Issue #139: Determine value type by input type rather than always
+            // using parseFloat — text inputs (e.g. personName) must be saved as strings
+            const isNumeric = input.type === 'number' || input.classList.contains('month-input');
+            const newValue = isNumeric
+                ? (parseFloat(input.value) || 0)
+                : input.value.trim();
+            const oldValue = item[fieldName] ?? '';
+
             if (newValue !== oldValue) {
                 hasChanges = true;
                 item[fieldName] = newValue;
@@ -523,13 +587,16 @@ function saveWholeRowProfessional(button, itemId, itemType) {
         } else if (itemType === 'vendor-cost') {
             renderVendorCostsTableFixed();
         }
-        
+
+        window.tableRenderer?.addTopScrollbars?.();
+        window.tableRenderer?.applyFrozenColumns?.();
+
         updateResourcePlanTabProfessional();
-        
+
         if (window.updateSummary) {
             window.updateSummary();
         }
-        
+
         console.log('Professional row saved successfully');
         
     } catch (error) {
@@ -543,12 +610,15 @@ function saveWholeRowProfessional(button, itemId, itemType) {
 function cancelWholeRowProfessional(button, itemId, itemType) {
     const row = button.closest('tr');
     console.log(`Cancelling professional row edit for ${itemType} ${itemId}`);
-    
+
     if (itemType === 'internal-resource') {
         renderInternalResourcesTableFixed();
     } else if (itemType === 'vendor-cost') {
         renderVendorCostsTableFixed();
     }
+
+    window.tableRenderer?.addTopScrollbars?.();
+    window.tableRenderer?.applyFrozenColumns?.();
 }
 
 // SOLUTION 9: Enhanced resource plan update
@@ -700,7 +770,10 @@ function applyCompleteProfessionalStylingFixes() {
             // Render tables with ALL fixes
             renderInternalResourcesTableFixed();
             renderVendorCostsTableFixed();
-            
+
+            window.tableRenderer?.addTopScrollbars?.();
+            window.tableRenderer?.applyFrozenColumns?.();
+
             console.log('All table rendering overrides applied successfully');
         } catch (error) {
             console.error('Error applying table rendering overrides:', error);
@@ -731,4 +804,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 2000);
 });
 
-console.log('COMPLETE MERGED PROFESSIONAL STYLING fixes loaded - Auto-expanding inputs + Blue headers + Professional buttons + All features combined');
+console.log('COMPLETE MERGED PROFESSIONAL STYLING fixes loaded - Issue #139: personName support added to Internal Resources');
