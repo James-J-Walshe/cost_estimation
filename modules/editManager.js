@@ -351,6 +351,7 @@ class EditManager {
             if (editState.type === 'tool-cost') {
                 const projEnd = window.projectData?.projectInfo?.endDate;
                 if (projEnd && newData.startDate) {
+                    const projEndYM  = projEnd.substring(0, 7); // normalise to YYYY-MM
                     const toolStartYM = newData.startDate.substring(0, 7);
                     const isOngoing = !newData.endDate || newData.endDate === '';
                     const toolEndYM = !isOngoing ? newData.endDate.substring(0, 7) : null;
@@ -358,10 +359,10 @@ class EditManager {
                     const fmtDay   = d  => new Date(d).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
 
                     let warningMsg = null;
-                    if (toolStartYM > projEnd) {
-                        warningMsg = `⚠️ Date Warning\n\nThe tool start date (${fmtDay(newData.startDate)}) is after the project end date (${fmtMonth(projEnd)}).\n\nNo costs will be calculated for this tool.\n\nDo you want to save anyway?`;
-                    } else if (toolEndYM && toolEndYM > projEnd) {
-                        warningMsg = `⚠️ Date Warning\n\nThe tool end date (${fmtDay(newData.endDate)}) is after the project end date (${fmtMonth(projEnd)}).\n\nCosts will only be calculated up to the end of the project. The remaining period will not be included.\n\nDo you want to continue?`;
+                    if (toolStartYM > projEndYM) {
+                        warningMsg = `⚠️ Date Warning\n\nThe tool start date (${fmtDay(newData.startDate)}) is after the project end date (${fmtMonth(projEndYM)}).\n\nThis tool will show $0 in the project totals, as costs outside the project timeline are excluded.\n\nYou may want to adjust the dates before saving.\n\nDo you want to save anyway?`;
+                    } else if (toolEndYM && toolEndYM > projEndYM) {
+                        warningMsg = `⚠️ Date Warning\n\nThe tool end date (${fmtDay(newData.endDate)}) is after the project end date (${fmtMonth(projEndYM)}).\n\nCosts will only be calculated up to the end of the project (${fmtMonth(projEndYM)}). The remaining period will not be included in the project total.\n\nDo you want to continue?`;
                     }
 
                     if (warningMsg) {

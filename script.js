@@ -1379,6 +1379,7 @@ function handleModalSubmit() {
                 {
                     const projEnd = projectData.projectInfo?.endDate;
                     if (projEnd && data.startDate) {
+                        const projEndYM  = projEnd.substring(0, 7); // normalise to YYYY-MM
                         const toolStartYM = data.startDate.substring(0, 7);
                         const isOngoing = data.isOngoing === 'on';
                         const toolEndYM = !isOngoing && data.endDate ? data.endDate.substring(0, 7) : null;
@@ -1386,10 +1387,10 @@ function handleModalSubmit() {
                         const fmtDay   = d  => new Date(d).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
 
                         let warningMsg = null;
-                        if (toolStartYM > projEnd) {
-                            warningMsg = `⚠️ Date Warning\n\nThe tool start date (${fmtDay(data.startDate)}) is after the project end date (${fmtMonth(projEnd)}).\n\nNo costs will be calculated for this tool.\n\nDo you want to add it anyway?`;
-                        } else if (toolEndYM && toolEndYM > projEnd) {
-                            warningMsg = `⚠️ Date Warning\n\nThe tool end date (${fmtDay(data.endDate)}) is after the project end date (${fmtMonth(projEnd)}).\n\nCosts will only be calculated up to the end of the project. The remaining period will not be included.\n\nDo you want to continue?`;
+                        if (toolStartYM > projEndYM) {
+                            warningMsg = `⚠️ Date Warning\n\nThe tool start date (${fmtDay(data.startDate)}) is after the project end date (${fmtMonth(projEndYM)}).\n\nThis tool will be added but will show $0 in the project totals, as costs outside the project timeline are excluded.\n\nYou may want to adjust the dates before saving.\n\nDo you want to add it anyway?`;
+                        } else if (toolEndYM && toolEndYM > projEndYM) {
+                            warningMsg = `⚠️ Date Warning\n\nThe tool end date (${fmtDay(data.endDate)}) is after the project end date (${fmtMonth(projEndYM)}).\n\nCosts will only be calculated up to the end of the project (${fmtMonth(projEndYM)}). The remaining period will not be included in the project total.\n\nDo you want to continue?`;
                         }
 
                         if (warningMsg && !confirm(warningMsg)) {
