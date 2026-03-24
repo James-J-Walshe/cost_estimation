@@ -899,7 +899,7 @@ class TableRenderer {
             <tr>${vendorRowHTML}</tr>
             <tr>${toolRowHTML}</tr>
             <tr>${miscRowHTML}</tr>
-            <tr class="total-row" style="background-color: #f3f4f6; font-weight: bold; border-top: 2px solid #d1d5db;">${totalRowHTML}</tr>
+            <tr class="total-row" style="background-color: #f4f4f5; font-weight: bold; border-top: 2px solid #e4e4e7;">${totalRowHTML}</tr>
         `;
         
         console.log('✅ Forecast table rendered successfully with ALL 5 ROWS\n');

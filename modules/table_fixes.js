@@ -21,10 +21,10 @@ function injectForceBlueHeadersCSS() {
     
     // CSS to force the correct colors with !important
     styleElement.textContent = `
-        /* FORCE BLUE YEAR HEADERS - Override any conflicting gradients */
+        /* FORCE TEAL YEAR HEADERS - Override any conflicting gradients */
         .data-table thead tr.year-header-row th {
-            background: #667eea !important;
-            background-color: #667eea !important;
+            background: #0d9488 !important;
+            background-color: #0d9488 !important;
             background-image: none !important;
             color: white !important;
             font-weight: 700 !important;
@@ -33,44 +33,44 @@ function injectForceBlueHeadersCSS() {
             padding: 0.4rem 1rem !important;
             border-bottom: 1px solid rgba(255,255,255,0.3) !important;
         }
-        
-        /* FORCE LIGHT GRAY MONTH HEADERS */
+
+        /* FORCE SUBTLE GRAY MONTH HEADERS */
         .data-table thead tr.month-header-row th {
-            background: #f1f5f9 !important;
-            background-color: #f1f5f9 !important;
+            background: #f4f4f5 !important;
+            background-color: #f4f4f5 !important;
             background-image: none !important;
-            color: #374151 !important;
+            color: #52525b !important;
             font-weight: 600 !important;
             text-align: center !important;
             font-size: 0.8rem !important;
             padding: 0.4rem 0.5rem !important;
-            border-bottom: 2px solid #e5e7eb !important;
+            border-bottom: 2px solid #e4e4e7 !important;
             white-space: nowrap !important;
         }
-        
+
         /* SPECIAL STYLING FOR FIXED COLUMNS IN MONTH HEADER ROW */
         .data-table thead tr.month-header-row th.fixed-column {
-            background: #f8fafc !important;
-            background-color: #f8fafc !important;
+            background: #f4f4f5 !important;
+            background-color: #f4f4f5 !important;
             background-image: none !important;
             font-size: 0.875rem !important;
             font-weight: 600 !important;
             padding: 1rem !important;
             text-align: left !important;
         }
-        
+
         /* ADDITIONAL OVERRIDE: Remove any gradient from year header rows */
         .year-header-row th {
-            background: #667eea !important;
+            background: #0d9488 !important;
             background-image: none !important;
         }
-        
+
         /* ENSURE NO CONFLICTING GRADIENTS */
         thead tr.year-header-row th,
         tr.year-header-row th,
         .year-header-row th {
-            background: #667eea !important;
-            background-color: #667eea !important;
+            background: #0d9488 !important;
+            background-color: #0d9488 !important;
             background-image: none !important;
             color: white !important;
         }
@@ -730,16 +730,16 @@ function forceBlueHeadersEverywhere() {
         
         yearHeaders.forEach(header => {
             if (header) {
-                header.style.setProperty('background-color', '#667eea', 'important');
-                header.style.setProperty('background', '#667eea', 'important');
+                header.style.setProperty('background-color', '#0d9488', 'important');
+                header.style.setProperty('background', '#0d9488', 'important');
                 header.style.setProperty('background-image', 'none', 'important');
                 header.style.setProperty('color', 'white', 'important');
-                
-                // Force all th elements within to blue
+
+                // Force all th elements within to teal
                 const thElements = header.querySelectorAll('th');
                 thElements.forEach(th => {
-                    th.style.setProperty('background-color', '#667eea', 'important');
-                    th.style.setProperty('background', '#667eea', 'important');
+                    th.style.setProperty('background-color', '#0d9488', 'important');
+                    th.style.setProperty('background', '#0d9488', 'important');
                     th.style.setProperty('background-image', 'none', 'important');
                     th.style.setProperty('color', 'white', 'important');
                 });

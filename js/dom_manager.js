@@ -135,22 +135,33 @@ class DOMManager {
         
         const methodRadios = document.querySelectorAll('input[name="contingencyMethod"]');
         
+        const updateSelectedState = (selectedValue) => {
+            methodRadios.forEach(r => {
+                const optionDiv = r.closest('.radio-option');
+                if (optionDiv) {
+                    optionDiv.classList.toggle('selected', r.value === selectedValue);
+                }
+            });
+        };
+
         methodRadios.forEach(radio => {
             radio.addEventListener('change', (e) => {
                 if (window.projectData) {
                     window.projectData.contingencyMethod = e.target.value;
                     console.log(`Contingency method changed to: ${e.target.value}`);
-                    
+
+                    updateSelectedState(e.target.value);
+
                     // Toggle percentage input visibility
                     if (window.togglePercentageInput) {
                         window.togglePercentageInput();
                     }
-                    
+
                     // Update calculations and display
                     if (window.updateSummary) {
                         window.updateSummary();
                     }
-                    
+
                     // Save to localStorage
                     if (window.dataManager && window.dataManager.saveToLocalStorage) {
                         window.dataManager.saveToLocalStorage();
@@ -160,16 +171,18 @@ class DOMManager {
                 }
             });
         });
-        
+
         // Set initial state based on projectData
         const currentMethod = window.projectData?.contingencyMethod || 'percentage';
         const radioToCheck = document.getElementById(
             currentMethod === 'percentage' ? 'contingencyMethodPercentage' : 'contingencyMethodRiskBased'
         );
-        
+
         if (radioToCheck) {
             radioToCheck.checked = true;
         }
+
+        updateSelectedState(currentMethod);
         
         // Initialize visibility
         if (window.togglePercentageInput) {
