@@ -701,7 +701,7 @@ Rules:
         .aipe-header {
             display: flex; align-items: center; justify-content: space-between;
             padding: 18px 24px; border-radius: 12px 12px 0 0;
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white;
+            background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%); color: white;
             position: sticky; top: 0; z-index: 1;
         }
         .aipe-header-title { display: flex; align-items: center; gap: 10px; }
@@ -730,7 +730,7 @@ Rules:
             flex: 1; padding: 8px 12px; border: 1px solid #d1d5db;
             border-radius: 6px; font-size: 0.875rem; font-family: monospace;
         }
-        .aipe-input:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+        .aipe-input:focus { outline: none; border-color: #0d9488; box-shadow: 0 0 0 3px rgba(13,148,136,0.15); }
         .aipe-icon-btn {
             padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 6px;
             background: #f9fafb; cursor: pointer; font-size: 1rem;
@@ -740,7 +740,7 @@ Rules:
             width: 100%; padding: 8px 12px; border: 1px solid #d1d5db;
             border-radius: 6px; font-size: 0.875rem; background: #fff; cursor: pointer;
         }
-        .aipe-select:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+        .aipe-select:focus { outline: none; border-color: #0d9488; box-shadow: 0 0 0 3px rgba(13,148,136,0.15); }
         .aipe-hint { font-size: 0.78rem; color: #9ca3af; margin: 0; }
         .aipe-textarea {
             width: 100%; min-height: 110px; padding: 10px 12px;
@@ -748,14 +748,14 @@ Rules:
             font-size: 0.875rem; line-height: 1.5; resize: vertical; font-family: inherit;
             box-sizing: border-box;
         }
-        .aipe-textarea:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15); }
+        .aipe-textarea:focus { outline: none; border-color: #0d9488; box-shadow: 0 0 0 3px rgba(13,148,136,0.15); }
         .aipe-drop-zone {
             border: 2px dashed #d1d5db; border-radius: 10px; padding: 22px 20px;
             display: flex; flex-direction: column; align-items: center; gap: 6px;
             cursor: pointer; transition: border-color 0.15s, background 0.15s;
         }
         .aipe-drop-zone:hover, .aipe-drop-zone.drag-over {
-            border-color: #6366f1; background: rgba(99,102,241,0.04);
+            border-color: #0d9488; background: rgba(13,148,136,0.04);
         }
         .aipe-drop-icon { font-size: 1.8rem; }
         .aipe-drop-zone p { margin: 0; color: #6b7280; font-size: 0.85rem; text-align: center; }
@@ -774,7 +774,7 @@ Rules:
         .aipe-actions { display: flex; gap: 10px; }
         .aipe-btn-primary {
             flex: 1; padding: 10px 20px;
-            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
             color: white; border: none; border-radius: 8px;
             font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: opacity 0.15s;
         }
@@ -788,11 +788,11 @@ Rules:
         .aipe-btn-secondary:hover { background: #e5e7eb; }
         .aipe-loading {
             display: flex; align-items: center; gap: 12px; padding: 14px 16px;
-            background: #f8f9ff; border-radius: 8px; color: #4f46e5; font-weight: 500;
+            background: #f0fdfa; border-radius: 8px; color: #0d9488; font-weight: 500;
         }
         .aipe-spinner {
-            width: 20px; height: 20px; border: 3px solid #c7d2fe;
-            border-top-color: #4f46e5; border-radius: 50%;
+            width: 20px; height: 20px; border: 3px solid #99f6e4;
+            border-top-color: #0d9488; border-radius: 50%;
             animation: aipe-spin 0.7s linear infinite; flex-shrink: 0;
         }
         @keyframes aipe-spin { to { transform: rotate(360deg); } }

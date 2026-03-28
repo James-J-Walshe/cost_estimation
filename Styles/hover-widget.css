@@ -24,8 +24,8 @@
     flex-direction: column;
     justify-content: center;
     padding: 0;
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.15);
-    border-radius: 0 12px 12px 0;
+    box-shadow: var(--shadow-sm);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }
 
 .widget-tab {
@@ -37,9 +37,9 @@
     justify-content: center;
     cursor: pointer;
     position: relative;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-sm);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 0 12px 12px 0;
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
 }
 
 /* Removed the ::before pseudo-element with clip-path for cleaner appearance */

@@ -930,18 +930,18 @@ function renderResourcePlanForecast() {
     months.forEach(month => {
         headerHTML += `<th>${month.label}</th>`;
     });
-    headerHTML += '<th>Total</th></tr>';
+    headerHTML += '<th class="col-total">Total</th></tr>';
     thead.innerHTML = headerHTML;
-    
+
     // Get cost data
     const internalCosts = getInternalResourcesMonthlyCosts(months);
     const vendorCosts = getVendorMonthlyCosts(months);
     const toolCosts = getToolCostsMonthlyCosts(months);
     const miscCosts = getMiscMonthlyCosts(months);
-    
+
     // Build body rows
     let bodyHTML = '';
-    
+
     // Internal Resources row
     bodyHTML += '<tr><td><strong>Internal Resources</strong></td>';
     let internalTotal = 0;
@@ -950,8 +950,8 @@ function renderResourcePlanForecast() {
         internalTotal += cost;
         bodyHTML += `<td>$${cost.toLocaleString()}</td>`;
     });
-    bodyHTML += `<td><strong>$${internalTotal.toLocaleString()}</strong></td></tr>`;
-    
+    bodyHTML += `<td class="col-total"><strong>$${internalTotal.toLocaleString()}</strong></td></tr>`;
+
     // Vendor Costs row
     bodyHTML += '<tr><td><strong>Vendor Costs</strong></td>';
     let vendorTotal = 0;
@@ -960,9 +960,9 @@ function renderResourcePlanForecast() {
         vendorTotal += cost;
         bodyHTML += `<td>$${cost.toLocaleString()}</td>`;
     });
-    bodyHTML += `<td><strong>$${vendorTotal.toLocaleString()}</strong></td></tr>`;
-    
-    // Tool Costs row (NEW)
+    bodyHTML += `<td class="col-total"><strong>$${vendorTotal.toLocaleString()}</strong></td></tr>`;
+
+    // Tool Costs row
     bodyHTML += '<tr><td><strong>Tool Costs</strong></td>';
     let toolTotal = 0;
     months.forEach(month => {
@@ -970,8 +970,8 @@ function renderResourcePlanForecast() {
         toolTotal += cost;
         bodyHTML += `<td>$${cost.toLocaleString()}</td>`;
     });
-    bodyHTML += `<td><strong>$${toolTotal.toLocaleString()}</strong></td></tr>`;
-    
+    bodyHTML += `<td class="col-total"><strong>$${toolTotal.toLocaleString()}</strong></td></tr>`;
+
     // Miscellaneous row
     bodyHTML += '<tr><td><strong>Miscellaneous</strong></td>';
     let miscTotal = 0;
@@ -980,20 +980,20 @@ function renderResourcePlanForecast() {
         miscTotal += cost;
         bodyHTML += `<td>$${cost.toLocaleString()}</td>`;
     });
-    bodyHTML += `<td><strong>$${miscTotal.toLocaleString()}</strong></td></tr>`;
-    
+    bodyHTML += `<td class="col-total"><strong>$${miscTotal.toLocaleString()}</strong></td></tr>`;
+
     // Total row
-    bodyHTML += '<tr class="total-row" style="background: #f0f9ff; font-weight: bold;"><td><strong>Total Monthly Cost</strong></td>';
+    bodyHTML += '<tr class="total-row"><td><strong>Total Monthly Cost</strong></td>';
     let grandTotal = 0;
     months.forEach(month => {
-        const monthTotal = (internalCosts[month.key] || 0) + 
-                          (vendorCosts[month.key] || 0) + 
-                          (toolCosts[month.key] || 0) + 
+        const monthTotal = (internalCosts[month.key] || 0) +
+                          (vendorCosts[month.key] || 0) +
+                          (toolCosts[month.key] || 0) +
                           (miscCosts[month.key] || 0);
         grandTotal += monthTotal;
         bodyHTML += `<td><strong>$${monthTotal.toLocaleString()}</strong></td>`;
     });
-    bodyHTML += `<td><strong>$${grandTotal.toLocaleString()}</strong></td></tr>`;
+    bodyHTML += `<td class="col-total"><strong>$${grandTotal.toLocaleString()}</strong></td></tr>`;
     
     tbody.innerHTML = bodyHTML;
 }
@@ -1197,8 +1197,8 @@ function getModalFields(type) {
                 </div>
             </div>
             <div class="vendor-cost-actions" style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
-                <button type="button" id="vendorCostClose" style="background-color: #6b7280; color: white; padding: 0.5rem 1.25rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">Close</button>
-                <button type="submit" id="vendorCostSave" style="background-color: #6366f1; color: white; padding: 0.5rem 1.25rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">Save</button>
+                <button type="button" id="vendorCostClose" class="btn btn-secondary">Close</button>
+                <button type="submit" id="vendorCostSave" class="btn btn-primary">Save</button>
             </div>
         `,
         toolCost: `

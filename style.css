@@ -252,6 +252,18 @@ header {
   border-color: #b91c1c;
 }
 
+.btn-secondary {
+  background: var(--bg-surface);
+  color: var(--zinc-600);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-subtle);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
 .btn-ghost {
   background: transparent;
   border-color: transparent;
@@ -371,7 +383,7 @@ header {
 .grid-menu-item svg {
   width: 24px;
   height: 24px;
-  color: var(--brand);
+  color: var(--zinc-600);
 }
 
 .grid-menu-item span {
@@ -508,6 +520,7 @@ header {
 
 .content {
   padding: var(--space-5);
+  padding-left: calc(var(--space-5) + 30px);
   background: var(--bg-page);
 }
 
@@ -596,7 +609,7 @@ header {
 
 /* Project info summary */
 .project-info-summary {
-  background: var(--bg-subtle);
+  background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: var(--space-4);
@@ -688,9 +701,13 @@ header {
 .scope-item {
   text-align: center;
   padding: var(--space-3);
-  background: var(--bg-subtle);
+  background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
+}
+
+.scope-item:first-child {
+  border-left: 3px solid var(--brand);
 }
 
 .scope-number {
@@ -724,6 +741,37 @@ header {
   border-radius: var(--radius-lg);
   overflow: hidden;
   overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--zinc-300) transparent;
+}
+
+.table-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+  background: var(--zinc-300);
+  border-radius: 3px;
+}
+
+.table-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Sticky total column */
+.data-table th.col-total,
+.data-table td.col-total {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border);
+}
+
+.data-table thead tr.month-header-row th.col-total {
+  background: var(--bg-subtle);
+  color: var(--brand);
+  font-weight: 700;
 }
 
 .data-table {
@@ -817,6 +865,19 @@ header {
 
 .data-table tfoot td.total {
   color: var(--brand);
+}
+
+/* Total row in resource plan forecast table */
+.data-table tr.total-row td {
+  background: var(--bg-subtle);
+  font-weight: 700;
+  border-top: 2px solid var(--border);
+  color: var(--text-primary);
+}
+
+.data-table tr.total-row td.col-total {
+  color: var(--brand);
+  background: var(--bg-subtle);
 }
 
 /* Inputs inside tables */
@@ -920,6 +981,21 @@ thead tr.year-header-row .col-sticky-right {
   overflow-y: hidden;
   height: 10px;
   margin-bottom: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--zinc-300) transparent;
+}
+
+.table-top-scrollbar::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-top-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--zinc-300);
+  border-radius: 3px;
+}
+
+.table-top-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .table-top-scrollbar-inner {

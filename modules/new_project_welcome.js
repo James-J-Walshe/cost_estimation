@@ -336,18 +336,18 @@ class NewProjectWelcome {
             }
             
             .welcome-option-ai {
-                border-color: #c4b5fd;
-                background: linear-gradient(135deg, #faf5ff 0%, #f5f3ff 100%);
+                border-color: #99f6e4;
+                background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
             }
 
             .welcome-option-ai:hover {
-                border-color: #8b5cf6;
-                background: linear-gradient(135deg, #f3e8ff 0%, #ede9fe 100%);
-                box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);
+                border-color: var(--brand, #0d9488);
+                background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+                box-shadow: 0 4px 15px rgba(13, 148, 136, 0.15);
             }
 
             .option-icon-ai {
-                background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+                background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
             }
 
             /* Mobile responsiveness */

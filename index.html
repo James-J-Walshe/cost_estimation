@@ -18,11 +18,11 @@
                     <div class="header-left">
                         <!-- Zyantik Logo -->
                         <div class="header-logo">
-                            <img src="images/zyantik-logo.png" alt="Zyantik Logo" style="height: 40px; width: auto;">
+                            <img src="images/zyantik-logo.png" alt="Zyantik Logo" style="height: 18px; width: auto;">
                         </div>
                         
                         <!-- Page Title -->
-                        <h1 class="header-title">Cost Modelling Tool</h1>
+                        <h1 class="header-title">Zyantik Cost Modelling Tool</h1>
                     </div>
                     
                     <!-- Header Controls with Dropdown Menus -->
@@ -74,14 +74,6 @@
                                             <path d="M18,12 L22,12 M20,10 L22,12 L20,14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
                                         </svg>
                                         <span>Merge File</span>
-                                    </button>
-                                    <button class="grid-menu-item" id="aiExtractBtn">
-                                        <svg viewBox="0 0 24 24">
-                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z" fill="currentColor" style="display:none"/>
-                                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z" fill="none"/>
-                                            <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M11,17V16H9L12,13L15,16H13V17H11M12,7L9,10H11V11H13V10H15L12,7Z" fill="currentColor"/>
-                                        </svg>
-                                        <span>AI Extract</span>
                                     </button>
                                 </div>
                             </div>
@@ -364,7 +356,7 @@
                     <div class="table-container">
                         <table class="data-table">
                             <thead>
-                                <tr>
+                                <tr class="month-header-row">
                                     <th>Tool/Software</th>
                                     <th>Type</th>
                                     <th>Billing</th>
@@ -392,7 +384,7 @@
                     <div class="table-container">
                         <table class="data-table">
                             <thead>
-                                <tr>
+                                <tr class="month-header-row">
                                     <th>Item</th>
                                     <th>Description</th>
                                     <th>Category</th>
@@ -413,7 +405,7 @@
                     
                     <!-- Contingency Method Selection -->
                     <div style="margin-bottom: 2rem;">
-                        <h3 style="margin-bottom: var(--space-4); color: var(--text-secondary); font-size: var(--text-md); font-weight: 600;">Calculation Method:</h3>
+                        <p style="margin-top: 0; margin-bottom: 0.75rem; font-size: var(--text-sm); color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em;">Calculation Method</p>
                         
                         <!-- Radio Buttons (Horizontal Layout) -->
                         <div class="radio-group">
@@ -434,11 +426,11 @@
                         </div>
 
                         <!-- Contingency Amount Display (Always Visible, Below Inputs) -->
-                        <div class="contingency-display" style="margin-top: var(--space-4); padding: var(--space-5); background-color: var(--brand-light); border-radius: var(--radius-lg); border: 1px solid var(--brand-border);">
-                            <h3 style="color: var(--brand); font-size: var(--text-base); margin-bottom: var(--space-2); font-weight: 600;">
+                        <div class="contingency-display" style="margin-top: 1rem; padding: 1.5rem; background-color: #f0fdf4; border-radius: 8px; border: 1px solid #d1fae5;">
+                            <h3 style="color: #059669; font-size: 1rem; margin-bottom: 0.5rem; font-weight: 600;">
                                 Contingency Amount: $<span id="contingencyAmount">0</span>
                             </h3>
-                            <p style="color: var(--text-muted); font-size: var(--text-xs); margin: 0;">
+                            <p style="color: #6b7280; font-size: 0.75rem; margin: 0;">
                                 <span id="contingencyMethodLabel">Calculated using: Percentage-based method (10%)</span>
                             </p>
                         </div>
@@ -453,8 +445,8 @@
                         </div>
                     </div>
 
-                    <!-- Risk Register (always visible; mitigation costs feed into risk-based contingency) -->
-                    <div id="riskBasedContent">
+                    <!-- Risk-based Content (Conditional Display) -->
+                    <div id="riskBasedContent" style="display: none;">
                         <div class="section-actions">
                             <button id="addRisk" class="btn btn-primary">Add Risk</button>
                         </div>
@@ -771,8 +763,8 @@
                     <!-- Dynamic form fields -->
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" id="cancelModal">Close</button>
                     <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary" id="cancelModal">Cancel</button>
                 </div>
             </form>
         </div>
@@ -794,8 +786,7 @@
     <script src="modules/merge_manager.js"></script>
     <script src="modules/multi_resource_manager.js"></script> 
     <script src="modules/analytics_manager.js"></script>
-    <script src="modules/ai_project_extractor.js"></script>
-
+    
     <!-- Load main script (contains functions but no auto-init) -->
     <script src="script.js"></script>
     

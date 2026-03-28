@@ -451,8 +451,8 @@ class DOMManager {
                     </div>
                 </div>
                 <div class="vendor-cost-actions" style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
-                    <button type="button" id="vendorCostClose" style="background-color: #6b7280; color: white; padding: 0.5rem 1.25rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">Close</button>
-                    <button type="submit" id="vendorCostSave" style="background-color: #6366f1; color: white; padding: 0.5rem 1.25rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">Save</button>
+                    <button type="button" id="vendorCostClose" class="btn btn-secondary">Close</button>
+                    <button type="submit" id="vendorCostSave" class="btn btn-primary">Save</button>
                 </div>
             `,
             toolCost: `
@@ -508,8 +508,8 @@ class DOMManager {
                     </div>
                 </div>
                 <div class="tool-cost-actions" style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
-                    <button type="button" id="toolCostClose" style="background-color: #6b7280; color: white; padding: 0.5rem 1.25rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">Close</button>
-                    <button type="submit" id="toolCostSave" style="background-color: #6366f1; color: white; padding: 0.5rem 1.25rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">Save</button>
+                    <button type="button" id="toolCostClose" class="btn btn-secondary">Close</button>
+                    <button type="submit" id="toolCostSave" class="btn btn-primary">Save</button>
                 </div>
             `,
             miscCost: `
