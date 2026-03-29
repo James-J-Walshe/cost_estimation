@@ -152,6 +152,10 @@ No gradients. No decorative shadows on cards or panels.
 ### Header
 - White background, `1px solid --border` bottom, sticky
 - Logo: `--brand` square, `--radius-md`, 30×30px, logo image filtered to white
+- Gap between logo and title text: minimum `--space-3` (12px) — if the logo
+  and title overlap or touch at any point this must be flagged as an error
+- Header left section layout: `display: flex; align-items: center; gap: var(--space-3)`
+  — the logo, any divider, and the title must be visually separated with clear space
 - Title: `--text-md`, weight 600, `--text-primary`
 - Project name: `--text-sm`, `--text-secondary`
 - Buttons: standard `.btn` (white bg, zinc border) or `.btn-primary` (teal bg)
@@ -167,6 +171,20 @@ No gradients. No decorative shadows on cards or panels.
 - Value: `--text-2xl`, weight 700, `--text-primary`, `letter-spacing: -0.5px`
 - Sub-label: `--text-xs`, `--text-muted`
 - Primary card only: `border-left: 3px solid --brand`
+
+### Info and Breakdown Rows
+- Minimum row padding: `--space-2` (8px) top and bottom per row
+- Minimum row height: 32px — flag any rows that appear cramped or tighter than this
+- Label text: `--text-sm`, `--text-secondary`
+- Value text: `--text-sm`, weight 500, `--text-primary`
+- Row divider: `1px solid --zinc-100`
+- Last row in a section: no bottom border
+- Subtotal row: `--space-3` (12px) top padding, `1px solid --border` top border,
+  weight 600, `--text-primary`
+- Total row: `--space-3` (12px) top padding, `2px solid --border` top border,
+  weight 700, `--brand` colour for both label and value
+- If rows in the Cost Breakdown, Project Information, or any info panel appear
+  visually cramped — insufficient whitespace between rows — this must be flagged
 
 ### Tables
 - Container: white bg, `1px solid --border`, `--radius-lg`
@@ -219,8 +237,8 @@ When evaluating screenshots against this brief, flag issues in these categories:
 
 1. **Colour consistency** — any colour not matching the token values above, especially purple/indigo from the old design
 2. **Typography** — incorrect size, weight, or colour for the context
-3. **Spacing** — inconsistent padding or margins
-4. **Component standards** — gradients where flat colour is specified, wrong border radius, wrong background colour
+3. **Spacing** — inconsistent padding or margins, including cramped row spacing in info and breakdown panels
+4. **Component standards** — gradients where flat colour is specified, wrong border radius, wrong background colour, logo overlapping title text
 5. **Contrast** — text that is hard to read against its background
 6. **Consistency** — similar elements styled differently across tabs
 7. **Leftover old styles** — any gradient, indigo accent, or heavy decorative shadow

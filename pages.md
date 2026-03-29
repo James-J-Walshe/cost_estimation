@@ -1,45 +1,103 @@
 # Pages to Review
 
-## Main Application Tabs
+## Instructions for Screenshot Agent
 
-All tabs are accessible from the tab navigation bar beneath the header.
-The app runs on a single HTML file with tab-based navigation (no separate routes).
+- Always dismiss the welcome modal on load by clicking the dark backdrop
+- If backdrop click fails, click "Start New Project Manually"
+- Always dismiss the cookie consent banner by clicking Decline
+- Wait for content to fully load before taking each screenshot
+- All screenshots saved to the screenshots/ folder
 
-- Home / Launch: http://127.0.0.1:5500
-  - Note: Dismiss the welcome modal before reviewing
-  - Note: Dismiss the cookie consent banner before reviewing
+---
 
-- Summary Tab: Click "Summary" in tab navigation
-  - Key elements: Cost summary cards, project info panel, cost breakdown
+## Screenshot Sequence
 
-- Resource Plan Tab: Click "Resource Plan" in tab navigation
-  - Key elements: Resource table with month columns, frozen left/right columns, year header row
+### 01 — Home (on load)
+- URL: http://127.0.0.1:5500
+- Action: Load page, dismiss welcome modal and cookie banner
+- Screenshot: `01-home.png`
 
-- Internal Resources Tab: Click "Internal Resources" in tab navigation
-  - Key elements: Internal resource table, named resource rows, TBC placeholders
+### 02 — Summary tab
+- Action: Click "Summary" in the tab navigation
+- Screenshot: `02-summary.png`
 
-- Vendor Costs Tab: Click "Vendor Costs" in tab navigation
-  - Key elements: Vendor cost table, month columns
+### 03 — Resource Plan tab
+- Action: Click "Resource Plan" in the tab navigation
+- Screenshot: `03-resource-plan.png`
+- Note: No Add button on this tab — tab screenshot only
 
-- Tool Costs Tab: Click "Tool Costs" in tab navigation
-  - Key elements: Tool cost table, month columns
+### 04 — Internal Resources tab
+- Action: Click "Internal Resources" in the tab navigation
+- Screenshot: `04-internal-resources.png`
+- Then: Click the "Add..." button on this tab
+- Wait for the modal to open
+- Screenshot: `04b-internal-resources-add-modal.png`
+- Then: Close the modal (click backdrop or close button) before continuing
 
-- Miscellaneous Tab: Click "Miscellaneous" in tab navigation
-  - Key elements: Miscellaneous cost table
+### 05 — Vendor Costs tab
+- Action: Click "Vendor Costs" in the tab navigation
+- Screenshot: `05-vendor-costs.png`
+- Then: Click the "Add..." button on this tab
+- Wait for the modal to open
+- Screenshot: `05b-vendor-costs-add-modal.png`
+- Then: Close the modal before continuing
 
-- Risks & Contingency Tab: Click "Risks & Contingency" in tab navigation
-  - Key elements: Risk summary panel, contingency method radio buttons, risk table
+### 06 — Tool Costs tab
+- Action: Click "Tool Costs" in the tab navigation
+- Screenshot: `06-tool-costs.png`
+- Then: Click the "Add..." button on this tab
+- Wait for the modal to open
+- Screenshot: `06b-tool-costs-add-modal.png`
+- Then: Close the modal before continuing
 
-## Header Dropdown Menus
+### 07 — Miscellaneous tab
+- Action: Click "Miscellaneous" in the tab navigation
+- Screenshot: `07-miscellaneous.png`
+- Then: Click the "Add..." button on this tab
+- Wait for the modal to open
+- Screenshot: `07b-miscellaneous-add-modal.png`
+- Then: Close the modal before continuing
 
-- Project Functions Menu: Top-right grid icon button
-  - Contains: Save, Export, and other project actions in a 3-column grid layout
+### 08 — Risks & Contingency tab
+- Action: Click "Risks & Contingency" in the tab navigation
+- Screenshot: `08-risks-contingency.png`
+- Then: Click the "Add..." button on this tab
+- Wait for the modal to open
+- Screenshot: `08b-risks-contingency-add-modal.png`
+- Then: Close the modal before continuing
 
-- Settings Menu: Top-right settings icon button
-  - Contains: Project Information, Exchange Rate, Rate Cards
+### 09 — Project functions menu
+- Action: Navigate back to http://127.0.0.1:5500, dismiss any modals
+- Click the project functions button (grid icon, top right of header)
+- Wait for dropdown to open
+- Screenshot: `09-project-functions-menu.png`
+- Then: Close the dropdown before continuing
 
-## Settings Panel (accessed via Settings dropdown)
+### 10 — Settings menu
+- Action: Click the settings button (cog icon, top right of header)
+- Wait for dropdown to open
+- Screenshot: `10-settings-menu.png`
 
-- Project Information: Project name, manager, dates, description, scope
-- Exchange Rate: Currency conversion rates table
-- Rate Cards: Internal and external rate card tables
+---
+
+## Summary
+
+| # | Page / State | Screenshot filename |
+|---|---|---|
+| 01 | Home — on load | 01-home.png |
+| 02 | Summary tab | 02-summary.png |
+| 03 | Resource Plan tab | 03-resource-plan.png |
+| 04 | Internal Resources tab | 04-internal-resources.png |
+| 04b | Internal Resources — Add modal | 04b-internal-resources-add-modal.png |
+| 05 | Vendor Costs tab | 05-vendor-costs.png |
+| 05b | Vendor Costs — Add modal | 05b-vendor-costs-add-modal.png |
+| 06 | Tool Costs tab | 06-tool-costs.png |
+| 06b | Tool Costs — Add modal | 06b-tool-costs-add-modal.png |
+| 07 | Miscellaneous tab | 07-miscellaneous.png |
+| 07b | Miscellaneous — Add modal | 07b-miscellaneous-add-modal.png |
+| 08 | Risks & Contingency tab | 08-risks-contingency.png |
+| 08b | Risks & Contingency — Add modal | 08b-risks-contingency-add-modal.png |
+| 09 | Project functions menu open | 09-project-functions-menu.png |
+| 10 | Settings menu open | 10-settings-menu.png |
+
+Total: 15 screenshots
