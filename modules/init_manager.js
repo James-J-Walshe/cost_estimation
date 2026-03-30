@@ -622,6 +622,10 @@ class InitializationManager {
             if (typeof window.updateMonthHeaders === 'function') {
                 window.updateMonthHeaders();
             }
+            // Sync contingency panel visibility with loaded data (fix DEF-004)
+            if (typeof window.togglePercentageInput === 'function') {
+                window.togglePercentageInput();
+            }
             console.log('✓ UI updated');
 
             // Step 10: Initialize New Project Welcome if available
