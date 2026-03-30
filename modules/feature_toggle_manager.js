@@ -51,7 +51,7 @@ class FeatureToggleManager {
                 description: "Enable multi-currency support and exchange rates",
                 enabled: true,
                 restrictions: {
-                    roles: ["admin"],
+                    roles: [],
                     userIds: []
                 }
             },
