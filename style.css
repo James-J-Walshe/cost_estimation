@@ -140,16 +140,14 @@ header {
 }
 
 .header-logo {
-  width: 30px;
-  min-width: 30px;
   height: 30px;
+  padding: 0 var(--space-2);
   background: var(--brand);
   border-radius: var(--radius-md);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  overflow: hidden;
 }
 
 .header-logo img {
