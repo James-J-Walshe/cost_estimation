@@ -1522,15 +1522,19 @@ function togglePercentageInput() {
     const riskBasedContent = document.getElementById('riskBasedContent');
     
     if (method === 'percentage') {
-        // Show percentage input; risk table stays visible regardless
         if (percentageGroup) {
             percentageGroup.style.display = 'block';
         }
+        if (riskBasedContent) {
+            riskBasedContent.style.display = 'none';
+        }
         console.log('Switched to percentage-based view');
     } else {
-        // Hide percentage input; risk table stays visible
         if (percentageGroup) {
             percentageGroup.style.display = 'none';
+        }
+        if (riskBasedContent) {
+            riskBasedContent.style.display = 'block';
         }
         console.log('Switched to risk-based view');
     }
