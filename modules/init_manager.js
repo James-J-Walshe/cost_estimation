@@ -626,6 +626,14 @@ class InitializationManager {
             if (typeof window.togglePercentageInput === 'function') {
                 window.togglePercentageInput();
             }
+            // Sync radio option card highlight with loaded data (fix DEF-005)
+            const loadedMethod = window.projectData?.contingencyMethod || 'percentage';
+            document.querySelectorAll('input[name="contingencyMethod"]').forEach(r => {
+                const optionDiv = r.closest('.radio-option');
+                if (optionDiv) {
+                    optionDiv.classList.toggle('selected', r.value === loadedMethod);
+                }
+            });
             console.log('✓ UI updated');
 
             // Step 10: Initialize New Project Welcome if available
