@@ -862,25 +862,25 @@ class TableRenderer {
         });
         
         // Build HTML rows
-        let internalRowHTML = '<td><strong>Internal Resources</strong></td>';
+        let internalRowHTML = '<td>Internal Resources</td>';
         internalMonthly.forEach(cost => {
             internalRowHTML += `<td>$${Math.round(cost).toLocaleString()}</td>`;
         });
         internalRowHTML += `<td><strong>$${Math.round(internalTotal).toLocaleString()}</strong></td>`;
-        
-        let vendorRowHTML = '<td><strong>Vendor Costs</strong></td>';
+
+        let vendorRowHTML = '<td>Vendor Costs</td>';
         vendorMonthly.forEach(cost => {
             vendorRowHTML += `<td>$${Math.round(cost).toLocaleString()}</td>`;
         });
         vendorRowHTML += `<td><strong>$${Math.round(vendorTotal).toLocaleString()}</strong></td>`;
-        
-        let toolRowHTML = '<td><strong>Tool Costs</strong></td>';
+
+        let toolRowHTML = '<td>Tool Costs</td>';
         toolMonthly.forEach(cost => {
             toolRowHTML += `<td>$${Math.round(cost).toLocaleString()}</td>`;
         });
         toolRowHTML += `<td><strong>$${Math.round(toolTotal).toLocaleString()}</strong></td>`;
-        
-        let miscRowHTML = '<td><strong>Miscellaneous</strong></td>';
+
+        let miscRowHTML = '<td>Miscellaneous</td>';
         miscMonthly.forEach(cost => {
             miscRowHTML += `<td>$${Math.round(cost).toLocaleString()}</td>`;
         });

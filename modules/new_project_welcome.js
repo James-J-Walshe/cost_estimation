@@ -211,7 +211,7 @@ class NewProjectWelcome {
             .welcome-header {
                 text-align: center;
                 padding: 2.5rem 2rem 1.5rem;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: var(--brand, #0d9488);
                 color: white;
                 border-radius: 16px 16px 0 0;
             }
@@ -257,10 +257,10 @@ class NewProjectWelcome {
             }
             
             .welcome-option:hover {
-                border-color: #667eea;
-                background: #f8faff;
+                border-color: var(--brand, #0d9488);
+                background: var(--brand-light, #f0fdfa);
                 transform: translateY(-2px);
-                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
+                box-shadow: 0 4px 15px rgba(13, 148, 136, 0.15);
             }
             
             .welcome-option:active {
@@ -272,7 +272,7 @@ class NewProjectWelcome {
                 width: 64px;
                 height: 64px;
                 border-radius: 12px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: var(--brand, #0d9488);
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -309,7 +309,7 @@ class NewProjectWelcome {
             
             .welcome-option:hover .option-arrow {
                 transform: translateX(4px);
-                color: #667eea;
+                color: var(--brand, #0d9488);
             }
             
             .welcome-footer {
@@ -337,17 +337,17 @@ class NewProjectWelcome {
             
             .welcome-option-ai {
                 border-color: #99f6e4;
-                background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+                background: var(--brand-light, #f0fdfa);
             }
 
             .welcome-option-ai:hover {
                 border-color: var(--brand, #0d9488);
-                background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+                background: var(--brand-light, #f0fdfa);
                 box-shadow: 0 4px 15px rgba(13, 148, 136, 0.15);
             }
 
             .option-icon-ai {
-                background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+                background: var(--brand-dark, #0f766e);
             }
 
             /* Mobile responsiveness */

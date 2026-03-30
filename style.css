@@ -141,6 +141,7 @@ header {
 
 .header-logo {
   width: 30px;
+  min-width: 30px;
   height: 30px;
   background: var(--brand);
   border-radius: var(--radius-md);
@@ -148,6 +149,7 @@ header {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .header-logo img {
@@ -499,15 +501,16 @@ header {
 .tab-btn.active {
   color: var(--brand);
   border-bottom-color: var(--brand);
+  font-weight: 600;
 }
 
 .tab-content {
   display: none;
-  animation: fadeIn 0.2s ease;
 }
 
 .tab-content.active {
   display: block;
+  animation: fadeIn 0.2s ease;
 }
 
 /* ==========================================================================
@@ -797,7 +800,7 @@ header {
   font-weight: 600;
   font-size: var(--text-xs);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-align: center;
   padding: var(--space-2) var(--space-3);
   border-bottom: 1px solid var(--border);
@@ -820,7 +823,7 @@ header {
   font-weight: 600;
   font-size: var(--text-xs);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   color: var(--zinc-600);
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
@@ -1428,6 +1431,17 @@ small {
 /* ==========================================================================
    15. SECTION-SPECIFIC STYLES
    ========================================================================== */
+
+/* Section label — uppercase muted label used above grouped controls */
+.section-label {
+  margin-top: 0;
+  margin-bottom: var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
 
 /* Section actions bar */
 .section-actions {

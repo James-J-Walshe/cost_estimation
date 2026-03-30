@@ -265,17 +265,19 @@
     color: var(--zinc-600);
     font-weight: 600;
     text-align: center;
-    font-size: 0.8rem;
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 /* Two-row Header Styling */
 .year-header-row th {
     background: var(--brand);
     color: white;
-    font-weight: 700;
+    font-weight: 600;
     text-align: center;
     border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-    font-size: 0.9rem;
+    font-size: var(--text-sm);
 }
 
 .month-header-row th {
@@ -283,7 +285,9 @@
     color: var(--zinc-600);
     font-weight: 600;
     text-align: center;
-    font-size: 0.8rem;
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
     padding: 8px 4px;
 }
 
