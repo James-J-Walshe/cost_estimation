@@ -1,4 +1,5 @@
 // Application State
+// Issue #134: addInternalResource now handled by Multi Resource Manager
 let projectData = {
     projectInfo: {
         projectName: '',
@@ -80,6 +81,14 @@ function initializeBasicFunctionality() {
                 if (targetTab === 'summary') {
                     updateSummary();
                 }
+
+                // Refresh top scrollbar and frozen columns when returning to
+                // wide tables — the 2-second table_fixes re-render can leave
+                // the scrollbar width stale until this is explicitly refreshed.
+                if (targetTab === 'internal-resources' || targetTab === 'vendor-costs') {
+                    window.tableRenderer?.addTopScrollbars?.();
+                    window.tableRenderer?.applyFrozenColumns?.();
+                }
             });
         });
         console.log('Tab functionality initialized');
@@ -100,8 +109,12 @@ function initializeBasicEventListeners() {
     }
     window._basicEventListenersInitialized = true;
     
+    // ====================================================================
+    // Issue #134: addInternalResource is now handled by Multi Resource Manager
+    // Removed from this array to prevent duplicate listeners
+    // ====================================================================
     const addButtons = [
-        { id: 'addInternalResource', type: 'internalResource', title: 'Add Internal Resource' },
+        // { id: 'addInternalResource', type: 'internalResource', title: 'Add Internal Resource' }, // Issue #134: Handled by Multi Resource Manager
         { id: 'addVendorCost', type: 'vendorCost', title: 'Add Vendor Cost' },
         { id: 'addToolCost', type: 'toolCost', title: 'Add Tool Cost' },
         { id: 'addMiscCost', type: 'miscCost', title: 'Add Miscellaneous Cost' },
@@ -126,6 +139,9 @@ function initializeBasicEventListeners() {
             console.log(`Event listener added to ${btn.id}`);
         }
     });
+
+    // Issue #134: Log that addInternalResource is handled by Multi Resource Manager
+    console.log('addInternalResource handled by Multi Resource Manager (Issue #134)');
 
     // ====================================================================
     // FIX for Issue #130: Action buttons (Save, Load, Export, etc.) are 
@@ -914,18 +930,18 @@ function renderResourcePlanForecast() {
     months.forEach(month => {
         headerHTML += `<th>${month.label}</th>`;
     });
-    headerHTML += '<th>Total</th></tr>';
+    headerHTML += '<th class="col-total">Total</th></tr>';
     thead.innerHTML = headerHTML;
-    
+
     // Get cost data
     const internalCosts = getInternalResourcesMonthlyCosts(months);
     const vendorCosts = getVendorMonthlyCosts(months);
     const toolCosts = getToolCostsMonthlyCosts(months);
     const miscCosts = getMiscMonthlyCosts(months);
-    
+
     // Build body rows
     let bodyHTML = '';
-    
+
     // Internal Resources row
     bodyHTML += '<tr><td><strong>Internal Resources</strong></td>';
     let internalTotal = 0;
@@ -934,8 +950,8 @@ function renderResourcePlanForecast() {
         internalTotal += cost;
         bodyHTML += `<td>$${cost.toLocaleString()}</td>`;
     });
-    bodyHTML += `<td><strong>$${internalTotal.toLocaleString()}</strong></td></tr>`;
-    
+    bodyHTML += `<td class="col-total"><strong>$${internalTotal.toLocaleString()}</strong></td></tr>`;
+
     // Vendor Costs row
     bodyHTML += '<tr><td><strong>Vendor Costs</strong></td>';
     let vendorTotal = 0;
@@ -944,9 +960,9 @@ function renderResourcePlanForecast() {
         vendorTotal += cost;
         bodyHTML += `<td>$${cost.toLocaleString()}</td>`;
     });
-    bodyHTML += `<td><strong>$${vendorTotal.toLocaleString()}</strong></td></tr>`;
-    
-    // Tool Costs row (NEW)
+    bodyHTML += `<td class="col-total"><strong>$${vendorTotal.toLocaleString()}</strong></td></tr>`;
+
+    // Tool Costs row
     bodyHTML += '<tr><td><strong>Tool Costs</strong></td>';
     let toolTotal = 0;
     months.forEach(month => {
@@ -954,8 +970,8 @@ function renderResourcePlanForecast() {
         toolTotal += cost;
         bodyHTML += `<td>$${cost.toLocaleString()}</td>`;
     });
-    bodyHTML += `<td><strong>$${toolTotal.toLocaleString()}</strong></td></tr>`;
-    
+    bodyHTML += `<td class="col-total"><strong>$${toolTotal.toLocaleString()}</strong></td></tr>`;
+
     // Miscellaneous row
     bodyHTML += '<tr><td><strong>Miscellaneous</strong></td>';
     let miscTotal = 0;
@@ -964,20 +980,20 @@ function renderResourcePlanForecast() {
         miscTotal += cost;
         bodyHTML += `<td>$${cost.toLocaleString()}</td>`;
     });
-    bodyHTML += `<td><strong>$${miscTotal.toLocaleString()}</strong></td></tr>`;
-    
+    bodyHTML += `<td class="col-total"><strong>$${miscTotal.toLocaleString()}</strong></td></tr>`;
+
     // Total row
-    bodyHTML += '<tr class="total-row" style="background: #f0f9ff; font-weight: bold;"><td><strong>Total Monthly Cost</strong></td>';
+    bodyHTML += '<tr class="total-row"><td><strong>Total Monthly Cost</strong></td>';
     let grandTotal = 0;
     months.forEach(month => {
-        const monthTotal = (internalCosts[month.key] || 0) + 
-                          (vendorCosts[month.key] || 0) + 
-                          (toolCosts[month.key] || 0) + 
+        const monthTotal = (internalCosts[month.key] || 0) +
+                          (vendorCosts[month.key] || 0) +
+                          (toolCosts[month.key] || 0) +
                           (miscCosts[month.key] || 0);
         grandTotal += monthTotal;
         bodyHTML += `<td><strong>$${monthTotal.toLocaleString()}</strong></td>`;
     });
-    bodyHTML += `<td><strong>$${grandTotal.toLocaleString()}</strong></td></tr>`;
+    bodyHTML += `<td class="col-total"><strong>$${grandTotal.toLocaleString()}</strong></td></tr>`;
     
     tbody.innerHTML = bodyHTML;
 }
@@ -1084,8 +1100,46 @@ function openModal(title, type) {
         modalFields.innerHTML = getModalFields(type);
         modal.style.display = 'block';
         modalForm.setAttribute('data-type', type);
+        
+        // Handle vendor cost modal - hide standard buttons and attach close handler
+        if (type === 'vendorCost') {
+            // Hide standard modal buttons
+            const standardModalActions = modalForm.querySelector('.modal-actions:not(.vendor-cost-actions)');
+            if (standardModalActions) {
+                standardModalActions.style.display = 'none';
+            }
+            const cancelModal = document.getElementById('cancelModal');
+            const saveModal = modalForm.querySelector('button[type="submit"]:not(#vendorCostSave)');
+            if (cancelModal) cancelModal.style.display = 'none';
+            if (saveModal) saveModal.style.display = 'none';
+            
+            // Attach close button handler
+            const closeBtn = document.getElementById('vendorCostClose');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    modal.style.display = 'none';
+                    // Restore standard buttons for next modal
+                    restoreStandardModalButtons();
+                });
+            }
+        }
     } catch (error) {
         console.error('Error opening modal:', error);
+    }
+}
+
+// Helper function to restore standard modal buttons
+function restoreStandardModalButtons() {
+    const modalForm = document.getElementById('modalForm');
+    if (modalForm) {
+        const standardModalActions = modalForm.querySelector('.modal-actions');
+        if (standardModalActions) {
+            standardModalActions.style.display = '';
+        }
+        const cancelModal = document.getElementById('cancelModal');
+        const saveModal = modalForm.querySelector('button[type="submit"]');
+        if (cancelModal) cancelModal.style.display = '';
+        if (saveModal) saveModal.style.display = '';
     }
 }
 
@@ -1118,39 +1172,33 @@ function getModalFields(type) {
             </div>
         `,
         vendorCost: `
-            <div class="form-group">
-                <label>Vendor:</label>
-                <input type="text" name="vendor" class="form-control" required>
+            <div class="vendor-cost-container">
+                <p style="margin-bottom: 1rem; color: #6b7280; font-size: 0.9rem;">
+                    Enter vendor details. You can add monthly cost allocations after saving.
+                </p>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Vendor Name:</label>
+                    <input type="text" name="vendor" class="form-control" required style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Description:</label>
+                    <input type="text" name="description" class="form-control" required style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;">
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Category:</label>
+                    <select name="category" class="form-control" required style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;">
+                        <option value="">-- Select Category --</option>
+                        <option value="Implementation">Implementation</option>
+                        <option value="Consulting">Consulting</option>
+                        <option value="Training">Training</option>
+                        <option value="Support">Support</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Description:</label>
-                <input type="text" name="description" class="form-control" required>
-            </div>
-            <div class="form-group">
-                <label>Category:</label>
-                <select name="category" class="form-control" required>
-                    <option value="Implementation">Implementation</option>
-                    <option value="Consulting">Consulting</option>
-                    <option value="Training">Training</option>
-                    <option value="Support">Support</option>
-                    <option value="Other">Other</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>${months[0] || 'Month 1'} Cost:</label>
-                <input type="number" name="month1Cost" class="form-control" min="0" step="0.01" value="0">
-            </div>
-            <div class="form-group">
-                <label>${months[1] || 'Month 2'} Cost:</label>
-                <input type="number" name="month2Cost" class="form-control" min="0" step="0.01" value="0">
-            </div>
-            <div class="form-group">
-                <label>${months[2] || 'Month 3'} Cost:</label>
-                <input type="number" name="month3Cost" class="form-control" min="0" step="0.01" value="0">
-            </div>
-            <div class="form-group">
-                <label>${months[3] || 'Month 4'} Cost:</label>
-                <input type="number" name="month4Cost" class="form-control" min="0" step="0.01" value="0">
+            <div class="vendor-cost-actions" style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+                <button type="button" id="vendorCostClose" class="btn btn-secondary">Close</button>
+                <button type="submit" id="vendorCostSave" class="btn btn-primary">Save</button>
             </div>
         `,
         toolCost: `
@@ -1185,6 +1233,7 @@ function getModalFields(type) {
             <div class="form-group">
                 <label>Quantity (Licenses/Units):</label>
                 <input type="number" name="quantity" class="form-control" id="quantity" min="1" step="1" value="1" required>
+                <small class="form-text text-muted">Total cost = Cost per period × Quantity</small>
             </div>
             <div class="form-group">
                 <label>Start Date:</label>
@@ -1300,16 +1349,21 @@ function handleModalSubmit() {
                 });
                 break;
             case 'vendorCost':
-                projectData.vendorCosts.push({
+                // Get project month information for setting up 0 costs
+                const vendorMonthInfo = window.tableRenderer?.calculateProjectMonths() || { count: 12 };
+                const newVendor = {
                     id: Date.now(),
                     vendor: data.vendor,
                     description: data.description,
-                    category: data.category,
-                    month1Cost: parseFloat(data.month1Cost) || 0,
-                    month2Cost: parseFloat(data.month2Cost) || 0,
-                    month3Cost: parseFloat(data.month3Cost) || 0,
-                    month4Cost: parseFloat(data.month4Cost) || 0
-                });
+                    category: data.category
+                };
+                // Initialize all months with 0 cost
+                for (let i = 1; i <= vendorMonthInfo.count; i++) {
+                    newVendor[`month${i}Cost`] = 0;
+                }
+                projectData.vendorCosts.push(newVendor);
+                // Restore standard modal buttons
+                restoreStandardModalButtons();
                 break;
             case 'toolCost':
                 // Validate using tool costs manager
@@ -1320,7 +1374,31 @@ function handleModalSubmit() {
                         return;
                     }
                 }
-                
+
+                // Warn if tool dates extend beyond the project end date
+                {
+                    const projEnd = projectData.projectInfo?.endDate;
+                    if (projEnd && data.startDate) {
+                        const projEndYM  = projEnd.substring(0, 7); // normalise to YYYY-MM
+                        const toolStartYM = data.startDate.substring(0, 7);
+                        const isOngoing = data.isOngoing === 'on';
+                        const toolEndYM = !isOngoing && data.endDate ? data.endDate.substring(0, 7) : null;
+                        const fmtMonth = ym => new Date(ym + '-01').toLocaleDateString('en-GB', { year: 'numeric', month: 'long' });
+                        const fmtDay   = d  => new Date(d).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
+
+                        let warningMsg = null;
+                        if (toolStartYM > projEndYM) {
+                            warningMsg = `⚠️ Date Warning\n\nThe tool start date (${fmtDay(data.startDate)}) is after the project end date (${fmtMonth(projEndYM)}).\n\nThis tool will be added but will show $0 in the project totals, as costs outside the project timeline are excluded.\n\nYou may want to adjust the dates before saving.\n\nDo you want to add it anyway?`;
+                        } else if (toolEndYM && toolEndYM > projEndYM) {
+                            warningMsg = `⚠️ Date Warning\n\nThe tool end date (${fmtDay(data.endDate)}) is after the project end date (${fmtMonth(projEndYM)}).\n\nCosts will only be calculated up to the end of the project (${fmtMonth(projEndYM)}). The remaining period will not be included in the project total.\n\nDo you want to continue?`;
+                        }
+
+                        if (warningMsg && !confirm(warningMsg)) {
+                            return;
+                        }
+                    }
+                }
+
                 projectData.toolCosts.push({
                     id: Date.now(),
                     tool: data.tool,
@@ -1444,21 +1522,15 @@ function togglePercentageInput() {
     const riskBasedContent = document.getElementById('riskBasedContent');
     
     if (method === 'percentage') {
-        // Show percentage input, hide risk content
+        // Show percentage input; risk table stays visible regardless
         if (percentageGroup) {
             percentageGroup.style.display = 'block';
         }
-        if (riskBasedContent) {
-            riskBasedContent.style.display = 'none';
-        }
         console.log('Switched to percentage-based view');
     } else {
-        // Hide percentage input, show risk content
+        // Hide percentage input; risk table stays visible
         if (percentageGroup) {
             percentageGroup.style.display = 'none';
-        }
-        if (riskBasedContent) {
-            riskBasedContent.style.display = 'block';
         }
         console.log('Switched to risk-based view');
     }
@@ -1691,6 +1763,7 @@ window.updateMonthHeaders = updateMonthHeaders;
 window.calculateProjectMonths = calculateProjectMonths;
 window.initializeBasicFunctionality = initializeBasicFunctionality;
 window.initializeProjectInfoSaveButton = initializeProjectInfoSaveButton;
+window.restoreStandardModalButtons = restoreStandardModalButtons;
 
 // Calculation functions for modules
 window.calculateInternalResourcesTotal = calculateInternalResourcesTotal;
