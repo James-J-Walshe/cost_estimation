@@ -1098,6 +1098,7 @@ function openModal(title, type) {
 
         modalTitle.textContent = title;
         modalFields.innerHTML = getModalFields(type);
+        if (window.initCurrencySelectors) window.initCurrencySelectors(modal);
         modal.style.display = 'block';
         modalForm.setAttribute('data-type', type);
         
@@ -1155,6 +1156,11 @@ function getModalFields(type) {
                 </select>
             </div>
             <div class="form-group">
+                <label>Currency:</label>
+                <select name="currency" id="entryCurrencyInternal" class="form-control currency-selector"></select>
+                <span class="currency-error-msg" style="display:none;"></span>
+            </div>
+            <div class="form-group">
                 <label>${months[0] || 'Month 1'} Days:</label>
                 <input type="number" name="month1Days" class="form-control" min="0" step="0.5" value="0">
             </div>
@@ -1195,6 +1201,11 @@ function getModalFields(type) {
                         <option value="Other">Other</option>
                     </select>
                 </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Currency:</label>
+                    <select name="currency" id="entryCurrencyVendor" class="form-control currency-selector" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius-md);"></select>
+                    <span class="currency-error-msg" style="display:none;"></span>
+                </div>
             </div>
             <div class="vendor-cost-actions" style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
                 <button type="button" id="vendorCostClose" class="btn btn-secondary">Close</button>
@@ -1229,6 +1240,11 @@ function getModalFields(type) {
                 <label>Cost Per Period:</label>
                 <input type="number" name="costPerPeriod" class="form-control" id="costPerPeriod" min="0" step="0.01" required>
                 <small class="form-text text-muted">Enter the cost for one billing period</small>
+            </div>
+            <div class="form-group">
+                <label>Currency:</label>
+                <select name="currency" id="entryCurrencyTool" class="form-control currency-selector"></select>
+                <span class="currency-error-msg" style="display:none;"></span>
             </div>
             <div class="form-group">
                 <label>Quantity (Licenses/Units):</label>
@@ -1335,9 +1351,17 @@ function handleModalSubmit() {
 
         // Add item to appropriate array
         switch(type) {
-            case 'internalResource':
+            case 'internalResource': {
+                // STR-001: currency validation
+                const irCurrencySelector = document.querySelector('#modal .currency-selector');
+                const irErrorEl = irCurrencySelector ? irCurrencySelector.closest('.form-group')?.querySelector('.currency-error-msg') : null;
+                const irCurrency = irCurrencySelector ? irCurrencySelector.value : (projectData.currency?.primaryCurrency || '');
+                if (window.validateCurrencyRate && !window.validateCurrencyRate(irCurrency, irCurrencySelector, irErrorEl)) {
+                    return;
+                }
+                const primaryCurrency = projectData.currency?.primaryCurrency || '';
                 const rate = projectData.rateCards.find(r => r.role === data.role);
-                projectData.internalResources.push({
+                const irEntry = {
                     id: Date.now(),
                     role: data.role,
                     rateCard: rate ? rate.category || 'Internal' : 'Internal',
@@ -1346,9 +1370,25 @@ function handleModalSubmit() {
                     month2Days: parseFloat(data.month2Days) || 0,
                     month3Days: parseFloat(data.month3Days) || 0,
                     month4Days: parseFloat(data.month4Days) || 0
-                });
+                };
+                if (irCurrency && irCurrency !== primaryCurrency && window.currencyManager) {
+                    irEntry.currency = irCurrency;
+                    irEntry.originalDailyRate = irEntry.dailyRate;
+                    irEntry.dailyRate = window.currencyManager.convertCurrency(irEntry.dailyRate, irCurrency, primaryCurrency);
+                    irEntry.originalAmount = irEntry.originalDailyRate;
+                }
+                projectData.internalResources.push(irEntry);
+                window.dataManager.saveToLocalStorage();
                 break;
-            case 'vendorCost':
+            }
+            case 'vendorCost': {
+                // STR-001: currency validation
+                const vcCurrencySelector = document.querySelector('#modal .currency-selector');
+                const vcErrorEl = vcCurrencySelector ? vcCurrencySelector.closest('.form-group')?.querySelector('.currency-error-msg') : null;
+                const vcCurrency = vcCurrencySelector ? vcCurrencySelector.value : (projectData.currency?.primaryCurrency || '');
+                if (window.validateCurrencyRate && !window.validateCurrencyRate(vcCurrency, vcCurrencySelector, vcErrorEl)) {
+                    return;
+                }
                 // Get project month information for setting up 0 costs
                 const vendorMonthInfo = window.tableRenderer?.calculateProjectMonths() || { count: 12 };
                 const newVendor = {
@@ -1361,11 +1401,27 @@ function handleModalSubmit() {
                 for (let i = 1; i <= vendorMonthInfo.count; i++) {
                     newVendor[`month${i}Cost`] = 0;
                 }
+                const vcPrimary = projectData.currency?.primaryCurrency || '';
+                if (vcCurrency && vcCurrency !== vcPrimary) {
+                    newVendor.currency = vcCurrency;
+                    // originalAmount stored as 0 initially — costs are set per-month via edit
+                    newVendor.originalAmount = 0;
+                }
                 projectData.vendorCosts.push(newVendor);
+                window.dataManager.saveToLocalStorage();
                 // Restore standard modal buttons
                 restoreStandardModalButtons();
                 break;
-            case 'toolCost':
+            }
+            case 'toolCost': {
+                // STR-001: currency validation
+                const tcCurrencySelector = document.querySelector('#modal .currency-selector');
+                const tcErrorEl = tcCurrencySelector ? tcCurrencySelector.closest('.form-group')?.querySelector('.currency-error-msg') : null;
+                const tcCurrency = tcCurrencySelector ? tcCurrencySelector.value : (projectData.currency?.primaryCurrency || '');
+                if (window.validateCurrencyRate && !window.validateCurrencyRate(tcCurrency, tcCurrencySelector, tcErrorEl)) {
+                    return;
+                }
+
                 // Validate using tool costs manager
                 if (window.toolCostsManager) {
                     const validation = window.toolCostsManager.validateToolCost(data);
@@ -1399,18 +1455,28 @@ function handleModalSubmit() {
                     }
                 }
 
-                projectData.toolCosts.push({
+                const tcPrimary = projectData.currency?.primaryCurrency || '';
+                const rawCostPerPeriod = parseFloat(data.costPerPeriod);
+                const tcEntry = {
                     id: Date.now(),
                     tool: data.tool,
                     procurementType: data.procurementType,
                     billingFrequency: data.billingFrequency,
-                    costPerPeriod: parseFloat(data.costPerPeriod),
+                    costPerPeriod: rawCostPerPeriod,
                     quantity: parseInt(data.quantity),
                     startDate: data.startDate,
                     endDate: data.endDate || null,
                     isOngoing: data.isOngoing === 'on' || data.isOngoing === true
-                });
+                };
+                if (tcCurrency && tcCurrency !== tcPrimary && window.currencyManager) {
+                    tcEntry.currency = tcCurrency;
+                    tcEntry.originalAmount = rawCostPerPeriod;
+                    tcEntry.costPerPeriod = window.currencyManager.convertCurrency(rawCostPerPeriod, tcCurrency, tcPrimary);
+                }
+                projectData.toolCosts.push(tcEntry);
+                window.dataManager.saveToLocalStorage();
                 break;
+            }
             case 'miscCost':
                 projectData.miscCosts.push({
                     id: Date.now(),
@@ -1419,6 +1485,7 @@ function handleModalSubmit() {
                     category: data.category,
                     cost: parseFloat(data.cost)
                 });
+                window.dataManager.saveToLocalStorage();
                 break;
             case 'risk':
                 projectData.risks.push({
@@ -1428,6 +1495,7 @@ function handleModalSubmit() {
                     impact: parseInt(data.impact),
                     mitigationCost: parseFloat(data.mitigationCost) || 0
                 });
+                window.dataManager.saveToLocalStorage();
                 break;
             case 'rateCard':
                 console.log('Adding rate card:', data);
@@ -1438,6 +1506,7 @@ function handleModalSubmit() {
                     category: data.category
                 };
                 projectData.rateCards.push(newRateCard);
+                window.dataManager.saveToLocalStorage();
                 break;
         }
 
