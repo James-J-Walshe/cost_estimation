@@ -171,20 +171,20 @@ class TableRenderer {
     updateTableHeaders() {
         const monthInfo = this.calculateProjectMonths();
         
-        // Update Internal Resources table header
+        // Update Internal Resources table header — STR-001: added Currency column
         const internalYearHeader = document.getElementById('internalResourcesYearHeader');
         const internalHeader = document.getElementById('internalResourcesTableHeader');
         if (internalYearHeader && internalHeader) {
-            const headers = this.createTwoRowHeaders(['Role', 'Rate Card', 'Daily Rate'], monthInfo, true);
+            const headers = this.createTwoRowHeaders(['Role', 'Rate Card', 'Daily Rate', 'Currency'], monthInfo, true);
             internalYearHeader.innerHTML = headers.yearRowHTML;
             internalHeader.innerHTML = headers.monthRowHTML;
         }
 
-        // Update Vendor Costs table header
+        // Update Vendor Costs table header — STR-001: added Currency column
         const vendorYearHeader = document.getElementById('vendorCostsYearHeader');
         const vendorHeader = document.getElementById('vendorCostsTableHeader');
         if (vendorYearHeader && vendorHeader) {
-            const headers = this.createTwoRowHeaders(['Vendor', 'Category', 'Description'], monthInfo, true);
+            const headers = this.createTwoRowHeaders(['Vendor', 'Category', 'Description', 'Currency'], monthInfo, true);
             vendorYearHeader.innerHTML = headers.yearRowHTML;
             vendorHeader.innerHTML = headers.monthRowHTML;
         }
@@ -420,45 +420,69 @@ class TableRenderer {
         const projectData = window.projectData || {};
         if (!projectData.internalResources || projectData.internalResources.length === 0) {
             const monthInfo = this.calculateProjectMonths();
-            const colspan = 3 + monthInfo.count + 2; // Fixed columns + months + Total Cost + Actions
+            const colspan = 4 + monthInfo.count + 2; // Fixed columns (Role, Rate Card, Daily Rate, Currency) + months + Total Cost + Actions
             tbody.innerHTML = `<tr><td colspan="${colspan}" class="empty-state">No internal resources added yet</td></tr>`;
             return;
         }
-        
+
         const monthInfo = this.calculateProjectMonths();
-        
+
         projectData.internalResources.forEach(resource => {
             let monthlyDays = [];
             let totalDays = 0;
-            
+
             // Get days for each month
             monthInfo.monthKeys.forEach(monthKey => {
                 const days = this.getMonthValue(resource, monthKey, 'q');
                 monthlyDays.push(days);
                 totalDays += days;
             });
-            
+
             const totalCost = totalDays * resource.dailyRate;
-            
+
+            // STR-001: staleness check
+            const isStale = window.isRateStale ? window.isRateStale(resource) : false;
+            const currencyDisplay = resource.currency || (projectData.currency?.primaryCurrency || '');
+
             const row = document.createElement('tr');
             let rowHTML = `
                 <td>${resource.role}</td>
                 <td>${resource.rateCard || 'Internal'}</td>
                 <td>${resource.dailyRate.toLocaleString()}</td>
+                <td>${currencyDisplay}</td>
             `;
-            
+
             // Add month columns
             monthlyDays.forEach(days => {
                 rowHTML += `<td>${days}</td>`;
             });
-            
+
+            // STR-001: cost cell with dual-currency annotation
+            const costCellHTML = window.buildCostCellHTML ? window.buildCostCellHTML(resource, totalCost) : totalCost.toLocaleString();
+            // STR-001: disable edit button if stale
+            const actionButtons = isStale
+                ? this.createActionButtons(resource.id, 'internal-resource').replace(
+                    'class="edit-btn icon-btn"',
+                    'class="edit-btn icon-btn" style="opacity:0.5;pointer-events:none;cursor:not-allowed"'
+                  )
+                : this.createActionButtons(resource.id, 'internal-resource');
+
             rowHTML += `
-                <td>${totalCost.toLocaleString()}</td>
-                <td class="col-actions">${this.createActionButtons(resource.id, 'internal-resource')}</td>
+                <td>${costCellHTML}</td>
+                <td class="col-actions">${actionButtons}</td>
             `;
-            
+
             row.innerHTML = rowHTML;
             tbody.appendChild(row);
+
+            // STR-001: append staleness warning sub-row if needed
+            if (isStale) {
+                const staleRow = document.createElement('tr');
+                staleRow.className = 'stale-rate-warning-row';
+                const colspan = 4 + monthInfo.count + 2;
+                staleRow.innerHTML = `<td colspan="${colspan}" class="stale-rate-warning">The exchange rate for ${resource.currency} has been removed. This entry cannot be modified until a rate is reconfigured in Settings.</td>`;
+                tbody.appendChild(staleRow);
+            }
         });
     }
 
@@ -472,43 +496,67 @@ class TableRenderer {
         const projectData = window.projectData || {};
         if (!projectData.vendorCosts || projectData.vendorCosts.length === 0) {
             const monthInfo = this.calculateProjectMonths();
-            const colspan = 3 + monthInfo.count + 2; // Fixed columns + months + Total Cost + Actions
+            const colspan = 4 + monthInfo.count + 2; // Fixed columns (Vendor, Category, Description, Currency) + months + Total Cost + Actions
             tbody.innerHTML = `<tr><td colspan="${colspan}" class="empty-state">No vendor costs added yet</td></tr>`;
             return;
         }
-        
+
         const monthInfo = this.calculateProjectMonths();
-        
+
         projectData.vendorCosts.forEach(vendor => {
             let monthlyCosts = [];
             let totalCost = 0;
-            
+
             // Get costs for each month
             monthInfo.monthKeys.forEach(monthKey => {
                 const cost = this.getMonthValue(vendor, monthKey, 'q');
                 monthlyCosts.push(cost);
                 totalCost += cost;
             });
-            
+
+            // STR-001: staleness check
+            const isStale = window.isRateStale ? window.isRateStale(vendor) : false;
+            const currencyDisplay = vendor.currency || (projectData.currency?.primaryCurrency || '');
+
             const row = document.createElement('tr');
             let rowHTML = `
                 <td>${vendor.vendor}</td>
                 <td>${vendor.category}</td>
                 <td>${vendor.description}</td>
+                <td>${currencyDisplay}</td>
             `;
-            
+
             // Add month columns
             monthlyCosts.forEach(cost => {
                 rowHTML += `<td>${cost.toLocaleString()}</td>`;
             });
-            
+
+            // STR-001: cost cell with dual-currency annotation
+            const costCellHTML = window.buildCostCellHTML ? window.buildCostCellHTML(vendor, totalCost) : totalCost.toLocaleString();
+            // STR-001: disable edit button if stale
+            const actionButtons = isStale
+                ? this.createActionButtons(vendor.id, 'vendor-cost').replace(
+                    'class="edit-btn icon-btn"',
+                    'class="edit-btn icon-btn" style="opacity:0.5;pointer-events:none;cursor:not-allowed"'
+                  )
+                : this.createActionButtons(vendor.id, 'vendor-cost');
+
             rowHTML += `
-                <td>${totalCost.toLocaleString()}</td>
-                <td class="col-actions">${this.createActionButtons(vendor.id, 'vendor-cost')}</td>
+                <td>${costCellHTML}</td>
+                <td class="col-actions">${actionButtons}</td>
             `;
-            
+
             row.innerHTML = rowHTML;
             tbody.appendChild(row);
+
+            // STR-001: append staleness warning sub-row if needed
+            if (isStale) {
+                const staleRow = document.createElement('tr');
+                staleRow.className = 'stale-rate-warning-row';
+                const colspan = 4 + monthInfo.count + 2;
+                staleRow.innerHTML = `<td colspan="${colspan}" class="stale-rate-warning">The exchange rate for ${vendor.currency} has been removed. This entry cannot be modified until a rate is reconfigured in Settings.</td>`;
+                tbody.appendChild(staleRow);
+            }
         });
     }
   
@@ -521,17 +569,39 @@ class TableRenderer {
         
         const projectData = window.projectData || {};
         if (!projectData.toolCosts || projectData.toolCosts.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No tool costs added yet</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="empty-state">No tool costs added yet</td></tr>';
             return;
         }
         
         projectData.toolCosts.forEach(tool => {
             const row = document.createElement('tr');
-            
+
+            // STR-001: staleness check
+            const isStale = window.isRateStale ? window.isRateStale(tool) : false;
+            const currencyDisplay = tool.currency || (projectData.currency?.primaryCurrency || '');
+
             // Use Tool Costs Manager for formatting if available
             if (window.toolCostsManager) {
                 const formatted = window.toolCostsManager.formatToolCostForDisplay(tool);
-                
+
+                // STR-001 / DEF-010: cost cell with dual-currency annotation.
+                // formatted.totalCost is in primary currency (costPerPeriod was converted at save).
+                // Back-convert to entry currency so buildCostCellHTML shows the correct total.
+                const tcPrimary = projectData.currency?.primaryCurrency || '';
+                let toolEntry = tool;
+                if (tool.currency && tool.currency !== tcPrimary && window.currencyManager) {
+                    const originalTotal = window.currencyManager.convertCurrency(formatted.totalCost, tcPrimary, tool.currency);
+                    toolEntry = { ...tool, originalAmount: originalTotal };
+                }
+                const costCellHTML = window.buildCostCellHTML ? window.buildCostCellHTML(toolEntry, formatted.totalCost) : `$${formatted.totalCost.toLocaleString()}`;
+                // STR-001: disable edit button if stale
+                const actionButtons = isStale
+                    ? this.createActionButtons(tool.id, 'tool-cost').replace(
+                        'class="edit-btn icon-btn"',
+                        'class="edit-btn icon-btn" style="opacity:0.5;pointer-events:none;cursor:not-allowed"'
+                      )
+                    : this.createActionButtons(tool.id, 'tool-cost');
+
                 row.innerHTML = `
                     <td>${formatted.tool}</td>
                     <td>${formatted.procurementType}</td>
@@ -539,9 +609,10 @@ class TableRenderer {
                     <td>$${formatted.costPerPeriod.toLocaleString()}</td>
                     <td>${formatted.quantity}</td>
                     <td>${formatted.startDate}</td>
-                    <td>${formatted.endDate}${formatted.isOngoing ? ' <span style="color: #059669;">♾️</span>' : ''}</td>
-                    <td>$${formatted.totalCost.toLocaleString()}</td>
-                    <td class="col-actions">${this.createActionButtons(tool.id, 'tool-cost')}</td>
+                    <td>${formatted.endDate}${formatted.isOngoing ? ' <span style="color: #059669;">&#x267E;</span>' : ''}</td>
+                    <td>${currencyDisplay}</td>
+                    <td>${costCellHTML}</td>
+                    <td class="col-actions">${actionButtons}</td>
                 `;
             } else {
                 // Fallback for old structure
@@ -552,12 +623,21 @@ class TableRenderer {
                     <td>${tool.monthlyCost.toLocaleString()}</td>
                     <td>${tool.users}</td>
                     <td>${tool.duration}</td>
+                    <td>${currencyDisplay}</td>
                     <td>${totalCost.toLocaleString()}</td>
                     <td class="col-actions">${this.createActionButtons(tool.id, 'tool-cost')}</td>
                 `;
             }
-            
+
             tbody.appendChild(row);
+
+            // STR-001: append staleness warning sub-row if needed
+            if (isStale) {
+                const staleRow = document.createElement('tr');
+                staleRow.className = 'stale-rate-warning-row';
+                staleRow.innerHTML = `<td colspan="10" class="stale-rate-warning">The exchange rate for ${tool.currency} has been removed. This entry cannot be modified until a rate is reconfigured in Settings.</td>`;
+                tbody.appendChild(staleRow);
+            }
         });
     }
 
@@ -719,12 +799,18 @@ class TableRenderer {
             });
         }
         
-        // Calculate Vendor Costs
+        // Calculate Vendor Costs — DEF-011: convert from entry currency to primary before accumulating
         if (projectData.vendorCosts && projectData.vendorCosts.length > 0) {
             console.log(`🏢 Processing ${projectData.vendorCosts.length} vendor costs`);
+            const summaryPrimary = projectData.currency?.primaryCurrency || '';
             projectData.vendorCosts.forEach(vendor => {
+                const vendorCurr = vendor.currency;
+                const svNeedsConv = vendorCurr && vendorCurr !== summaryPrimary && window.currencyManager;
                 monthInfo.monthKeys.forEach((monthKey, index) => {
-                    const cost = this.getMonthValue(vendor, monthKey, 'q');
+                    let cost = this.getMonthValue(vendor, monthKey, 'q');
+                    if (svNeedsConv) {
+                        cost = window.currencyManager.convertCurrency(cost, vendorCurr, summaryPrimary);
+                    }
                     vendorMonthly[index] += cost;
                 });
             });
@@ -921,7 +1007,12 @@ function updateItemById(itemId, newData, itemType) {
                 Object.assign(projectData.internalResources[resourceIndex], newData);
                 const rate = projectData.rateCards.find(r => r.role === newData.role);
                 if (rate) {
-                    projectData.internalResources[resourceIndex].dailyRate = rate.rate;
+                    // STR-001: only overwrite dailyRate from rate card when no foreign currency conversion is stored
+                    const primaryCurrency = projectData.currency?.primaryCurrency || '';
+                    const entryCurrency = projectData.internalResources[resourceIndex].currency;
+                    if (!entryCurrency || entryCurrency === primaryCurrency) {
+                        projectData.internalResources[resourceIndex].dailyRate = rate.rate;
+                    }
                     projectData.internalResources[resourceIndex].rateCard = rate.category;
                 }
             }

@@ -1101,8 +1101,18 @@ function openModal(title, type) {
         if (window.initCurrencySelectors) window.initCurrencySelectors(modal);
         modal.style.display = 'block';
         modalForm.setAttribute('data-type', type);
-        
-        // Handle vendor cost modal - hide standard buttons and attach close handler
+
+        // DEF-007: Defensive re-attach of submit listener in case init-time attachment was missed
+        if (!modalForm.hasAttribute('data-submit-listener-attached')) {
+            modalForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                handleModalSubmit();
+            });
+            modalForm.setAttribute('data-submit-listener-attached', 'true');
+            console.log('Modal form submit listener attached (defensive re-attach in openModal)');
+        }
+
+        // Handle vendor cost modal - hide standard buttons and attach handlers
         if (type === 'vendorCost') {
             // Hide standard modal buttons
             const standardModalActions = modalForm.querySelector('.modal-actions:not(.vendor-cost-actions)');
@@ -1110,10 +1120,18 @@ function openModal(title, type) {
                 standardModalActions.style.display = 'none';
             }
             const cancelModal = document.getElementById('cancelModal');
-            const saveModal = modalForm.querySelector('button[type="submit"]:not(#vendorCostSave)');
+            const saveModal = modalForm.querySelector('button[type="submit"]');
             if (cancelModal) cancelModal.style.display = 'none';
             if (saveModal) saveModal.style.display = 'none';
-            
+
+            // DEF-007: explicit click handler on Save — type="button" prevents native form submit
+            const saveBtn = document.getElementById('vendorCostSave');
+            if (saveBtn) {
+                saveBtn.addEventListener('click', () => {
+                    handleModalSubmit();
+                });
+            }
+
             // Attach close button handler
             const closeBtn = document.getElementById('vendorCostClose');
             if (closeBtn) {
@@ -1203,13 +1221,13 @@ function getModalFields(type) {
                 </div>
                 <div class="form-group" style="margin-bottom: 1rem;">
                     <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Currency:</label>
-                    <select name="currency" id="entryCurrencyVendor" class="form-control currency-selector" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: var(--radius-md);"></select>
+                    <select name="currency" id="entryCurrencyVendor" class="form-control currency-selector" style="width: 100%; padding: 0.5rem; border-radius: var(--radius-md);"></select>
                     <span class="currency-error-msg" style="display:none;"></span>
                 </div>
             </div>
             <div class="vendor-cost-actions" style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
                 <button type="button" id="vendorCostClose" class="btn btn-secondary">Close</button>
-                <button type="submit" id="vendorCostSave" class="btn btn-primary">Save</button>
+                <button type="button" id="vendorCostSave" class="btn btn-primary">Save</button>
             </div>
         `,
         toolCost: `
@@ -1404,8 +1422,8 @@ function handleModalSubmit() {
                 const vcPrimary = projectData.currency?.primaryCurrency || '';
                 if (vcCurrency && vcCurrency !== vcPrimary) {
                     newVendor.currency = vcCurrency;
-                    // originalAmount stored as 0 initially — costs are set per-month via edit
-                    newVendor.originalAmount = 0;
+                    // DEF-011: do not preset originalAmount — buildCostCellHTML falls back to
+                    // totalCost (sum of monthNCost values stored in entry currency), which is correct.
                 }
                 projectData.vendorCosts.push(newVendor);
                 window.dataManager.saveToLocalStorage();
@@ -1675,13 +1693,23 @@ function calculateInternalResourcesTotal() {
 }
 
 function calculateVendorCostsTotal() {
+    // DEF-011: convert each vendor's monthly costs from entry currency to primary currency
+    const primaryCurrency = projectData.currency?.primaryCurrency || '';
     return projectData.vendorCosts.reduce((total, vendor) => {
-        const month1Cost = vendor.month1Cost || 0;
-        const month2Cost = vendor.month2Cost || 0;
-        const month3Cost = vendor.month3Cost || 0;
-        const month4Cost = vendor.month4Cost || 0;
-
-        return total + (month1Cost + month2Cost + month3Cost + month4Cost);
+        const vendorCurr = vendor.currency;
+        const needsConversion = vendorCurr && vendorCurr !== primaryCurrency && window.currencyManager;
+        let vendorTotal = 0;
+        // Sum all monthNCost keys dynamically (no hardcoded 4-month limit)
+        for (const key in vendor) {
+            if (/^month\d+Cost$/.test(key)) {
+                let cost = vendor[key] || 0;
+                if (needsConversion) {
+                    cost = window.currencyManager.convertCurrency(cost, vendorCurr, primaryCurrency);
+                }
+                vendorTotal += cost;
+            }
+        }
+        return total + vendorTotal;
     }, 0);
 }
 

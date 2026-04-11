@@ -181,16 +181,17 @@ function renderTableHeadersCorrectly() {
         });
         
         yearRowHTML += `
+            <th rowspan="2" class="fixed-column">Currency</th>
             <th rowspan="2" class="fixed-column">Total Cost</th>
             <th rowspan="2" class="fixed-column">Actions</th>
         `;
-        
+
         // Build month header row (only month names, no fixed columns)
         let monthRowHTML = '';
         monthInfo.months.forEach(month => {
             monthRowHTML += `<th>${month}</th>`;
         });
-        
+
         internalYearHeader.innerHTML = yearRowHTML;
         internalMonthHeader.innerHTML = monthRowHTML;
         
@@ -216,15 +217,16 @@ function renderTableHeadersCorrectly() {
         });
         
         yearRowHTML += `
+            <th rowspan="2" class="fixed-column">Currency</th>
             <th rowspan="2" class="fixed-column">Total Cost</th>
             <th rowspan="2" class="fixed-column">Actions</th>
         `;
-        
+
         let monthRowHTML = '';
         monthInfo.months.forEach(month => {
             monthRowHTML += `<th>${month}</th>`;
         });
-        
+
         vendorYearHeader.innerHTML = yearRowHTML;
         vendorMonthHeader.innerHTML = monthRowHTML;
         
@@ -282,8 +284,8 @@ function renderInternalResourcesTableFixed() {
     
     if (!projectData.internalResources || projectData.internalResources.length === 0) {
         const monthInfo = window.tableRenderer ? window.tableRenderer.calculateProjectMonths() : { count: 16 };
-        // Issue #139: colspan increased by 1 to account for Person Name column
-        const colspan = 4 + monthInfo.count + 2;
+        // Issue #139: +1 for Person Name; STR-001: +1 for Currency
+        const colspan = 4 + monthInfo.count + 3;
         tbody.innerHTML = `<tr><td colspan="${colspan}" class="empty-state" style="padding: 2rem; text-align: center; color: #6b7280;">No internal resources added yet</td></tr>`;
         return;
     }
@@ -317,16 +319,25 @@ function renderInternalResourcesTableFixed() {
         });
         
         const totalCost = totalDays * (resource.dailyRate || 0);
-        
+        const primaryCurrency = projectData.currency?.primaryCurrency || '';
+        const isStale = window.isRateStale ? window.isRateStale(resource) : false;
+        const costCellHTML = window.buildCostCellHTML
+            ? window.buildCostCellHTML(resource, totalCost)
+            : `<strong>$${totalCost.toLocaleString()}</strong>`;
+
         const row = document.createElement('tr');
         row.setAttribute('data-id', resource.id);
         row.setAttribute('data-type', 'internal-resource');
-        
+
         // Issue #139: Person Name cell added as second column (index 1)
         // Shows name if present, otherwise renders a grey italic TBC placeholder
         const personNameCell = resource.personName
             ? resource.personName
             : '<span class="tbc-label">TBC</span>';
+
+        const editBtnStyle = isStale
+            ? 'background-color: #17a2b8; color: white; border: none; padding: 6px 8px; border-radius: 4px; cursor: not-allowed; margin-right: 4px; opacity: 0.5; pointer-events: none;'
+            : 'background-color: #17a2b8; color: white; border: none; padding: 6px 8px; border-radius: 4px; cursor: pointer; margin-right: 4px;';
 
         // CRITICAL: Remove inline styles - let CSS handle styling
         row.innerHTML = `
@@ -335,11 +346,12 @@ function renderInternalResourcesTableFixed() {
             <td><span class="category-badge category-internal">${resource.rateCard || 'Internal'}</span></td>
             <td style="text-align: right;">$${(resource.dailyRate || 0).toLocaleString()}</td>
             ${monthCells}
-            <td class="cost-total"><strong>$${totalCost.toLocaleString()}</strong></td>
+            <td class="cost-currency">${resource.currency && resource.currency !== primaryCurrency ? resource.currency : (primaryCurrency || '')}</td>
+            <td class="cost-total">${costCellHTML}</td>
             <td class="action-cell">
                 <div class="action-buttons" style="display: flex; gap: 4px; align-items: center; justify-content: center;">
                     <button class="edit-row-btn icon-btn" data-id="${resource.id}" data-type="internal-resource" title="Edit Row" onclick="editWholeRowProfessional(this)"
-                            style="background-color: #17a2b8; color: white; border: none; padding: 6px 8px; border-radius: 4px; cursor: pointer; margin-right: 4px;">
+                            style="${editBtnStyle}">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -349,8 +361,17 @@ function renderInternalResourcesTableFixed() {
                 </div>
             </td>
         `;
-        
+
         tbody.appendChild(row);
+
+        // STR-001: staleness warning sub-row
+        if (isStale) {
+            const staleRow = document.createElement('tr');
+            staleRow.className = 'stale-rate-warning-row';
+            const colspan = 4 + monthInfo.count + 3;
+            staleRow.innerHTML = `<td colspan="${colspan}" class="stale-rate-warning">The exchange rate for ${resource.currency} has been removed. This entry cannot be modified until a rate is reconfigured in Settings.</td>`;
+            tbody.appendChild(staleRow);
+        }
     });
     
     console.log('Internal Resources table rendered with CORRECT CSS');
@@ -372,7 +393,8 @@ function renderVendorCostsTableFixed() {
     const projectData = window.projectData || {};
     if (!projectData.vendorCosts || projectData.vendorCosts.length === 0) {
         const monthInfo = window.tableRenderer ? window.tableRenderer.calculateProjectMonths() : { count: 16 };
-        const colspan = 3 + monthInfo.count + 2;
+        // STR-001: +1 for Currency column
+        const colspan = 3 + monthInfo.count + 3;
         tbody.innerHTML = `<tr><td colspan="${colspan}" class="empty-state" style="padding: 2rem; text-align: center; color: #6b7280;">No vendor costs added yet</td></tr>`;
         return;
     }
@@ -404,20 +426,31 @@ function renderVendorCostsTableFixed() {
             monthCells += `<td class="month-cell" data-field="${fieldName}">$${cost.toLocaleString()}</td>`;
         });
         
+        const primaryCurrency = projectData.currency?.primaryCurrency || '';
+        const isStale = window.isRateStale ? window.isRateStale(vendor) : false;
+        const costCellHTML = window.buildCostCellHTML
+            ? window.buildCostCellHTML(vendor, totalCost)
+            : `<strong>$${totalCost.toLocaleString()}</strong>`;
+
         const row = document.createElement('tr');
         row.setAttribute('data-id', vendor.id);
         row.setAttribute('data-type', 'vendor-cost');
-        
+
+        const editBtnStyle = isStale
+            ? 'background-color: #17a2b8; color: white; border: none; padding: 6px 8px; border-radius: 4px; cursor: not-allowed; margin-right: 4px; opacity: 0.5; pointer-events: none;'
+            : 'background-color: #17a2b8; color: white; border: none; padding: 6px 8px; border-radius: 4px; cursor: pointer; margin-right: 4px;';
+
         row.innerHTML = `
             <td>${vendor.vendor || 'Unknown Vendor'}</td>
             <td><span class="category-badge">${vendor.category || 'Other'}</span></td>
             <td>${vendor.description || 'No description'}</td>
             ${monthCells}
-            <td class="cost-total"><strong>$${totalCost.toLocaleString()}</strong></td>
+            <td class="cost-currency">${vendor.currency && vendor.currency !== primaryCurrency ? vendor.currency : (primaryCurrency || '')}</td>
+            <td class="cost-total">${costCellHTML}</td>
             <td class="action-cell">
                 <div class="action-buttons" style="display: flex; gap: 4px; align-items: center; justify-content: center;">
                     <button class="edit-row-btn icon-btn" data-id="${vendor.id}" data-type="vendor-cost" title="Edit Row" onclick="editWholeRowProfessional(this)"
-                            style="background-color: #17a2b8; color: white; border: none; padding: 6px 8px; border-radius: 4px; cursor: pointer; margin-right: 4px;">
+                            style="${editBtnStyle}">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                             <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -427,10 +460,19 @@ function renderVendorCostsTableFixed() {
                 </div>
             </td>
         `;
-        
+
         tbody.appendChild(row);
+
+        // STR-001: staleness warning sub-row
+        if (isStale) {
+            const staleRow = document.createElement('tr');
+            staleRow.className = 'stale-rate-warning-row';
+            const staleColspan = 3 + monthInfo.count + 3;
+            staleRow.innerHTML = `<td colspan="${staleColspan}" class="stale-rate-warning">The exchange rate for ${vendor.currency} has been removed. This entry cannot be modified until a rate is reconfigured in Settings.</td>`;
+            tbody.appendChild(staleRow);
+        }
     });
-    
+
     console.log('Vendor Costs table rendered with CORRECT CSS');
 }
 

@@ -1125,6 +1125,56 @@ small {
 }
 
 /* ==========================================================================
+   STR-001 — Multi-currency cost entry
+   ========================================================================== */
+
+/* Currency selector — error state */
+.currency-selector.input-error {
+  border-color: var(--danger-border);
+  background-color: var(--danger-bg);
+}
+
+.currency-selector.input-error:focus {
+  border-color: var(--danger-border);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+  outline: none;
+}
+
+/* Inline error message */
+.currency-error-msg {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--danger);
+  font-weight: 400;
+}
+
+/* Dual-currency annotation in table cells */
+.cost-original {
+  display: block;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.cost-converted {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--text-secondary);
+  margin-top: var(--space-1);
+}
+
+/* Staleness warning sub-row */
+.stale-rate-warning-row td.stale-rate-warning {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
+  color: var(--warning);
+  background-color: var(--warning-bg);
+  border-top: 1px solid var(--warning-border);
+  border-bottom: 1px solid var(--warning-border);
+}
+
+/* ==========================================================================
    11. SETTINGS & USER VIEWS
    ========================================================================== */
 

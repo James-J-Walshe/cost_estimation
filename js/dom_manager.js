@@ -311,10 +311,14 @@ class DOMManager {
             
             this.modalTitle.textContent = title;
             this.modalFields.innerHTML = this.getModalFields(type);
+            // STR-001: populate currency selectors after modal fields are injected
+            if (window.initCurrencySelectors) {
+                window.initCurrencySelectors(this.modal);
+            }
             this.modal.style.display = 'block';
             this.modalForm.setAttribute('data-type', type);
             
-            // Handle vendor cost modal - hide standard buttons and attach close handler
+            // Handle vendor cost modal - hide standard buttons and attach handlers
             if (type === 'vendorCost') {
                 // Hide standard modal buttons
                 const standardModalActions = this.modalForm.querySelector('.modal-actions:not(.vendor-cost-actions)');
@@ -322,10 +326,18 @@ class DOMManager {
                     standardModalActions.style.display = 'none';
                 }
                 const cancelModal = document.getElementById('cancelModal');
-                const saveModal = this.modalForm.querySelector('button[type="submit"]:not(#vendorCostSave)');
+                const saveModal = this.modalForm.querySelector('button[type="submit"]');
                 if (cancelModal) cancelModal.style.display = 'none';
                 if (saveModal) saveModal.style.display = 'none';
-                
+
+                // DEF-007: explicit click handler on Save — type="button" prevents native form submit
+                const saveBtn = document.getElementById('vendorCostSave');
+                if (saveBtn) {
+                    saveBtn.addEventListener('click', () => {
+                        if (window.handleModalSubmit) window.handleModalSubmit();
+                    });
+                }
+
                 // Attach close button handler
                 const closeBtn = document.getElementById('vendorCostClose');
                 if (closeBtn) {
@@ -336,8 +348,8 @@ class DOMManager {
                     });
                 }
             }
-            
-            // Handle tool cost modal - hide standard buttons and attach close handler
+
+            // Handle tool cost modal - hide standard buttons and attach handlers
             if (type === 'toolCost') {
                 // Hide standard modal buttons
                 const standardModalActions = this.modalForm.querySelector('.modal-actions:not(.tool-cost-actions)');
@@ -345,10 +357,18 @@ class DOMManager {
                     standardModalActions.style.display = 'none';
                 }
                 const cancelModal = document.getElementById('cancelModal');
-                const saveModal = this.modalForm.querySelector('button[type="submit"]:not(#toolCostSave)');
+                const saveModal = this.modalForm.querySelector('button[type="submit"]');
                 if (cancelModal) cancelModal.style.display = 'none';
                 if (saveModal) saveModal.style.display = 'none';
-                
+
+                // DEF-007: explicit click handler on Save — type="button" prevents native form submit
+                const saveBtn = document.getElementById('toolCostSave');
+                if (saveBtn) {
+                    saveBtn.addEventListener('click', () => {
+                        if (window.handleModalSubmit) window.handleModalSubmit();
+                    });
+                }
+
                 // Attach close button handler
                 const closeBtn = document.getElementById('toolCostClose');
                 if (closeBtn) {
@@ -403,10 +423,17 @@ class DOMManager {
                 <div class="form-group">
                     <label>Role:</label>
                     <select name="role" class="form-control" required>
-                        ${window.projectData?.rateCards?.map(rate => 
+                        ${window.projectData?.rateCards?.map(rate =>
                             `<option value="${rate.role}" data-category="${rate.category}">${rate.role} (${rate.category})</option>`
                         ).join('') || ''}
                     </select>
+                </div>
+                <div class="form-group">
+                    <label for="entryCurrencyInternal">Currency:</label>
+                    <select name="currency" id="entryCurrencyInternal" class="form-control currency-selector">
+                        <!-- populated by initCurrencySelectors() -->
+                    </select>
+                    <span class="currency-error-msg" style="display:none;"></span>
                 </div>
                 <div class="form-group">
                     <label>${months[0]} Days:</label>
@@ -449,10 +476,18 @@ class DOMManager {
                             <option value="Other">Other</option>
                         </select>
                     </div>
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Currency:</label>
+                        <select name="currency" id="entryCurrencyVendor" class="form-control currency-selector"
+                                style="width: 100%; padding: 0.5rem; border-radius: var(--radius-md);">
+                            <!-- populated by initCurrencySelectors() -->
+                        </select>
+                        <span class="currency-error-msg" style="display:none;"></span>
+                    </div>
                 </div>
                 <div class="vendor-cost-actions" style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
                     <button type="button" id="vendorCostClose" class="btn btn-secondary">Close</button>
-                    <button type="submit" id="vendorCostSave" class="btn btn-primary">Save</button>
+                    <button type="button" id="vendorCostSave" class="btn btn-primary">Save</button>
                 </div>
             `,
             toolCost: `
@@ -489,6 +524,14 @@ class DOMManager {
                         <small style="color: #6b7280; font-size: 0.8rem;">Enter the cost for one billing period</small>
                     </div>
                     <div class="form-group" style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Currency:</label>
+                        <select name="currency" id="entryCurrencyTool" class="form-control currency-selector"
+                                style="width: 100%; padding: 0.5rem; border-radius: var(--radius-md);">
+                            <!-- populated by initCurrencySelectors() -->
+                        </select>
+                        <span class="currency-error-msg" style="display:none;"></span>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 1rem;">
                         <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Quantity (Licenses/Units):</label>
                         <input type="number" name="quantity" class="form-control" id="quantity" min="1" step="1" value="1" required style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;">
                     </div>
@@ -509,7 +552,7 @@ class DOMManager {
                 </div>
                 <div class="tool-cost-actions" style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
                     <button type="button" id="toolCostClose" class="btn btn-secondary">Close</button>
-                    <button type="submit" id="toolCostSave" class="btn btn-primary">Save</button>
+                    <button type="button" id="toolCostSave" class="btn btn-primary">Save</button>
                 </div>
             `,
             miscCost: `

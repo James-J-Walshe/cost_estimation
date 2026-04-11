@@ -145,31 +145,45 @@ class EditManager {
             { monthKeys: ['month1', 'month2', 'month3', 'month4'], count: 4 };
         
         switch (itemType) {
-            case 'internal-resource':
+            case 'internal-resource': {
                 data.role = cells[0]?.textContent?.trim() || '';
                 data.rateCard = cells[1]?.textContent?.trim() || '';
                 data.dailyRate = parseFloat(cells[2]?.textContent?.replace(/[^0-9.-]/g, '')) || 0;
-                
-                // Extract dynamic month data
+                // STR-001: cell[3] is now the Currency column — read currency from projectData
+                const _irId = isNaN(Number(itemId)) ? itemId : Number(itemId);
+                const _irEntry = window.projectData?.internalResources?.find(r => r.id === _irId);
+                const _irPrimary = window.projectData?.currency?.primaryCurrency || '';
+                data.currency = _irEntry?.currency || _irPrimary;
+                data.originalAmount = _irEntry?.originalAmount || 0;
+
+                // Extract dynamic month data — cells start at index 4 now (Currency is index 3)
                 monthInfo.monthKeys.forEach((monthKey, index) => {
-                    const cellIndex = 3 + index; // Start from 4th cell (index 3)
+                    const cellIndex = 4 + index;
                     const fieldName = monthKey + 'Days';
                     data[fieldName] = parseFloat(cells[cellIndex]?.textContent?.replace(/[^0-9.-]/g, '')) || 0;
                 });
                 break;
-                
-            case 'vendor-cost':
+            }
+
+            case 'vendor-cost': {
                 data.vendor = cells[0]?.textContent?.trim() || '';
                 data.category = cells[1]?.textContent?.trim() || '';
                 data.description = cells[2]?.textContent?.trim() || '';
-                
-                // Extract dynamic month data
+                // STR-001: cell[3] is now the Currency column — read currency from projectData
+                const _vcId = isNaN(Number(itemId)) ? itemId : Number(itemId);
+                const _vcEntry = window.projectData?.vendorCosts?.find(v => v.id === _vcId);
+                const _vcPrimary = window.projectData?.currency?.primaryCurrency || '';
+                data.currency = _vcEntry?.currency || _vcPrimary;
+                data.originalAmount = _vcEntry?.originalAmount || 0;
+
+                // Extract dynamic month data — cells start at index 4 now (Currency is index 3)
                 monthInfo.monthKeys.forEach((monthKey, index) => {
-                    const cellIndex = 3 + index; // Start from 4th cell (index 3)
+                    const cellIndex = 4 + index;
                     const fieldName = monthKey + 'Cost';
                     data[fieldName] = parseFloat(cells[cellIndex]?.textContent?.replace(/[^0-9.-]/g, '')) || 0;
                 });
                 break;
+            }
                 
             case 'tool-cost': {
                 // Read directly from projectData to avoid parsing formatted display values.
@@ -181,11 +195,15 @@ class EditManager {
                     data.tool = toolData.tool || '';
                     data.procurementType = toolData.procurementType || '';
                     data.billingFrequency = toolData.billingFrequency || '';
-                    data.costPerPeriod = toolData.costPerPeriod || 0;
+                    // STR-001: use originalAmount for costPerPeriod display if non-base currency
+                    data.costPerPeriod = toolData.originalAmount !== undefined ? toolData.originalAmount : (toolData.costPerPeriod || 0);
                     data.quantity = toolData.quantity || 1;
                     data.startDate = toolData.startDate || '';
                     data.endDate = toolData.endDate || '';
                     data.isOngoing = toolData.isOngoing || false;
+                    // STR-001: currency fields
+                    data.currency = toolData.currency || (window.projectData?.currency?.primaryCurrency || '');
+                    data.originalAmount = toolData.originalAmount || 0;
                 }
                 break;
             }
@@ -235,10 +253,15 @@ class EditManager {
                 </select>`;
                 cells[1].innerHTML = `<input type="text" class="edit-input" value="${data.rateCard}" data-field="rateCard" readonly>`;
                 cells[2].innerHTML = `<input type="number" class="edit-input" value="${data.dailyRate}" data-field="dailyRate" step="0.01" min="0">`;
-                
-                // Create dynamic month inputs
+                // STR-001: cell[3] is the Currency column
+                if (cells[3]) {
+                    const irCurrencyOptions = window.buildCurrencyOptions ? window.buildCurrencyOptions(data.currency) : '';
+                    cells[3].innerHTML = `<select class="edit-input currency-selector" data-field="currency">${irCurrencyOptions}</select>`;
+                }
+
+                // Create dynamic month inputs — cells start at index 4 now
                 monthInfo.monthKeys.forEach((monthKey, index) => {
-                    const cellIndex = 3 + index;
+                    const cellIndex = 4 + index;
                     if (cells[cellIndex]) {
                         const fieldName = monthKey + 'Days';
                         const value = data[fieldName] || 0;
@@ -253,10 +276,15 @@ class EditManager {
                     ${this.getVendorCategoryOptions(data.category)}
                 </select>`;
                 cells[2].innerHTML = `<input type="text" class="edit-input" value="${data.description}" data-field="description">`;
-                
-                // Create dynamic month inputs
+                // STR-001: cell[3] is the Currency column
+                if (cells[3]) {
+                    const vcCurrencyOptions = window.buildCurrencyOptions ? window.buildCurrencyOptions(data.currency) : '';
+                    cells[3].innerHTML = `<select class="edit-input currency-selector" data-field="currency">${vcCurrencyOptions}</select>`;
+                }
+
+                // Create dynamic month inputs — cells start at index 4 now
                 monthInfo.monthKeys.forEach((monthKey, index) => {
-                    const cellIndex = 3 + index;
+                    const cellIndex = 4 + index;
                     if (cells[cellIndex]) {
                         const fieldName = monthKey + 'Cost';
                         const value = data[fieldName] || 0;
@@ -266,7 +294,7 @@ class EditManager {
                 break;
                 
             case 'tool-cost':
-                // Columns: Tool, Type, Billing, Cost/Period, Quantity, Start Date, End Date, Total (read-only)
+                // Columns: Tool, Type, Billing, Cost/Period, Quantity, Start Date, End Date, Currency, Total (read-only)
                 cells[0].innerHTML = `<input type="text" class="edit-input" value="${data.tool}" data-field="tool">`;
                 cells[1].innerHTML = `<select class="edit-input" data-field="procurementType">
                     ${this.getProcurementTypeOptions(data.procurementType)}
@@ -282,7 +310,12 @@ class EditManager {
                 } else {
                     cells[6].innerHTML = `<input type="date" class="edit-input" value="${data.endDate}" data-field="endDate">`;
                 }
-                // cells[7] is Total Cost (computed) — leave as-is
+                // STR-001: cell[7] is Currency
+                if (cells[7]) {
+                    const tcCurrencyOptions = window.buildCurrencyOptions ? window.buildCurrencyOptions(data.currency) : '';
+                    cells[7].innerHTML = `<select class="edit-input currency-selector" data-field="currency">${tcCurrencyOptions}</select>`;
+                }
+                // cells[8] is Total Cost (computed) — leave as-is
                 break;
 
             case 'misc-cost':
@@ -340,7 +373,38 @@ class EditManager {
         
         try {
             const newData = this.extractEditData(row, editState.type);
-            
+
+            // STR-001: currency validation for the three cost types
+            if (['internal-resource', 'vendor-cost', 'tool-cost'].includes(editState.type)) {
+                const currencySelector = row.querySelector('.currency-selector');
+                const selectedCurrency = currencySelector ? currencySelector.value : (window.projectData?.currency?.primaryCurrency || '');
+                // Find an error span sibling if any (edit-mode rows don't have them, so pass null)
+                if (window.validateCurrencyRate && !window.validateCurrencyRate(selectedCurrency, currencySelector, null)) {
+                    // Show a brief alert since edit rows have no dedicated error span
+                    alert(`Exchange rate for ${selectedCurrency} is not configured. Please configure it in Settings before saving this entry.`);
+                    row.classList.remove('saving');
+                    return;
+                }
+                // Store currency on newData for updateItemData
+                newData.currency = selectedCurrency;
+                const primaryCurrency = window.projectData?.currency?.primaryCurrency || '';
+                if (selectedCurrency && selectedCurrency !== primaryCurrency && window.currencyManager) {
+                    if (editState.type === 'tool-cost' && newData.costPerPeriod !== undefined) {
+                        newData.originalAmount = newData.costPerPeriod;
+                        newData.costPerPeriod = window.currencyManager.convertCurrency(newData.costPerPeriod, selectedCurrency, primaryCurrency);
+                    } else if (editState.type === 'internal-resource' && newData.dailyRate !== undefined) {
+                        newData.originalAmount = newData.dailyRate;
+                        newData.dailyRate = window.currencyManager.convertCurrency(newData.dailyRate, selectedCurrency, primaryCurrency);
+                    }
+                    // vendor-cost: month costs are entered directly in base currency in edit mode
+                    // originalAmount tracks total; no per-month conversion needed here
+                } else {
+                    // Base currency — clear currency fields
+                    newData.currency = undefined;
+                    newData.originalAmount = undefined;
+                }
+            }
+
             // Validate data
             if (!this.validateEditData(newData, editState.type, itemId)) {
                 row.classList.remove('saving');
