@@ -1422,8 +1422,8 @@ function handleModalSubmit() {
                 const vcPrimary = projectData.currency?.primaryCurrency || '';
                 if (vcCurrency && vcCurrency !== vcPrimary) {
                     newVendor.currency = vcCurrency;
-                    // originalAmount stored as 0 initially — costs are set per-month via edit
-                    newVendor.originalAmount = 0;
+                    // DEF-011: do not preset originalAmount — buildCostCellHTML falls back to
+                    // totalCost (sum of monthNCost values stored in entry currency), which is correct.
                 }
                 projectData.vendorCosts.push(newVendor);
                 window.dataManager.saveToLocalStorage();
@@ -1693,13 +1693,23 @@ function calculateInternalResourcesTotal() {
 }
 
 function calculateVendorCostsTotal() {
+    // DEF-011: convert each vendor's monthly costs from entry currency to primary currency
+    const primaryCurrency = projectData.currency?.primaryCurrency || '';
     return projectData.vendorCosts.reduce((total, vendor) => {
-        const month1Cost = vendor.month1Cost || 0;
-        const month2Cost = vendor.month2Cost || 0;
-        const month3Cost = vendor.month3Cost || 0;
-        const month4Cost = vendor.month4Cost || 0;
-
-        return total + (month1Cost + month2Cost + month3Cost + month4Cost);
+        const vendorCurr = vendor.currency;
+        const needsConversion = vendorCurr && vendorCurr !== primaryCurrency && window.currencyManager;
+        let vendorTotal = 0;
+        // Sum all monthNCost keys dynamically (no hardcoded 4-month limit)
+        for (const key in vendor) {
+            if (/^month\d+Cost$/.test(key)) {
+                let cost = vendor[key] || 0;
+                if (needsConversion) {
+                    cost = window.currencyManager.convertCurrency(cost, vendorCurr, primaryCurrency);
+                }
+                vendorTotal += cost;
+            }
+        }
+        return total + vendorTotal;
     }, 0);
 }
 

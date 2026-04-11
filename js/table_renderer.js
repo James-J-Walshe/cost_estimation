@@ -584,8 +584,16 @@ class TableRenderer {
             if (window.toolCostsManager) {
                 const formatted = window.toolCostsManager.formatToolCostForDisplay(tool);
 
-                // STR-001: cost cell with dual-currency annotation
-                const costCellHTML = window.buildCostCellHTML ? window.buildCostCellHTML(tool, formatted.totalCost) : `$${formatted.totalCost.toLocaleString()}`;
+                // STR-001 / DEF-010: cost cell with dual-currency annotation.
+                // formatted.totalCost is in primary currency (costPerPeriod was converted at save).
+                // Back-convert to entry currency so buildCostCellHTML shows the correct total.
+                const tcPrimary = projectData.currency?.primaryCurrency || '';
+                let toolEntry = tool;
+                if (tool.currency && tool.currency !== tcPrimary && window.currencyManager) {
+                    const originalTotal = window.currencyManager.convertCurrency(formatted.totalCost, tcPrimary, tool.currency);
+                    toolEntry = { ...tool, originalAmount: originalTotal };
+                }
+                const costCellHTML = window.buildCostCellHTML ? window.buildCostCellHTML(toolEntry, formatted.totalCost) : `$${formatted.totalCost.toLocaleString()}`;
                 // STR-001: disable edit button if stale
                 const actionButtons = isStale
                     ? this.createActionButtons(tool.id, 'tool-cost').replace(
@@ -791,12 +799,18 @@ class TableRenderer {
             });
         }
         
-        // Calculate Vendor Costs
+        // Calculate Vendor Costs — DEF-011: convert from entry currency to primary before accumulating
         if (projectData.vendorCosts && projectData.vendorCosts.length > 0) {
             console.log(`🏢 Processing ${projectData.vendorCosts.length} vendor costs`);
+            const summaryPrimary = projectData.currency?.primaryCurrency || '';
             projectData.vendorCosts.forEach(vendor => {
+                const vendorCurr = vendor.currency;
+                const svNeedsConv = vendorCurr && vendorCurr !== summaryPrimary && window.currencyManager;
                 monthInfo.monthKeys.forEach((monthKey, index) => {
-                    const cost = this.getMonthValue(vendor, monthKey, 'q');
+                    let cost = this.getMonthValue(vendor, monthKey, 'q');
+                    if (svNeedsConv) {
+                        cost = window.currencyManager.convertCurrency(cost, vendorCurr, summaryPrimary);
+                    }
                     vendorMonthly[index] += cost;
                 });
             });
