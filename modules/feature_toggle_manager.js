@@ -99,7 +99,9 @@ class FeatureToggleManager {
     }
 
     loadToggles() {
-        this.toggles = window.projectData.featureToggles?.toggles || this.getDefaultToggles();
+        const saved = window.projectData.featureToggles?.toggles;
+        const defaults = this.getDefaultToggles();
+        this.toggles = saved ? { ...defaults, ...saved } : defaults;
         console.log('Feature toggles loaded:', Object.keys(this.toggles).length, 'toggles');
     }
 
